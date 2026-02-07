@@ -22,7 +22,7 @@ from ..vllm_inductor_pass import VllmInductorPass
 logger = init_logger(__name__)
 
 
-def get_default_overload(op: OpOverload | OpOverloadPacket) -> OpOverload:
+def overload_or_default(op: OpOverload | OpOverloadPacket) -> OpOverload:
     if isinstance(op, OpOverloadPacket):
         return op.default
     assert isinstance(op, OpOverload), "Expected an OpOverload or OpOverloadPacket"
@@ -36,7 +36,7 @@ def get_ir_op(node: fx.Node) -> IrOp | None:
     if not isinstance(node.target, (OpOverload, OpOverloadPacket)):
         return None
 
-    op_overload = get_default_overload(node.target)
+    op_overload = overload_or_default(node.target)
     if op_overload.namespace != "vllm_ir":
         return None
 
@@ -76,7 +76,7 @@ class VllmIRLoweringPass(VllmInductorPass):
 
         assert len(match.nodes) == 1, "Expected single node match"
         node = match.nodes[0]
-        ir_op = get_ir_op(node)
+        ir_op = get_ir_op(node)  # TODO is node.target always an overload?
         assert ir_op is not None, "Expected vLLM IR op"
         assert not node.kwargs  # I think there should never be kwargs here
 
@@ -86,13 +86,14 @@ class VllmIRLoweringPass(VllmInductorPass):
         self.selected_impls[ir_op.name][node.name] = ir_op_impl.provider
 
         # replace_by_example wants node args, not the fake tensors
+        # use safe_impl_fn to properly handle in-place implementations
         # TODO(luka): Use aot_export_module to get functionalized graph
         # TODO(luka): Cache the fx_replacement to avoid re-tracing the same impl
 
         # Defaults not present on node.args but required for replacement tracing
         bound_args = ir_op._py_signature.bind(*node.args)
         bound_args.apply_defaults()
-        match.replace_by_example(ir_op_impl.impl_fn, bound_args.args)
+        match.replace_by_example(ir_op_impl.safe_impl_fn, bound_args.args)
 
     @VllmInductorPass.time_and_log
     def __call__(self, graph: fx.Graph) -> None:

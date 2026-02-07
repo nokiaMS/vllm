@@ -83,6 +83,7 @@ class IrOp:
     name: str
     has_reduction: bool
     impls: dict[str, "IrOpImpl"]
+    maybe_inplace: "IrOpInplaceOverload | None"
 
     def __init__(
         self,
@@ -105,7 +106,9 @@ class IrOp:
         # By convention, we consider parameters starting with 'x' as activations.
         if activations is None:
             activations = [
-                p.name for p in self._py_signature.parameters.values() if p.name.startswith("x")
+                p.name
+                for p in self._py_signature.parameters.values()
+                if p.name.startswith("x")
             ]
 
         self.name = name
@@ -151,7 +154,8 @@ class IrOp:
 
         if self.allow_inplace:
             self.maybe_inplace = IrOpInplaceOverload(self)
-
+        else:
+            self.maybe_inplace = None
 
     def register_fake(self, fn: Callable) -> Callable:
         """
@@ -365,11 +369,15 @@ class IrOpInplaceOverload:
 
         self.op = op
         self.name = f"{op.name}.maybe_inplace"
-        self._schema_str = infer_schema(op.impls["native"].impl_fn, mutates_args=op.activations)
+        self._schema_str = infer_schema(
+            op.impls["native"].impl_fn, mutates_args=op.activations
+        )
 
         # torch registration
         vllm_ir_lib.define(self.name + self._schema_str)
-        vllm_ir_lib.impl(self.name, self._inner_call, dispatch_key="CompositeExplicitAutograd")
+        vllm_ir_lib.impl(
+            self.name, self._inner_call, dispatch_key="CompositeExplicitAutograd"
+        )
         # fake goes to default overload for now
         vllm_ir_lib._register_fake(self.name, self.op._fake_call)
 

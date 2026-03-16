@@ -1850,7 +1850,7 @@ class LLM:
         priority: list[int] | None = None,
         tokenization_kwargs: dict[str, Any] | None = None,
     ) -> list[str]:
-        print("[guoxu] Start _add_completion_requests. ", "file: ", __file__, "function: ", self.__name__)
+        print("[guoxu] Start _add_completion_requests. ", "file: ", __file__, "function: ", self._add_completion_requests.__name__)
 
         seq_prompts = prompt_to_seq(prompts)
         seq_params = self._params_to_seq(params, len(seq_prompts))

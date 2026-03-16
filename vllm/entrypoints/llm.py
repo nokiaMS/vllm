@@ -2084,6 +2084,10 @@ class LLM:
         *,
         use_tqdm: bool | Callable[..., tqdm] = True,
     ) -> list[_O]:
+
+        print("[guoxu] Start _run_engine. ", "file: ", __file__, "function: ",
+              self._run_engine.__name__)
+
         # Initialize tqdm.
         if use_tqdm:
             num_requests = self.llm_engine.get_num_unfinished_requests()

@@ -2032,7 +2032,7 @@ class LLM:
         lora_requests: Sequence[LoRARequest | None] | None = None,
         priorities: Sequence[int] | None = None,
     ) -> list[str]:
-        print("[guoxu] Start _render_and_add_requests. ", "file: ", __file__, "function: ", self.__name__)
+        print("[guoxu] Start _render_and_add_requests. ", "file: ", __file__, "function: ", self._render_and_run_requests.__name__)
 
         added_request_ids: list[str] = []
 
@@ -2062,7 +2062,7 @@ class LLM:
         lora_request: LoRARequest | None = None,
         priority: int = 0,
     ) -> str:
-        print("[guoxu] Start _add_request. ", "file: ", __file__, "function: ", self.__name__)
+        print("[guoxu] Start _add_request. ", "file: ", __file__, "function: ", self._add_request.__name__)
 
         if isinstance(params, SamplingParams):
             # We only care about the final output

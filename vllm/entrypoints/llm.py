@@ -541,7 +541,7 @@ class LLM:
             返回：
                 一个 `RequestOutput` 对象列表，按输入提示词的原始顺序返回生成结果。
         """
-        print("[guoxu] Start generate. ", "file: ", __file__, "function: ", self.__name__)
+        print("[guoxu] Start generate. ", "file: ", __file__, "function: ", self.generate.__name__)
 
         runner_type = self.model_config.runner_type
         if runner_type != "generate":
@@ -1934,7 +1934,7 @@ class LLM:
                 引擎产生的输出列表，按 request id 排序；具体输出类型由
                 `output_type` 决定。
         """
-        print("[guoxu] Start _run_completion. ", "file: ", __file__, "function: ", self.__name__)
+        print("[guoxu] Start _run_completion. ", "file: ", __file__, "function: ", self._run_completion.__name__)
 
         self._add_completion_requests(
             prompts=prompts,

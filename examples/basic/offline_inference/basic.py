@@ -3,6 +3,8 @@
 
 from vllm import LLM, SamplingParams
 
+print("[guoxu] Local LLM and Samplingparams done. in file ", __file__)
+
 # Sample prompts.
 prompts = [
     "Hello, my name is",
@@ -13,6 +15,7 @@ prompts = [
 # Create a sampling params object.
 sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
 
+print("[guoxu] Make sampling_params object done. in file ", __file__)
 
 def main():
     # Create an LLM.

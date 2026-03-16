@@ -649,7 +649,7 @@ class LLM:
         prompt: ProcessorInputs,
         lora_request: LoRARequest | None,
     ) -> LoRARequest | None:
-        print("[guoxu] Start _resolve_mm_lora. ", "file: ", __file__, "function: ", self.__name__)
+        print("[guoxu] Start _resolve_mm_lora. ", "file: ", __file__, "function: ", self._resolve_mm_lora.__name__)
 
         if prompt["type"] != "multimodal":
             return lora_request

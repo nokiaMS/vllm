@@ -21,11 +21,15 @@ def main():
     # Create an LLM.
     # 创建一个LLM实例，指定使用的模型为"facebook/opt-125m"。
     llm = LLM(model="facebook/opt-125m")
+    print("[guoxu] Creating LLM object done. in file ", __file__)
+
     # Generate texts from the prompts.
     # The output is a list of RequestOutput objects
     # that contain the prompt, generated text, and other information.
     # 调用generate生成结果。
     outputs = llm.generate(prompts, sampling_params)
+    print("[guoxu] Generating outputs done. in file ", __file__)
+
     # Print the outputs.
     print("\nGenerated Outputs:\n" + "-" * 60)
     for output in outputs:

@@ -288,6 +288,8 @@ class LLM:
     ) -> None:
         """LLM constructor."""
 
+        print("[guoxu] Start to init llm object. ", "file: ", __file__, "function: ", "__init__")
+
         if "swap_space" in kwargs:
             kwargs.pop("swap_space")
             import warnings

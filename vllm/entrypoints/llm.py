@@ -409,6 +409,7 @@ class LLM:
             logits_processors=logits_processors,
             **kwargs,
         )
+        print("[guoxu] Construct EngineArgs object done. ", "file: ", __file__, "function: ", "__init__")
 
         log_non_default_args(engine_args)
 
@@ -417,6 +418,7 @@ class LLM:
             engine_args=engine_args, usage_context=UsageContext.LLM_CLASS
         )
         self.engine_class = type(self.llm_engine)
+        print("[guoxu] Construct LLMEngine object done. ", "file: ", __file__, "function: ", "__init__")
 
         # 从参数构建请求计数器。
         self.request_counter = Counter()
@@ -539,6 +541,8 @@ class LLM:
             返回：
                 一个 `RequestOutput` 对象列表，按输入提示词的原始顺序返回生成结果。
         """
+        print("[guoxu] Start generate. ", "file: ", __file__, "function: ", self.__name__)
+
         runner_type = self.model_config.runner_type
         if runner_type != "generate":
             raise ValueError(
@@ -645,6 +649,8 @@ class LLM:
         prompt: ProcessorInputs,
         lora_request: LoRARequest | None,
     ) -> LoRARequest | None:
+        print("[guoxu] Start _resolve_mm_lora. ", "file: ", __file__, "function: ", self.__name__)
+
         if prompt["type"] != "multimodal":
             return lora_request
 
@@ -1844,6 +1850,8 @@ class LLM:
         priority: list[int] | None = None,
         tokenization_kwargs: dict[str, Any] | None = None,
     ) -> list[str]:
+        print("[guoxu] Start _add_completion_requests. ", "file: ", __file__, "function: ", self.__name__)
+
         seq_prompts = prompt_to_seq(prompts)
         seq_params = self._params_to_seq(params, len(seq_prompts))
         seq_lora_requests = self._lora_request_to_seq(lora_request, len(seq_prompts))
@@ -1926,6 +1934,8 @@ class LLM:
                 引擎产生的输出列表，按 request id 排序；具体输出类型由
                 `output_type` 决定。
         """
+        print("[guoxu] Start _run_completion. ", "file: ", __file__, "function: ", self.__name__)
+
         self._add_completion_requests(
             prompts=prompts,
             params=params,
@@ -2022,6 +2032,8 @@ class LLM:
         lora_requests: Sequence[LoRARequest | None] | None = None,
         priorities: Sequence[int] | None = None,
     ) -> list[str]:
+        print("[guoxu] Start _render_and_add_requests. ", "file: ", __file__, "function: ", self.__name__)
+
         added_request_ids: list[str] = []
 
         try:
@@ -2050,6 +2062,8 @@ class LLM:
         lora_request: LoRARequest | None = None,
         priority: int = 0,
     ) -> str:
+        print("[guoxu] Start _add_request. ", "file: ", __file__, "function: ", self.__name__)
+
         if isinstance(params, SamplingParams):
             # We only care about the final output
             params.output_kind = RequestOutputKind.FINAL_ONLY

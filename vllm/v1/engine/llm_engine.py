@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
-
+import pdb
 import time
 from collections.abc import Callable, Mapping
 from copy import copy
@@ -308,6 +308,7 @@ class LLMEngine:
         return req_id
 
     def step(self) -> list[RequestOutput | PoolingRequestOutput]:
+        pdb.set_trace()
         print("[guoxu] Start step(). ", "file: ", __file__, "function: ", self.step.__name__)
 
         """执行一次调度迭代并返回本轮产生的请求输出。"""

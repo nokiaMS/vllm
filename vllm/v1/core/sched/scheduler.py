@@ -341,7 +341,7 @@ class Scheduler(SchedulerInterface):
         中文：执行一次调度迭代，选择本轮要处理的请求/Token，并构造调度结果。
         """
         print("[guoxu] Start schedule. ", "file: ", __file__, "function: ",
-              self.step.__name__)
+              self.schedule.__name__)
 
         # NOTE(woosuk) on the scheduling algorithm:
         # 中文：调度器不强制区分 prefill/decoding，而是统一按 token 预算推进请求。

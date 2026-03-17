@@ -330,7 +330,7 @@ class InprocClient(EngineCoreClient):
         self.engine_core = EngineCore(*args, **kwargs)
 
     def get_output(self) -> EngineCoreOutputs:
-        print("[guoxu] Start get_output(). ", "file: ", __file__, "function: ", self.get_output.__name__)
+        print("[guoxu] Start get_output() in InprocClient class. ", "file: ", __file__, "function: ", self.get_output.__name__)
 
         outputs, model_executed = self.engine_core.step_fn()
         self.engine_core.post_step(model_executed=model_executed)
@@ -890,7 +890,7 @@ class SyncMPClient(MPClient):
         self.resources.output_socket = None
 
     def get_output(self) -> EngineCoreOutputs:
-        print("[guoxu] Start get_output(). ", "file: ", __file__, "function: ", self.get_output.__name__)
+        print("[guoxu] Start get_output() in SyncMPClient class. ", "file: ", __file__, "function: ", self.get_output.__name__)
 
         # If an exception arises in process_outputs_socket task,
         # it is forwarded to the outputs_queue so we can raise it

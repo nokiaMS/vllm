@@ -73,6 +73,9 @@ class EngineCoreClient(ABC):
     * InprocClient: In process EngineCore (for V0-style LLMEngine use)
     * SyncMPClient: ZMQ + background proc EngineCore (for LLM)
     * AsyncMPClient: ZMQ + background proc EngineCore w/ asyncio (for AsyncLLM)
+
+    中文：EngineCoreClient 是 EngineCore 通信抽象，统一定义不同运行模式
+    （进程内/多进程、同步/异步）下的请求提交与输出获取接口。
     """
 
     @staticmethod
@@ -83,6 +86,7 @@ class EngineCoreClient(ABC):
         executor_class: type[Executor],
         log_stats: bool,
     ) -> "EngineCoreClient":
+        """根据 multiprocessing/asyncio 模式选择并创建客户端实现。"""
         # TODO: support this for debugging purposes.
         if asyncio_mode and not multiprocess_mode:
             raise NotImplementedError(
@@ -110,6 +114,7 @@ class EngineCoreClient(ABC):
         client_count: int = 1,
         client_index: int = 0,
     ) -> "AsyncMPClient":
+        """在异步多进程场景中按 DP 配置选择并创建客户端。"""
         parallel_config = vllm_config.parallel_config
         client_args = (
             vllm_config,
@@ -128,64 +133,84 @@ class EngineCoreClient(ABC):
         return AsyncMPClient(*client_args)
 
     @abstractmethod
-    def shutdown(self, timeout: float | None = None) -> None: ...
+    def shutdown(self, timeout: float | None = None) -> None:
+        """关闭客户端并释放后台资源。"""
+        ...
 
     def get_output(self) -> EngineCoreOutputs:
+        """获取一次 EngineCore 输出（同步接口）。"""
         raise NotImplementedError
 
     def get_supported_tasks(self) -> tuple[SupportedTask, ...]:
+        """获取模型支持的任务类型（同步接口）。"""
         raise NotImplementedError
 
     def add_request(self, request: EngineCoreRequest) -> None:
+        """向 EngineCore 提交请求（同步接口）。"""
         raise NotImplementedError
 
     def profile(self, is_start: bool = True, profile_prefix: str | None = None) -> None:
+        """开启或停止性能分析（同步接口）。"""
         raise NotImplementedError
 
     def reset_mm_cache(self) -> None:
+        """重置多模态缓存（同步接口）。"""
         raise NotImplementedError
 
     def reset_prefix_cache(
         self, reset_running_requests: bool = False, reset_connector: bool = False
     ) -> bool:
+        """重置前缀缓存（同步接口）。"""
         raise NotImplementedError
 
     def reset_encoder_cache(self) -> None:
+        """重置编码器缓存（同步接口）。"""
         raise NotImplementedError
 
     def sleep(self, level: int = 1, mode: PauseMode = "abort") -> None:
+        """让引擎休眠（同步接口）。"""
         raise NotImplementedError
 
     def wake_up(self, tags: list[str] | None = None) -> None:
+        """唤醒引擎（同步接口）。"""
         raise NotImplementedError
 
     def is_sleeping(self) -> bool:
+        """返回引擎是否处于休眠状态（同步接口）。"""
         raise NotImplementedError
 
     def execute_dummy_batch(self) -> None:
+        """执行一次 dummy batch（同步接口）。"""
         raise NotImplementedError
 
     async def execute_dummy_batch_async(self) -> None:
+        """执行一次 dummy batch（异步接口）。"""
         raise NotImplementedError
 
     def abort_requests(self, request_ids: list[str]) -> None:
+        """中止指定请求（同步接口）。"""
         raise NotImplementedError
 
     def add_lora(self, lora_request: LoRARequest) -> bool:
+        """加载 LoRA 适配器（同步接口）。"""
         raise NotImplementedError
 
     def remove_lora(self, lora_id: int) -> bool:
+        """卸载 LoRA 适配器（同步接口）。"""
         raise NotImplementedError
 
     def list_loras(self) -> set[int]:
+        """列出已加载 LoRA 适配器（同步接口）。"""
         raise NotImplementedError
 
     def pin_lora(self, lora_id: int) -> bool:
+        """固定 LoRA 适配器避免被驱逐（同步接口）。"""
         raise NotImplementedError
 
     def save_sharded_state(
         self, path: str, pattern: str | None = None, max_size: int | None = None
     ) -> None:
+        """保存分片状态（同步接口）。"""
         raise NotImplementedError
 
     def collective_rpc(
@@ -195,68 +220,89 @@ class EngineCoreClient(ABC):
         args: tuple = (),
         kwargs: dict[str, Any] | None = None,
     ) -> list[_R]:
+        """在所有 worker 上执行 RPC 并返回结果（同步接口）。"""
         raise NotImplementedError
 
     def dp_engines_running(self) -> bool:
         """Returns True if data parallel engines are collectively in a
-        running state."""
+        running state.
+
+        中文：返回数据并行引擎整体是否处于运行状态。
+        """
         raise NotImplementedError
 
     async def scale_elastic_ep(self, new_data_parallel_size: int) -> None:
+        """弹性调整 EP 场景下的数据并行规模。"""
         raise NotImplementedError
 
     async def get_output_async(self) -> EngineCoreOutputs:
+        """获取一次 EngineCore 输出（异步接口）。"""
         raise NotImplementedError
 
     async def get_supported_tasks_async(self) -> tuple[SupportedTask, ...]:
+        """获取模型支持的任务类型（异步接口）。"""
         raise NotImplementedError
 
     async def add_request_async(self, request: EngineCoreRequest) -> None:
+        """向 EngineCore 提交请求（异步接口）。"""
         raise NotImplementedError
 
     async def profile_async(
         self, is_start: bool = True, profile_prefix: str | None = None
     ) -> None:
+        """开启或停止性能分析（异步接口）。"""
         raise NotImplementedError
 
     async def reset_mm_cache_async(self) -> None:
+        """重置多模态缓存（异步接口）。"""
         raise NotImplementedError
 
     async def reset_prefix_cache_async(
         self, reset_running_requests: bool = False, reset_connector: bool = False
     ) -> bool:
+        """重置前缀缓存（异步接口）。"""
         raise NotImplementedError
 
     async def reset_encoder_cache_async(self) -> None:
+        """重置编码器缓存（异步接口）。"""
         raise NotImplementedError
 
     async def sleep_async(self, level: int = 1, mode: PauseMode = "abort") -> None:
+        """让引擎休眠（异步接口）。"""
         raise NotImplementedError
 
     async def wake_up_async(self, tags: list[str] | None = None) -> None:
+        """唤醒引擎（异步接口）。"""
         raise NotImplementedError
 
     async def is_sleeping_async(self) -> bool:
+        """返回引擎是否处于休眠状态（异步接口）。"""
         raise NotImplementedError
 
     async def abort_requests_async(self, request_ids: list[str]) -> None:
+        """中止指定请求（异步接口）。"""
         raise NotImplementedError
 
     async def add_lora_async(self, lora_request: LoRARequest) -> bool:
+        """加载 LoRA 适配器（异步接口）。"""
         raise NotImplementedError
 
     async def remove_lora_async(self, lora_id: int) -> bool:
+        """卸载 LoRA 适配器（异步接口）。"""
         raise NotImplementedError
 
     async def list_loras_async(self) -> set[int]:
+        """列出已加载 LoRA 适配器（异步接口）。"""
         raise NotImplementedError
 
     async def pin_lora_async(self, lora_id: int) -> bool:
+        """固定 LoRA 适配器避免被驱逐（异步接口）。"""
         raise NotImplementedError
 
     async def save_sharded_state_async(
         self, path: str, pattern: str | None = None, max_size: int | None = None
     ) -> None:
+        """保存分片状态（异步接口）。"""
         raise NotImplementedError
 
     async def collective_rpc_async(
@@ -266,6 +312,7 @@ class EngineCoreClient(ABC):
         args: tuple = (),
         kwargs: dict[str, Any] | None = None,
     ) -> list[_R]:
+        """在所有 worker 上执行 RPC 并返回结果（异步接口）。"""
         raise NotImplementedError
 
 
@@ -283,6 +330,8 @@ class InprocClient(EngineCoreClient):
         self.engine_core = EngineCore(*args, **kwargs)
 
     def get_output(self) -> EngineCoreOutputs:
+        print("[guoxu] Start get_output(). ", "file: ", __file__, "function: ", self.get_output.__name__)
+
         outputs, model_executed = self.engine_core.step_fn()
         self.engine_core.post_step(model_executed=model_executed)
         return outputs and outputs.get(0) or EngineCoreOutputs()
@@ -516,6 +565,10 @@ class MPClient(EngineCoreClient):
 
         * AsyncMPClient subclass for AsyncLLM usage
         * SyncMPClient subclass for LLM usage
+
+    中文：MPClient 是多进程 EngineCore 的基础客户端封装。
+    它通过输入/输出套接字与后台 EngineCore 进程通信，
+    并为同步与异步子类提供公共的资源管理、序列化和存活检测逻辑。
     """
 
     def __init__(
@@ -526,33 +579,40 @@ class MPClient(EngineCoreClient):
         log_stats: bool,
         client_addresses: dict[str, str] | None = None,
     ):
+        """初始化多进程客户端的通信、资源回收和 EngineCore 连接状态。"""
         self.vllm_config = vllm_config
         # Serialization setup.
+        # 中文：初始化序列化/反序列化组件。
         self.encoder = MsgpackEncoder()
         self.decoder = MsgpackDecoder(EngineCoreOutputs)
 
         # ZMQ setup.
+        # 中文：初始化 ZMQ 上下文与通信套接字环境。
         sync_ctx = zmq.Context(io_threads=2)
         self.ctx = zmq.asyncio.Context(sync_ctx) if asyncio_mode else sync_ctx
 
         # This will ensure resources created so far are closed
         # when the client is garbage collected, even if an
         # exception is raised mid-construction.
+        # 中文：即使构造中途抛异常，也确保已创建资源在对象回收时被清理。
         self.resources = BackgroundResources(ctx=sync_ctx)
         self._finalizer = weakref.finalize(self, self.resources)
         success = False
         try:
             # State used for data parallel.
+            # 中文：记录数据并行场景下引擎是否仍在运行。
             self.engines_running = False
             parallel_config = vllm_config.parallel_config
             # Elastic EP can remove a rank and later add it back with the same
             # identity. The client input ROUTER needs handover to allow the new
             # engine to replace the dead connection.
+            # 中文：Elastic EP 场景下需要启用 handover，允许新引擎接管已失效连接。
             enable_input_socket_handover = parallel_config.enable_elastic_ep
 
             self.stats_update_address: str | None = None
             if client_addresses:
                 # Engines are managed externally to this client.
+                # 中文：引擎由外部组件管理，此处只连接既有地址。
                 input_address = client_addresses["input_address"]
                 output_address = client_addresses["output_address"]
                 self.stats_update_address = client_addresses.get("stats_update_address")
@@ -568,6 +628,7 @@ class MPClient(EngineCoreClient):
                 )
             else:
                 # Engines are managed by this client.
+                # 中文：引擎由当前客户端负责拉起并管理。
                 addresses = get_engine_zmq_addresses(vllm_config)
                 self.input_socket = self.resources.input_socket = make_zmq_socket(
                     self.ctx,
@@ -580,6 +641,7 @@ class MPClient(EngineCoreClient):
                     self.ctx, addresses.outputs[0], zmq.PULL
                 )
 
+                # 启动后台引擎进程。
                 with launch_core_engines(
                     vllm_config, executor_class, log_stats, addresses
                 ) as (engine_manager, coordinator, addresses):
@@ -607,11 +669,13 @@ class MPClient(EngineCoreClient):
             )
 
             # ZMQ identity of each engine that this client will talk to.
+            # 中文：为每个受管 EngineCore 生成 ZMQ 路由身份标识。
             self.core_engines: list[EngineIdentity] = [
                 rank.to_bytes(2, "little") for rank in self.engine_ranks_managed
             ]
 
             # Wait for ready messages from each engine on the input socket.
+            # 中文：等待所有引擎发出 ready 信号，确保服务端已完成启动。
             identities = set(self.core_engines)
             sync_input_socket = zmq.Socket.shadow(self.input_socket)
             while identities:
@@ -636,9 +700,11 @@ class MPClient(EngineCoreClient):
             # Request objects which may contain pytorch-allocated tensors
             # that we need to keep references to until zmq is done with the
             # underlying data.
+            # 中文：保留待发送消息引用，避免张量底层缓冲在 ZMQ 发送完成前被释放。
             self.pending_messages = deque[tuple[zmq.MessageTracker, Any]]()
 
             # Start monitoring engine core processes for unexpected failures
+            # 中文：启动后台监控线程，检测 EngineCore 进程异常退出。
             self.start_engine_core_monitor()
 
             success = True
@@ -647,35 +713,48 @@ class MPClient(EngineCoreClient):
                 self._finalizer()
 
     def shutdown(self, timeout: float | None = None) -> None:
-        """Shutdown engine manager under timeout and clean up resources."""
+        """Shutdown engine manager under timeout and clean up resources.
+
+        中文：在给定超时时间内关闭引擎管理器并清理相关资源。
+        """
         if self._finalizer.detach() is not None:
             if self.resources.engine_manager is not None:
                 self.resources.engine_manager.shutdown(timeout=timeout)
             self.resources()
 
     def _format_exception(self, e: Exception) -> Exception:
-        """If errored, use EngineDeadError so root cause is clear."""
+        """If errored, use EngineDeadError so root cause is clear.
+
+        中文：若底层引擎已死亡，则将异常统一包装为 EngineDeadError。
+        """
         return (
             EngineDeadError(suppress_context=True) if self.resources.engine_dead else e
         )
 
     def ensure_alive(self):
+        """确认底层 EngineCore 仍存活，否则抛出 EngineDeadError。"""
         if self.resources.engine_dead:
             raise EngineDeadError()
 
     def add_pending_message(self, tracker: zmq.MessageTracker, msg: Any):
+        """登记尚未完成发送的消息引用，防止其底层数据过早释放。"""
         if not tracker.done:
             self.pending_messages.appendleft((tracker, msg))
 
     def free_pending_messages(self):
+        """清理已完成发送的挂起消息引用。"""
         while self.pending_messages and self.pending_messages[-1][0].done:
             self.pending_messages.pop()
 
     def dp_engines_running(self) -> bool:
+        """返回数据并行引擎集合当前是否仍处于运行状态。"""
         return self.engines_running
 
     def start_engine_core_monitor(self):
-        """Start a monitor thread for engine core processes."""
+        """Start a monitor thread for engine core processes.
+
+        中文：启动监控线程，在任一 EngineCore 进程异常退出时标记故障并清理客户端。
+        """
         engine_manager = self.resources.engine_manager
         if (
             engine_manager is None
@@ -683,6 +762,7 @@ class MPClient(EngineCoreClient):
             or not engine_manager.processes
         ):
             # No engine processes to monitor
+            # 中文：没有可监控的引擎进程时直接返回。
             return
 
         engine_processes = engine_manager.processes
@@ -691,6 +771,7 @@ class MPClient(EngineCoreClient):
         # Monitor engine core process liveness. If any die unexpectedly,
         # logs an error, shuts down the client and invokes the failure
         # callback to inform the engine.
+        # 中文：监听子进程存活状态；若异常退出，则记录错误、关闭客户端并标记引擎死亡。
         def monitor_engine_cores():
             sentinels = [proc.sentinel for proc in engine_processes]
             died = multiprocessing.connection.wait(sentinels)
@@ -709,6 +790,7 @@ class MPClient(EngineCoreClient):
             # Note: For MPClient, we don't have a failure callback mechanism
             # like MultiprocExecutor, but we set engine_dead flag which will
             # cause subsequent operations to raise EngineDeadError
+            # 中文：MPClient 不提供额外失败回调，而是通过 engine_dead 标记让后续调用统一失败。
 
         Thread(
             target=monitor_engine_cores, daemon=True, name="MPClientEngineMonitor"
@@ -808,6 +890,8 @@ class SyncMPClient(MPClient):
         self.resources.output_socket = None
 
     def get_output(self) -> EngineCoreOutputs:
+        print("[guoxu] Start get_output(). ", "file: ", __file__, "function: ", self.get_output.__name__)
+
         # If an exception arises in process_outputs_socket task,
         # it is forwarded to the outputs_queue so we can raise it
         # from this (run_output_handler) task to shut down the server.
@@ -820,17 +904,24 @@ class SyncMPClient(MPClient):
         return outputs
 
     def _send_input(self, request_type: EngineCoreRequestType, request: Any):
+        # 检查引擎是否存活。
         self.ensure_alive()
+        # 清理已经发送完成消息。
         self.free_pending_messages()
+
+        # 构造消息。
         # (Identity, RequestType, SerializedRequest)
         msg = (self.core_engine, request_type.value, *self.encoder.encode(request))
 
+        # 发送消息。
         if len(msg) <= 3:
             # No auxiliary buffers => no tensor backing buffers in request.
             self.input_socket.send_multipart(msg, copy=False)
             return
 
         tracker = self.input_socket.send_multipart(msg, copy=False, track=True)
+
+        # 保持引用直到发送完成。
         self.add_pending_message(tracker, request)
 
     def call_utility(self, method: str, *args) -> Any:

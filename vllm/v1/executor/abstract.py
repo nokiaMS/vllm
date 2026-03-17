@@ -38,6 +38,8 @@ class Executor(ABC):
 
     An executor is responsible for executing the model on one device,
     or it can be a distributed executor that can execute the model on multiple devices.
+
+    模型执行器。Executor 是负责在一个设备上执行模型的组件，或者它也可以是一个分布式执行器，能够在多个设备上执行模型。
     """
 
     uses_ray: bool = False  # whether the executor uses Ray for orchestration.
@@ -188,6 +190,10 @@ class Executor(ABC):
     def collective_rpc(
         self, method, timeout=None, args=(), kwargs=None, non_block: bool = False
     ):
+        """
+        Execute an RPC call on all workers.
+        上层不需要关心是单进程还是多进程，可以理解成是executor的一个通用远程调用总线。
+        """
         raise NotImplementedError
 
     def get_kv_connector_handshake_metadata(
@@ -210,6 +216,7 @@ class Executor(ABC):
     def execute_model(
         self, scheduler_output: SchedulerOutput, non_block: bool = False
     ) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+        """调用模型进行推理。"""
         output = self.collective_rpc(  # type: ignore[call-overload]
             "execute_model", args=(scheduler_output,), non_block=non_block
         )

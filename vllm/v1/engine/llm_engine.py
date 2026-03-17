@@ -46,7 +46,10 @@ _R = TypeVar("_R", default=Any)
 
 
 class LLMEngine:
-    """Legacy LLMEngine for backwards compatibility."""
+    """Legacy LLMEngine for backwards compatibility.
+
+    中文：用于保持向后兼容的旧版 LLMEngine 封装。
+    """
 
     def __init__(
         self,
@@ -60,6 +63,7 @@ class LLMEngine:
         use_cached_outputs: bool = False,
         multiprocess_mode: bool = False,
     ) -> None:
+        """初始化引擎核心组件、输入输出处理器和并行相关状态。"""
         self.vllm_config = vllm_config
         self.model_config = vllm_config.model_config
         self.observability_config = vllm_config.observability_config
@@ -146,6 +150,7 @@ class LLMEngine:
         stat_loggers: list[StatLoggerFactory] | None = None,
         disable_log_stats: bool = False,
     ) -> "LLMEngine":
+        """根据 VllmConfig 创建 LLMEngine 实例。"""
         return cls(
             vllm_config=vllm_config,
             executor_class=Executor.get_class(vllm_config),
@@ -163,7 +168,10 @@ class LLMEngine:
         stat_loggers: list[StatLoggerFactory] | None = None,
         enable_multiprocessing: bool = False,
     ) -> "LLMEngine":
-        """Creates an LLM engine from the engine arguments."""
+        """Creates an LLM engine from the engine arguments.
+
+        中文：根据命令行/配置参数构建并返回 LLMEngine 实例。
+        """
 
         # Create the engine configs.
         vllm_config = engine_args.create_engine_config(usage_context)
@@ -184,15 +192,18 @@ class LLMEngine:
         )
 
     def get_num_unfinished_requests(self) -> int:
+        """返回当前未完成请求数量。"""
         return self.output_processor.get_num_unfinished_requests()
 
     def has_unfinished_requests(self) -> bool:
+        """判断是否仍有未完成请求需要继续调度执行。"""
         has_unfinished = self.output_processor.has_unfinished_requests()
         if self.dp_group is None:
             return has_unfinished or self.engine_core.dp_engines_running()
         return self.has_unfinished_requests_dp(has_unfinished)
 
     def has_unfinished_requests_dp(self, has_unfinished: bool) -> bool:
+        """在数据并行场景下聚合各 rank 的未完成请求状态。"""
         aggregated_has_unfinished = ParallelConfig.has_unfinished_dp(
             self.dp_group, has_unfinished
         )
@@ -201,6 +212,7 @@ class LLMEngine:
         return aggregated_has_unfinished
 
     def get_supported_tasks(self) -> tuple[SupportedTask, ...]:
+        """获取并缓存引擎支持的任务类型集合。"""
         if not hasattr(self, "_supported_tasks"):
             # Cache the result
             self._supported_tasks = self.engine_core.get_supported_tasks()
@@ -208,7 +220,10 @@ class LLMEngine:
         return self._supported_tasks
 
     def abort_request(self, request_ids: list[str], internal: bool = False) -> None:
-        """Remove request_ids from EngineCore and Detokenizer."""
+        """Remove request_ids from EngineCore and Detokenizer.
+
+        中文：从 EngineCore 和输出处理侧移除指定请求。
+        """
 
         request_ids = self.output_processor.abort_requests(request_ids, internal)
         self.engine_core.abort_requests(request_ids)
@@ -225,6 +240,7 @@ class LLMEngine:
         priority: int = 0,
         prompt_text: str | None = None,
     ) -> str:
+        """添加请求并在需要时将并行采样请求拆分为多个子请求。"""
         # Validate the request_id type.
         if not isinstance(request_id, str):
             raise TypeError(f"request_id must be a string, got {type(request_id)}")
@@ -292,16 +308,23 @@ class LLMEngine:
         return req_id
 
     def step(self) -> list[RequestOutput | PoolingRequestOutput]:
+        print("[guoxu] Start step(). ", "file: ", __file__, "function: ", self.step.__name__)
+
+        """执行一次调度迭代并返回本轮产生的请求输出。"""
         if self.should_execute_dummy_batch:
             self.should_execute_dummy_batch = False
             self.engine_core.execute_dummy_batch()
             return []
 
+        print("[guoxu] Start step() - Get EngineCoreOutput from the EngineCore. ", "file: ", __file__, "function: ", self.step.__name__)
         # 1) Get EngineCoreOutput from the EngineCore.
+        # 从底层engine_core拉取这一轮调度执行的结果。
         with record_function_or_nullcontext("llm_engine step: get_output"):
             outputs = self.engine_core.get_output()
 
+        print("[guoxu] Start step() - Process EngineCoreOutputs. ", "file: ", __file__, "function: ", self.step.__name__)
         # 2) Process EngineCoreOutputs.
+        # 把底层输出转换成易于理解的上层输出。
         with record_function_or_nullcontext("llm_engine step: process_outputs"):
             iteration_stats = IterationStats() if self.log_stats else None
             processed_outputs = self.output_processor.process_outputs(
@@ -309,13 +332,19 @@ class LLMEngine:
                 engine_core_timestamp=outputs.timestamp,
                 iteration_stats=iteration_stats,
             )
+            # 更新统计信息。
             self.output_processor.update_scheduler_stats(outputs.scheduler_stats)
 
+        print("[guoxu] Start step() - Abort any reqs that finished. ", "file: ", __file__, "function: ",
+              self.step.__name__)
         # 3) Abort any reqs that finished due to stop strings.
+        # 处理"应该立即停止"的请求。
         with record_function_or_nullcontext("llm_engine step: abort_requests"):
             self.engine_core.abort_requests(processed_outputs.reqs_to_abort)
 
+        print("[guoxu] Start step() - Record stats. ", "file: ", __file__, "function: ", self.step.__name__)
         # 4) Record stats
+        # 记录状态到日志中。
         with record_function_or_nullcontext("llm_engine step: record_stats"):
             if (
                 self.logger_manager is not None
@@ -329,21 +358,27 @@ class LLMEngine:
                 )
                 self.do_log_stats_with_interval()
 
+        print("[guoxu] end step(). ", "file: ", __file__, "function: ", self.step.__name__)
+        # 返回本轮可以交给上一层消费的输出列表。
         return processed_outputs.request_outputs
 
     def start_profile(self, profile_prefix: str | None = None):
+        """开启引擎性能分析。"""
         self.engine_core.profile(True, profile_prefix)
 
     def stop_profile(self):
+        """停止引擎性能分析。"""
         self.engine_core.profile(False)
 
     def reset_mm_cache(self):
+        """清理多模态缓存。"""
         self.renderer.clear_mm_cache()
         self.engine_core.reset_mm_cache()
 
     def reset_prefix_cache(
         self, reset_running_requests: bool = False, reset_connector: bool = False
     ) -> bool:
+        """重置前缀缓存，并可选重置运行中请求或连接器状态。"""
         return self.engine_core.reset_prefix_cache(
             reset_running_requests, reset_connector
         )
@@ -353,42 +388,56 @@ class LLMEngine:
 
         This should be called when model weights are updated to ensure
         stale vision embeddings computed with old weights are not reused.
+
+        中文：重置编码器缓存，避免在模型权重更新后复用旧的编码结果。
         """
         self.engine_core.reset_encoder_cache()
 
     def sleep(self, level: int = 1, mode: PauseMode = "abort"):
+        """让引擎进入休眠状态，并记录休眠指标。"""
         self.engine_core.sleep(level, mode)
 
         if self.logger_manager is not None:
             self.logger_manager.record_sleep_state(1, level)
 
     def wake_up(self, tags: list[str] | None = None):
+        """唤醒引擎并记录唤醒指标。"""
         self.engine_core.wake_up(tags)
 
         if self.logger_manager is not None:
             self.logger_manager.record_sleep_state(0, 0)
 
     def is_sleeping(self) -> bool:
+        """返回引擎当前是否处于休眠状态。"""
         return self.engine_core.is_sleeping()
 
     def get_metrics(self) -> list[Metric]:
+        """获取当前指标快照。"""
         assert self.log_stats, "Stat logging disabled"
         return get_metrics_snapshot()
 
     @property
     def tokenizer(self) -> TokenizerLike | None:
+        """返回当前渲染器绑定的分词器（可能为空）。"""
         return self.renderer.tokenizer
 
     def get_tokenizer(self) -> TokenizerLike:
+        """获取可用分词器实例。"""
         return self.renderer.get_tokenizer()
 
     def do_log_stats(self) -> None:
-        """Log stats if logging is enabled."""
+        """Log stats if logging is enabled.
+
+        中文：若启用统计日志，则输出当前统计信息。
+        """
         if self.logger_manager:
             self.logger_manager.log()
 
     def do_log_stats_with_interval(self) -> None:
-        """Log stats when the time interval has passed."""
+        """Log stats when the time interval has passed.
+
+        中文：当达到日志时间间隔时输出统计信息。
+        """
         now = time.time()
         if not hasattr(self, "_last_log_time"):
             self._last_log_time = now
@@ -397,19 +446,31 @@ class LLMEngine:
             self._last_log_time = now
 
     def add_lora(self, lora_request: LoRARequest) -> bool:
-        """Load a new LoRA adapter into the engine for future requests."""
+        """Load a new LoRA adapter into the engine for future requests.
+
+        中文：向引擎加载新的 LoRA 适配器供后续请求使用。
+        """
         return self.engine_core.add_lora(lora_request)
 
     def remove_lora(self, lora_id: int) -> bool:
-        """Remove an already loaded LoRA adapter."""
+        """Remove an already loaded LoRA adapter.
+
+        中文：移除已加载的 LoRA 适配器。
+        """
         return self.engine_core.remove_lora(lora_id)
 
     def list_loras(self) -> set[int]:
-        """List all registered adapters."""
+        """List all registered adapters.
+
+        中文：列出当前已注册的适配器 ID。
+        """
         return self.engine_core.list_loras()
 
     def pin_lora(self, lora_id: int) -> bool:
-        """Prevent an adapter from being evicted."""
+        """Prevent an adapter from being evicted.
+
+        中文：固定指定适配器，防止其被驱逐。
+        """
         return self.engine_core.pin_lora(lora_id)
 
     def collective_rpc(
@@ -419,12 +480,15 @@ class LLMEngine:
         args: tuple = (),
         kwargs: dict[str, Any] | None = None,
     ) -> list[_R]:
+        """在所有 worker 上执行同一 RPC 调用并返回结果列表。"""
         return self.engine_core.collective_rpc(method, timeout, args, kwargs)
 
     def apply_model(self, func: Callable[[nn.Module], _R]) -> list[_R]:
+        """在各 worker 的模型实例上应用给定函数。"""
         return self.collective_rpc("apply_model", args=(func,))
 
     def __del__(self):
+        """析构时释放本地创建的数据并行进程组资源。"""
         dp_group = getattr(self, "dp_group", None)
         if dp_group is not None and not self.external_launcher_dp:
             stateless_destroy_torch_distributed_process_group(dp_group)

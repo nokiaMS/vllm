@@ -2100,14 +2100,21 @@ class LLM:
             )
 
         # Run the engine.
+        # 输出结果存储位置。
         outputs: list[_O] = []
         total_in_toks = 0
         total_out_toks = 0
+
+        # 判断是否有尚未完成的请求，如果有则处理。
         while self.llm_engine.has_unfinished_requests():
+            # 执行一次调度。
             step_outputs = self.llm_engine.step()
             for output in step_outputs:
                 assert isinstance(output, output_type)
+
+                # 如果输出已经结束了，那么把本次输出合并到输出列表中。
                 if output.finished:
+                    # 合并本次输出到输出列表中。
                     outputs.append(output)  # type: ignore[arg-type]
                     if use_tqdm:
                         if isinstance(output, RequestOutput):
@@ -2135,6 +2142,7 @@ class LLM:
         # Sort the outputs by request ID.
         # This is necessary because some requests may be finished earlier than
         # its previous requests.
+        # 把输出按 request ID 排序。这是必要的，因为某些请求可能比它之前的请求更早完成。
         return sorted(outputs, key=lambda x: int(x.request_id))
 
     def init_weight_transfer_engine(

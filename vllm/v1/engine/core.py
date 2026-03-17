@@ -380,6 +380,8 @@ class EngineCore:
 
         Returns tuple of outputs and a flag indicating whether the model
         was executed.
+
+        调度一次推理过程。
         """
 
         # Check for any requests remaining in the scheduler - unfinished,
@@ -387,6 +389,8 @@ class EngineCore:
         if not self.scheduler.has_requests():
             return {}, False
         scheduler_output = self.scheduler.schedule()
+
+        # 调用模型。
         future = self.model_executor.execute_model(scheduler_output, non_block=True)
         grammar_output = self.scheduler.get_grammar_bitmask(scheduler_output)
         with (
@@ -1027,9 +1031,13 @@ class EngineCoreProc(EngineCore):
 
     @staticmethod
     def run_engine_core(*args, dp_rank: int = 0, local_dp_rank: int = 0, **kwargs):
-        """Launch EngineCore busy loop in background process."""
+        """Launch EngineCore busy loop in background process.
+
+        中文：在后台进程中启动 EngineCore 的主循环。
+        """
 
         # Ensure we can serialize transformer config after spawning
+        # 中文：确保子进程启动后仍可序列化 transformer 配置。
         maybe_register_config_serialize_by_value()
 
         engine_core: EngineCoreProc | None = None
@@ -1050,6 +1058,7 @@ class EngineCoreProc(EngineCore):
             if data_parallel and vllm_config.kv_transfer_config is not None:
                 # modify the engine_id and append the local_dp_rank to it to ensure
                 # that the kv_transfer_config is unique for each DP rank.
+                # 中文：为不同 DP rank 拼接本地 rank 后缀，避免 kv_transfer_config 冲突。
                 vllm_config.kv_transfer_config.engine_id = (
                     f"{vllm_config.kv_transfer_config.engine_id}_dp{local_dp_rank}"
                 )
@@ -1061,15 +1070,19 @@ class EngineCoreProc(EngineCore):
             parallel_config.data_parallel_index = dp_rank
             if data_parallel and vllm_config.model_config.is_moe:
                 # Set data parallel rank for this engine process.
+                # 中文：MoE + DP 场景下，使用 DPEngineCoreProc 运行引擎核心。
                 parallel_config.data_parallel_rank = dp_rank
                 engine_core = DPEngineCoreProc(*args, **kwargs)
             else:
                 # Non-MoE DP ranks are completely independent, so treat like DP=1.
                 # Note that parallel_config.data_parallel_index will still reflect
                 # the original DP rank.
+                # 中文：非 MoE 的 DP rank 彼此独立，按 DP=1 的独立引擎路径处理。
                 parallel_config.data_parallel_size = 1
                 parallel_config.data_parallel_size_local = 1
                 parallel_config.data_parallel_rank = 0
+
+                # 初始化engine_core.
                 engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
 
             assert engine_core is not None
@@ -1078,6 +1091,7 @@ class EngineCoreProc(EngineCore):
                 # Wakes up idle engine via input_queue when shutdown is requested
                 # Not safe in a signal handler - we may interrupt the main thread
                 # while it is holding the non-reentrant input_queue.mutex
+                # 中文：收到退出信号时通过 input_queue 唤醒空闲引擎，避免忙循环阻塞退出。
                 engine_core.input_queue.put_nowait((EngineCoreRequestType.WAKEUP, None))
 
             signal_callback = SignalCallback(wakeup_engine)
@@ -1125,11 +1139,16 @@ class EngineCoreProc(EngineCore):
         return self.shutdown_state == EngineShutdownState.RUNNING
 
     def run_busy_loop(self):
-        """Core busy loop of the EngineCore."""
+        """
+        Core busy loop of the EngineCore.
+        负责不断拉取请求，执行进一步推理，产出结果。
+        """
         while self._handle_shutdown():
             # 1) Poll the input queue until there is work to do.
+            # 从input_queue队列中获取前端请求。
             self._process_input_queue()
             # 2) Step the engine core and return the outputs.
+            # 推进一次引擎执行。
             self._process_engine_step()
 
         raise SystemExit

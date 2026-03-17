@@ -75,6 +75,7 @@ class UniProcExecutor(Executor):
             kwargs = {}
 
         if not non_block:
+            # 让driver_worker进程执行method。
             result = run_method(self.driver_worker, method, args, kwargs)
             return result if single_value else [result]
 

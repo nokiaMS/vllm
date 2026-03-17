@@ -336,7 +336,15 @@ class Scheduler(SchedulerInterface):
         return num_new_tokens
 
     def schedule(self) -> SchedulerOutput:
+        """Run one scheduler iteration and construct SchedulerOutput.
+
+        中文：执行一次调度迭代，选择本轮要处理的请求/Token，并构造调度结果。
+        """
+        print("[guoxu] Start schedule. ", "file: ", __file__, "function: ",
+              self.step.__name__)
+
         # NOTE(woosuk) on the scheduling algorithm:
+        # 中文：调度器不强制区分 prefill/decoding，而是统一按 token 预算推进请求。
         # There's no "decoding phase" nor "prefill phase" in the scheduler.
         # Each request just has the num_computed_tokens and
         # num_tokens_with_spec. num_tokens_with_spec =
@@ -357,6 +365,7 @@ class Scheduler(SchedulerInterface):
         token_budget = self.max_num_scheduled_tokens
         if self._pause_state == PauseState.PAUSED_ALL:
             # Do not schedule any requests when paused.
+            # 中文：完全暂停时，本轮 token 预算置 0。
             token_budget = 0
 
         # Encoder-related.
@@ -371,6 +380,7 @@ class Scheduler(SchedulerInterface):
         self.kv_cache_manager.new_step_starts()
 
         # First, schedule the RUNNING requests.
+        # 中文：第一阶段优先调度 running 队列中的请求。
         req_index = 0
         while req_index < len(self.running) and token_budget > 0:
             request = self.running[req_index]
@@ -448,6 +458,7 @@ class Scheduler(SchedulerInterface):
                 continue
 
             # Schedule newly needed KV blocks for the request.
+            # 中文：为本轮新增 token 申请对应的 KV cache block；不足时可能触发抢占。
             with record_function_or_nullcontext("schedule: allocate_slots"):
                 while True:
                     new_blocks = self.kv_cache_manager.allocate_slots(
@@ -551,6 +562,7 @@ class Scheduler(SchedulerInterface):
             assert len(scheduled_loras) <= self.lora_config.max_loras
 
         # Next, schedule the WAITING requests.
+        # 中文：第二阶段在无抢占且未暂停新增时，尝试从 waiting/skipped_waiting 拉起请求。
         if not preempted_reqs and self._pause_state == PauseState.UNPAUSED:
             step_skipped_waiting = create_request_queue(self.policy)
 
@@ -568,6 +580,7 @@ class Scheduler(SchedulerInterface):
                 if self._is_blocked_waiting_status(
                     request.status
                 ) and not self._try_promote_blocked_waiting_request(request):
+                    # 中文：受阻状态暂不可推进，先放回本轮 skipped 队列，后续再尝试。
                     if request.status == RequestStatus.WAITING_FOR_REMOTE_KVS:
                         logger.debug(
                             "%s is still in WAITING_FOR_REMOTE_KVS state.",
@@ -763,6 +776,7 @@ class Scheduler(SchedulerInterface):
                 if load_kv_async:
                     # If loading async, allocate memory and put request
                     # into the WAITING_FOR_REMOTE_KV state.
+                    # 中文：异步远端 KV 加载中，先占位并回到等待远端 KV 状态。
                     request.status = RequestStatus.WAITING_FOR_REMOTE_KVS
                     step_skipped_waiting.prepend_request(request)
                     # Set num_computed_tokens even though KVs are not yet loaded.
@@ -849,6 +863,7 @@ class Scheduler(SchedulerInterface):
                 )
 
         # Construct the scheduler output.
+        # 中文：整理本轮调度结果，供 model runner 执行与后续状态更新使用。
         if self.use_v2_model_runner:
             scheduled_new_reqs = scheduled_new_reqs + scheduled_resumed_reqs
             scheduled_resumed_reqs = []
@@ -906,6 +921,7 @@ class Scheduler(SchedulerInterface):
         )
 
         # NOTE(Kuntai): this function is designed for multiple purposes:
+        # 中文：构建连接器元信息（KV/EC）并清理连接器内部暂存状态。
         # 1. Plan the KV cache store
         # 2. Wrap up all the KV cache load / save ops into an opaque object
         # 3. Clear the internal states of the connector
@@ -923,6 +939,7 @@ class Scheduler(SchedulerInterface):
             scheduler_output.ec_connector_metadata = ec_meta
 
         with record_function_or_nullcontext("schedule: update_after_schedule"):
+            # 中文：提交本轮调度后的状态更新（如推进 num_computed_tokens 等）。
             self._update_after_schedule(scheduler_output)
         return scheduler_output
 
@@ -1536,9 +1553,12 @@ class Scheduler(SchedulerInterface):
         )
 
     def _enqueue_waiting_request(self, request: Request) -> None:
+        # 中文：按请求状态分流入队。
         if self._is_blocked_waiting_status(request.status):
+            # 中文：受阻请求（如等待远端 KV / FSM / streaming 输入）进入 skipped_waiting。
             self.skipped_waiting.add_request(request)
         else:
+            # 中文：可直接参与调度的请求进入 waiting。
             self.waiting.add_request(request)
 
     def _select_waiting_queue_for_scheduling(self) -> RequestQueue | None:
@@ -1703,25 +1723,32 @@ class Scheduler(SchedulerInterface):
         return len(self.running), len(self.waiting) + len(self.skipped_waiting)
 
     def add_request(self, request: Request) -> None:
+        # 中文：向调度器注册新请求；若是同 request_id，则按流式会话更新处理。
         existing = self.requests.get(request.request_id)
         if existing is not None:
+            # 中文：同一 request_id 已存在，按 streaming update 处理后续输入分片。
             update = StreamingUpdate.from_request(request)
             if existing.status != RequestStatus.WAITING_FOR_STREAMING_REQ:
                 assert existing.streaming_queue is not None, "duplicate request id"
                 # Queue next input chunk (or finished sentinel).
+                # 中文：将下一段输入（或结束哨兵）入队，等待当前分片完成后续处理。
                 existing.streaming_queue.append(update)
             elif update is not None:
                 # Commence next input chunk.
+                # 中文：当前会话正等待下一段输入，立即切换并开始处理新分片。
                 self._update_request_as_session(existing, update)
             else:
                 # Streaming-input session finished.
+                # 中文：流式输入会话结束，按终止状态清理该请求。
                 self.finish_requests(request.request_id, RequestStatus.FINISHED_ABORTED)
         else:
+            # 中文：首次出现的 request_id，初始化并加入 waiting/skipped_waiting 队列。
             if request.resumable:
                 request.streaming_queue = deque()
             self._enqueue_waiting_request(request)
             self.requests[request.request_id] = request
             if self.log_stats:
+                # 中文：记录请求入队事件，用于后续调度统计。
                 request.record_event(EngineCoreEventType.QUEUED)
 
     def finish_requests(

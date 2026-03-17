@@ -293,14 +293,19 @@ class EngineCore:
 
         `request_wave`: indicate which wave of requests this is expected to
         belong to in DP case
+
+        中文：将请求加入调度器；`request_wave` 用于数据并行场景，
+        标记该请求预期所属的 wave。
         """
         # Validate the request_id type.
+        # 中文：校验 request_id 类型，避免后续调度和输出关联出错。
         if not isinstance(request.request_id, str):
             raise TypeError(
                 f"request_id must be a string, got {type(request.request_id)}"
             )
 
         if pooling_params := request.pooling_params:
+            # 中文：若是 pooling 任务，校验任务类型是否被当前模型支持。
             supported_pooling_tasks = [
                 task for task in self.get_supported_tasks() if task in POOLING_TASKS
             ]
@@ -314,11 +319,13 @@ class EngineCore:
         if request.kv_transfer_params is not None and (
             not self.scheduler.get_kv_connector()
         ):
+            # 中文：请求带有 KV 传输参数但当前未启用 KVConnector，降级为不使用 KV 传输。
             logger.warning(
                 "Got kv_transfer_params, but no KVConnector found. "
                 "Disabling KVTransfer for this request."
             )
 
+        # 中文：通过所有校验后，将请求正式加入调度队列。
         self.scheduler.add_request(request)
 
     def abort_requests(self, request_ids: list[str]):
@@ -383,11 +390,15 @@ class EngineCore:
 
         调度一次推理过程。
         """
+        print("[guoxu] Start step(). ", "file: ", __file__, "function: ",
+              self.step.__name__)
 
         # Check for any requests remaining in the scheduler - unfinished,
         # or finished and not yet removed from the batch.
         if not self.scheduler.has_requests():
             return {}, False
+
+        # 把当前需要通过模型来执行的输入构造成调度器的输出格式。
         scheduler_output = self.scheduler.schedule()
 
         # 调用模型。
@@ -407,6 +418,9 @@ class EngineCore:
         engine_core_outputs = self.scheduler.update_from_output(
             scheduler_output, model_output
         )
+
+        print("[guoxu] End step(). ", "file: ", __file__, "function: ",
+              self.step.__name__)
 
         return engine_core_outputs, scheduler_output.total_num_scheduled_tokens > 0
 
@@ -742,6 +756,9 @@ class EngineCore:
         This function could be directly used in input processing thread to allow
         request initialization running in parallel with Model forward
         """
+        print("[guoxu] Start preprocess_add_request. ", "file: ", __file__, "function: ",
+              self.preprocess_add_request.__name__)
+
         # Note on thread safety: no race condition.
         # `mm_receiver_cache` is reset at the end of LLMEngine init,
         # and will only be accessed in the input processing thread afterwards.
@@ -795,7 +812,9 @@ class EngineCoreProc(EngineCore):
         *,
         engine_index: int = 0,
     ):
+        # 输入队列，存储request。
         self.input_queue = queue.Queue[tuple[EngineCoreRequestType, Any]]()
+        # 输出队列，存储处理结果。
         self.output_queue = queue.Queue[tuple[int, EngineCoreOutputs] | bytes]()
         executor_fail_callback = lambda: self.input_queue.put_nowait(
             (EngineCoreRequestType.EXECUTOR_FAILED, b"")
@@ -1141,7 +1160,9 @@ class EngineCoreProc(EngineCore):
     def run_busy_loop(self):
         """
         Core busy loop of the EngineCore.
-        负责不断拉取请求，执行进一步推理，产出结果。
+
+        中文：EngineCore 的核心忙循环，持续拉取输入请求、推进一步引擎执行，
+        并将结果放入输出队列，直到收到退出信号。
         """
         while self._handle_shutdown():
             # 1) Poll the input queue until there is work to do.
@@ -1154,13 +1175,21 @@ class EngineCoreProc(EngineCore):
         raise SystemExit
 
     def _process_input_queue(self):
-        """Exits when an engine step needs to be performed."""
+        """Exits when an engine step needs to be performed.
+
+        中文：持续处理输入队列；当引擎需要执行一步计算时退出本函数，
+        控制权回到主循环继续推进推理。
+        """
+        print("[guoxu] Start _process_input_queue. ", "file: ", __file__, "function: ",
+              self._process_input_queue.__name__)
 
         waited = False
         while not self.has_work() and self.is_running():
+            # 当前没有可执行的工作时，先尝试处理输入请求。
             # Notify callbacks waiting for engine to become idle.
             self._notify_idle_state_callbacks()
             if self.input_queue.empty():
+                # 输入队列为空时，清理并发中止队列，避免残留历史中止请求。
                 # Drain aborts queue; all aborts are also processed via input_queue.
                 with self.aborts_queue.mutex:
                     self.aborts_queue.queue.clear()
@@ -1170,6 +1199,7 @@ class EngineCoreProc(EngineCore):
             block = self.process_input_queue_block
             try:
                 req = self.input_queue.get(block=block)
+                # 处理单个客户端请求（ADD/ABORT/UTILITY 等）。
                 self._handle_client_request(*req)
             except queue.Empty:
                 break
@@ -1182,26 +1212,42 @@ class EngineCoreProc(EngineCore):
         # Handle any more client requests.
         while not self.input_queue.empty():
             req = self.input_queue.get_nowait()
+            # 在进入引擎 step 前，尽量把当前批次可取到的请求都消费掉。
             self._handle_client_request(*req)
 
     def _process_engine_step(self) -> bool:
-        """Called only when there are unfinished local requests."""
+        """Called only when there are unfinished local requests.
+
+        中文：仅在本地仍有未完成请求时调用；执行一次引擎 step，
+        将输出写入队列并返回本轮是否实际执行了模型。
+        """
+        print("[guoxu] Start _process_engine_step. ", "file: ", __file__, "function: ",
+              self._process_engine_step.__name__)
 
         # Step the engine core.
+        # 中文：推进引擎一步，得到本轮输出和是否执行模型的标记。
         outputs, model_executed = self.step_fn()
         # Put EngineCoreOutputs into the output queue.
+        # 中文：将本轮产出的 EngineCoreOutputs 推送到输出队列。
         for output in outputs.items() if outputs else ():
             self.output_queue.put_nowait(output)
         # Post-step hook.
+        # 中文：执行 step 后置处理（如草稿 token 状态更新）。
         self.post_step(model_executed)
 
         # If no model execution happened but there are waiting requests
         # (e.g., WAITING_FOR_REMOTE_KVS), yield the GIL briefly to allow
         # background threads (like NIXL handshake) to make progress.
         # Without this, the tight polling loop can starve background threads.
+        # 中文：若本轮未执行模型但仍有未完成请求（例如等待远端 KV），
+        # 短暂 sleep 以让出 GIL，避免紧凑轮询饿死后台线程。
         if not model_executed and self.scheduler.has_unfinished_requests():
             time.sleep(0.001)
 
+        print("[guoxu] End _process_engine_step. ", "file: ", __file__, "function: ",
+              self._process_engine_step.__name__)
+
+        # 中文：返回本轮是否发生了实际模型执行。
         return model_executed
 
     def _notify_idle_state_callbacks(self) -> None:
@@ -1248,23 +1294,33 @@ class EngineCoreProc(EngineCore):
     def _handle_client_request(
         self, request_type: EngineCoreRequestType, request: Any
     ) -> None:
-        """Dispatch request from client."""
+        """Dispatch request from client.
+
+        中文：分发并处理来自客户端的请求，根据请求类型执行对应逻辑。
+        """
 
         if request_type == EngineCoreRequestType.WAKEUP:
+            # 中文：仅用于唤醒忙循环，不需要业务处理。
             return
         elif request_type == EngineCoreRequestType.ADD:
+            # 中文：新增请求，若处于关机流程则拒绝并回传中止结果。
             req, request_wave = request
             if self._reject_add_in_shutdown(req):
                 return
+
+            # 添加请求到scheduler的等待队列。
             self.add_request(req, request_wave)
         elif request_type == EngineCoreRequestType.ABORT:
+            # 中文：终止指定请求。
             self.abort_requests(request)
         elif request_type == EngineCoreRequestType.UTILITY:
+            # 中文：执行工具类 RPC（如状态查询/控制类调用）。
             client_idx, call_id, method_name, args = request
             if self._reject_utility_in_shutdown(client_idx, call_id, method_name):
                 return
             output = UtilityOutput(call_id)
             # Lazily look-up utility method so that failure will be handled/returned.
+            # 中文：延迟查找并调用方法，确保异常可被捕获并返回给客户端。
             get_result = lambda: (method := getattr(self, method_name)) and method(
                 *self._convert_msgspec_args(method, args)
             )
@@ -1273,8 +1329,10 @@ class EngineCoreProc(EngineCore):
             )
             self._invoke_utility_method(method_name, get_result, output, enqueue_output)
         elif request_type == EngineCoreRequestType.EXECUTOR_FAILED:
+            # 中文：执行器异常，升级为致命错误交由上层处理。
             raise RuntimeError("Executor failed.")
         else:
+            # 中文：未知请求类型，仅记录错误日志。
             logger.error(
                 "Unrecognized input request type encountered: %s", request_type
             )
@@ -1358,6 +1416,8 @@ class EngineCoreProc(EngineCore):
         ready_event: threading.Event,
     ):
         """Input socket IO thread."""
+        print("[guoxu] Start process_input_sockets. ", "file: ", __file__, "function: ",
+              self.process_input_sockets.__name__)
 
         # Msgpack serialization decoding.
         add_request_decoder = MsgpackDecoder(EngineCoreRequest)
@@ -1434,7 +1494,10 @@ class EngineCoreProc(EngineCore):
                             self.aborts_queue.put_nowait(request)
 
                     # Push to input queue for core busy loop.
+                    # 把request放入input_queue队列中。
                     self.input_queue.put_nowait((request_type, request))
+
+                    print("[guoxu] end process_input_sockets. ", "file: ", __file__, "function: ", self.process_input_sockets.__name__)
 
     def process_output_sockets(
         self,
@@ -1647,13 +1710,19 @@ class DPEngineCoreProc(EngineCoreProc):
             stateless_destroy_torch_distributed_process_group(dp_group)
 
     def add_request(self, request: Request, request_wave: int = 0):
+        """Add request and keep DP wave state in sync.
+
+        中文：在基类添加请求逻辑基础上，同步维护 DP wave 状态。
+        """
         super().add_request(request, request_wave)
         if self.has_coordinator and request_wave != self.current_wave:
             if request_wave > self.current_wave:
+                # 中文：请求来自更新的 wave，推进本地 wave 游标。
                 self.current_wave = request_wave
             elif not self.engines_running:
                 # Request received for an already-completed wave, notify
                 # front-end that we need to start the next one.
+                # 中文：若旧 wave 请求到达且当前未运行，通知前端启动下一轮 wave。
                 self.output_queue.put_nowait(
                     (-1, EngineCoreOutputs(start_wave=self.current_wave))
                 )
@@ -1673,7 +1742,12 @@ class DPEngineCoreProc(EngineCoreProc):
     def _handle_client_request(
         self, request_type: EngineCoreRequestType, request: Any
     ) -> None:
+        """Handle client request in DP engine.
+
+        中文：DP 模式下优先处理波次启动控制消息，其余请求复用父类逻辑。
+        """
         if request_type == EngineCoreRequestType.START_DP_WAVE:
+            # 中文：收到新 wave 启动信号，更新当前 wave 并唤醒引擎循环。
             new_wave, exclude_eng_index = request
             if exclude_eng_index != self.engine_index and (
                 new_wave >= self.current_wave
@@ -1683,6 +1757,7 @@ class DPEngineCoreProc(EngineCoreProc):
                     logger.debug("EngineCore starting idle loop for wave %d.", new_wave)
                     self.engines_running = True
         else:
+            # 中文：非 DP 控制消息走基类通用请求分发逻辑。
             super()._handle_client_request(request_type, request)
 
     def _maybe_publish_request_counts(self):
@@ -1699,7 +1774,11 @@ class DPEngineCoreProc(EngineCoreProc):
             self.output_queue.put_nowait((-1, EngineCoreOutputs(scheduler_stats=stats)))
 
     def run_busy_loop(self):
-        """Core busy loop of the EngineCore for data parallel case."""
+        """Core busy loop of the EngineCore for data parallel case.
+
+        中文：数据并行场景下的 EngineCore 核心循环，负责处理输入请求、推进
+        本地引擎步进、同步全局未完成请求状态，并在每个 wave 结束时通知前端。
+        """
 
         # Loop until process is sent a SIGINT or SIGTERM
         while self._handle_shutdown():

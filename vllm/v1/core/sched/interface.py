@@ -51,9 +51,14 @@ class SchedulerInterface(ABC):
     def schedule(self) -> "SchedulerOutput":
         """Schedule the requests to process in this scheduling step.
 
+        中文：在当前调度步中，决定哪些请求会被处理，以及每个请求处理多少 token。
+
         The scheduling decision is made at the iteration level. Each scheduling
         step corresponds to a single forward pass of the model. Therefore, this
         method is called repeatedly by a busy loop in the engine.
+
+        中文：调度决策发生在迭代级别；每个调度步对应一次模型前向计算。
+        因此该方法会在引擎的忙循环中被反复调用。
 
         Essentially, the scheduler produces a dictionary of {req_id: num_tokens}
         that specifies how many tokens to process for each request in this
@@ -63,13 +68,24 @@ class SchedulerInterface(ABC):
         can be somewhere in between in case of chunked prefills, prefix caching,
         speculative decoding, etc.
 
+        中文：本质上，调度器会产出一个 `{req_id: num_tokens}` 的映射，
+        指定每个请求在本轮应处理的 token 数。对于新请求，`num_tokens`
+        可能接近 prompt 长度；对于逐 token 自回归生成，通常为 1；在
+        chunked prefill、prefix caching、speculative decoding 等场景下，
+        则可能取中间值。
+
         Additionally, the scheduler also returns useful data about each request
         or the batch as a whole. The model runner will use this information in
         preparing inputs to the model.
 
+        中文：此外，调度器还会返回请求级或批次级的辅助信息，供模型执行器
+        在构造模型输入时使用。
+
         Returns:
             A SchedulerOutput object containing information about the scheduled
             requests.
+
+        中文返回：一个 `SchedulerOutput` 对象，包含本轮已调度请求的相关信息。
         """
         raise NotImplementedError
 

@@ -71,6 +71,9 @@ class UniProcExecutor(Executor):
         non_block: bool = False,
         single_value: bool = False,
     ) -> Any:
+        print("[guoxu] Start collective_rpc. ", "file: ", __file__, "function: ",
+              self.collective_rpc.__name__)
+
         if kwargs is None:
             kwargs = {}
 
@@ -101,6 +104,10 @@ class UniProcExecutor(Executor):
     def execute_model(  # type: ignore[override]
         self, scheduler_output: SchedulerOutput, non_block: bool = False
     ) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+
+        print("[guoxu] Start execute_model. ", "file: ", __file__, "function: ",
+              self.execute_model.__name__)
+
         output = self.collective_rpc(
             "execute_model",
             args=(scheduler_output,),
@@ -111,6 +118,10 @@ class UniProcExecutor(Executor):
         if non_block and output.done():
             # Raise the exception in-line if the task failed.
             output.result()
+
+        print("[guoxu] End execute_model. ", "file: ", __file__, "function: ",
+              self.execute_model.__name__)
+
         return output
 
     def sample_tokens(  # type: ignore[override]

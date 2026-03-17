@@ -34,6 +34,9 @@ class WorkerBase:
     """Worker interface that allows vLLM to cleanly separate implementations for
     different hardware. Also abstracts control plane communication, e.g., to
     communicate request metadata to other workers.
+
+    中文：WorkerBase 定义了统一的工作进程接口，用于隔离不同硬件后端实现，
+    同时抽象控制面通信（例如在 worker 间同步请求元数据）。
     """
 
     def __init__(
@@ -47,6 +50,8 @@ class WorkerBase:
         """
         Initialize common worker components.
 
+        中文：初始化 Worker 的通用配置与运行时状态。
+
         Args:
             vllm_config: Complete vLLM configuration
             local_rank: Local device index
@@ -54,6 +59,13 @@ class WorkerBase:
             distributed_init_method: Distributed initialization method
             is_driver_worker: Whether this worker handles driver
                 responsibilities
+
+        中文参数说明：
+            vllm_config：完整的 vLLM 配置。
+            local_rank：当前节点内设备编号。
+            rank：分布式全局 rank。
+            distributed_init_method：分布式初始化方式。
+            is_driver_worker：是否承担 driver 侧职责。
         """
         self.vllm_config = vllm_config
         self.model_config = vllm_config.model_config
@@ -83,47 +95,76 @@ class WorkerBase:
         self.model_runner: nn.Module | None = None
 
     def get_kv_cache_spec(self) -> dict[str, KVCacheSpec]:
-        """Get specifications for KV cache implementation."""
+        """Get specifications for KV cache implementation.
+
+        中文：返回 KV Cache 的实现规格定义。
+        """
         raise NotImplementedError
 
     def compile_or_warm_up_model(self) -> float:
         """Prepare model for execution through compilation/warmup.
 
+        中文：通过编译或预热让模型进入可执行状态。
+
         Returns:
             The accumulated compilation time in seconds.
+
+        中文返回：累计编译耗时（秒）。
         """
         raise NotImplementedError
 
     def check_health(self) -> None:
-        """Basic health check (override for device-specific checks)."""
+        """Basic health check (override for device-specific checks).
+
+        中文：基础健康检查；设备相关检查可由子类覆盖。
+        """
         return
 
     def init_device(self) -> None:
         """Initialize device state, such as loading the model or other on-device
         memory allocations.
+
+        中文：初始化设备侧状态，例如加载模型与设备内存分配。
         """
         raise NotImplementedError
 
     def reset_mm_cache(self) -> None:
+        """Reset multimodal cache if the model runner provides the hook.
+
+        中文：若 model_runner 实现了 reset_mm_cache，则调用其重置多模态缓存。
+        """
         reset_fn = getattr(self.model_runner, "reset_mm_cache", None)
         if callable(reset_fn):
             reset_fn()
 
     def get_model(self) -> nn.Module:
+        """Return the underlying model instance.
+
+        中文：返回当前 Worker 持有的底层模型对象。
+        """
         raise NotImplementedError
 
     def apply_model(self, fn: Callable[[nn.Module], _R]) -> _R:
-        """Apply a function on the model inside this worker."""
+        """Apply a function on the model inside this worker.
+
+        中文：在 Worker 内部模型上执行传入函数，并返回函数结果。
+        """
         return fn(self.get_model())
 
     def get_model_inspection(self) -> str:
-        """Return a transformers-style hierarchical view of the model."""
+        """Return a transformers-style hierarchical view of the model.
+
+        中文：返回类似 transformers 的模型层级结构描述。
+        """
         from vllm.model_inspection import format_model_inspection
 
         return format_model_inspection(self.get_model())
 
     def load_model(self) -> None:
-        """Load model onto target device."""
+        """Load model onto target device.
+
+        中文：将模型加载到目标设备。
+        """
         raise NotImplementedError
 
     def execute_model(
@@ -132,42 +173,74 @@ class WorkerBase:
         """If this method returns None, sample_tokens should be called immediately after
         to obtain the ModelRunnerOutput.
 
+        中文：若该方法返回 None，调用方需要立刻调用 sample_tokens 获取
+        ModelRunnerOutput。
+
         Note that this design may be changed in future if/when structured outputs
         parallelism is re-architected.
+
+        中文：当结构化输出并行机制重构时，该接口约定未来可能调整。
         """
         raise NotImplementedError
 
     def sample_tokens(
         self, grammar_output: GrammarOutput
     ) -> ModelRunnerOutput | AsyncModelRunnerOutput:
-        """Should be called immediately after execute_model iff it returned None."""
+        """Should be called immediately after execute_model iff it returned None.
+
+        中文：仅在 execute_model 返回 None 时，需紧接着调用本方法采样 token。
+        """
         raise NotImplementedError
 
     def get_cache_block_size_bytes(self) -> int:
         """Return the size of a single cache block, in bytes. Used in
         speculative decoding.
+
+        中文：返回单个缓存块的字节大小，用于投机解码等场景。
         """
         raise NotImplementedError
 
     def add_lora(self, lora_request: LoRARequest) -> bool:
+        """Attach a LoRA adapter to the worker.
+
+        中文：向当前 Worker 挂载一个 LoRA 适配器。
+        """
         raise NotImplementedError
 
     def remove_lora(self, lora_id: int) -> bool:
+        """Remove a LoRA adapter from the worker.
+
+        中文：从当前 Worker 卸载指定 LoRA 适配器。
+        """
         raise NotImplementedError
 
     def pin_lora(self, lora_id: int) -> bool:
+        """Pin a LoRA adapter to avoid eviction.
+
+        中文：固定指定 LoRA，避免其被回收。
+        """
         raise NotImplementedError
 
     def list_loras(self) -> set[int]:
+        """List currently loaded LoRA adapter IDs.
+
+        中文：列出当前已加载的 LoRA ID 集合。
+        """
         raise NotImplementedError
 
     @property
     def vocab_size(self) -> int:
-        """Get vocabulary size from model configuration."""
+        """Get vocabulary size from model configuration.
+
+        中文：从模型配置中读取词表大小。
+        """
         return self.model_config.get_vocab_size()
 
     def shutdown(self) -> None:
-        """Clean up resources held by the worker."""
+        """Clean up resources held by the worker.
+
+        中文：清理 Worker 持有的资源。
+        """
         return
 
 

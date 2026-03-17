@@ -83,6 +83,7 @@ class UniProcExecutor(Executor):
             return result if single_value else [result]
 
         try:
+            # 在driver_worker上动态调用一个方法，并把结果赋给result。
             result = run_method(self.driver_worker, method, args, kwargs)
             if isinstance(result, AsyncModelRunnerOutput):
                 if (async_thread := self.async_output_thread) is not None:

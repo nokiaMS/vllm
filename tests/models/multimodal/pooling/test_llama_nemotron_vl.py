@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 LlamaNemotronVL 系列模型的嵌入和评分功能，包括文本、图像及多模态输入
 """
 Tests for the LlamaNemotronVL model family:
   - nvidia/llama-nemotron-embed-vl-1b-v2  (LlamaNemotronVLForCausalLM / embed)

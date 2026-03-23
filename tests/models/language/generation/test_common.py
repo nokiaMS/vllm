@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试多种常见语言模型的文本生成正确性，对比HF与vLLM的logprobs输出，
+# 支持ROCm AITER内核测试和prompt_embeds嵌入输入测试
+
 import pytest
 import torch
 from packaging.version import Version

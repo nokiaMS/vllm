@@ -7,6 +7,8 @@ from vllm.sampling_params import RepetitionDetectionParams
 from vllm.v1.request import Request, RequestStatus
 
 
+# [中文注释] 检测 token 序列尾部是否存在重复模式。
+#   从末尾向前检查长度为 pattern_len 的模式是否连续重复了 repetition_min_count 次。
 def _has_repeating_pattern(
     token_ids: Sequence[int],
     pattern_len: int,
@@ -25,6 +27,9 @@ def _has_repeating_pattern(
     return True
 
 
+# [中文注释] 检测 token 序列是否存在重复模式（用于 repetition_detection 停止条件）。
+#   遍历 [min_pattern_size, max_pattern_size] 范围内的所有模式长度，
+#   对每个长度调用 _has_repeating_pattern 检查是否有 min_count 次重复。
 def check_sequence_repetition(
     token_ids: Sequence[int],
     params: RepetitionDetectionParams,
@@ -59,6 +64,8 @@ def check_sequence_repetition(
     return False
 
 
+# [中文注释] 从列表中移除指定集合中的所有元素。
+#   优化：单元素移除时直接用 list.remove()（最常见情况），多元素时用列表推导式。
 def remove_all(lst: list, items_to_remove: set) -> list:
     """Remove all items from a list that are in the items_to_remove set.
 
@@ -91,6 +98,13 @@ def remove_all(lst: list, items_to_remove: set) -> list:
     return [item for item in lst if item not in items_to_remove]
 
 
+# [中文注释] 检查请求是否满足停止条件（每生成一个 token 后调用）。
+#   按优先级依次检查：
+#     1. min_tokens 未满足 → 不停止
+#     2. EOS token → FINISHED_STOPPED
+#     3. stop_token_ids 命中 → FINISHED_STOPPED
+#     4. 达到 max_model_len 或 max_tokens → FINISHED_LENGTH_CAPPED
+#     5. 重复模式检测 → FINISHED_REPETITION
 def check_stop(request: Request, max_model_len: int) -> bool:
     assert not request.pooling_params
 

@@ -25,6 +25,7 @@ FIXTURE_REWARD_RESULT = {
 }
 
 
+# 测试夹具：构造数学分步推理的提示文本，用于过程奖励模型（PRM）的测试
 @pytest.fixture
 def math_step_prompts():
     # ruff: noqa: E501
@@ -43,6 +44,7 @@ def math_step_prompts():
     return [prompt]
 
 
+# 辅助函数：为 HuggingFace 模型添加分步奖励计算功能，基于特殊 token 的位置提取各步骤的奖励分数
 def step_reward_patch_hf_model(hf_model: HfRunner):
     # Patch the hf_runner to use the step reward function
     def make_step_rewards(
@@ -73,11 +75,13 @@ def step_reward_patch_hf_model(hf_model: HfRunner):
     return hf_model
 
 
+# 辅助函数：将奖励模型的输出保存为 JSON 文件
 def dump_reward_outputs(outputs: list[list[float]], filename: "StrPath"):
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(outputs, f)
 
 
+# 辅助函数：从 JSON 文件加载奖励模型的预期输出
 def load_reward_outputs(filename: "StrPath") -> list[list[float]]:
     with open(filename, encoding="utf-8") as f:
         return json.load(f)
@@ -93,6 +97,7 @@ def load_reward_outputs(filename: "StrPath") -> list[list[float]]:
     ],
 )
 @pytest.mark.parametrize("dtype", ["half"])
+# 测试过程奖励模型（PRM）：比较 vLLM 与 HuggingFace 的分步奖励分数是否一致
 def test_prm_models(
     hf_runner,
     vllm_runner,
@@ -136,6 +141,7 @@ def test_prm_models(
     ],
 )
 @pytest.mark.parametrize("dtype", ["half"])
+# 测试过程奖励模型与预存的黄金标准输出进行对比，确保模型输出的稳定性
 def test_prm_models_with_golden_outputs(
     vllm_runner,
     math_step_prompts,

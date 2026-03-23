@@ -35,6 +35,7 @@ from vllm.utils.torch_utils import is_torch_equal_or_newer
 from ..utils import create_new_process_for_each_test
 
 
+# 将 VLLM_CACHE_ROOT 设置为临时目录的 pytest fixture
 @pytest.fixture
 def vllm_tmp_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Fixture that sets VLLM_CACHE_ROOT to a temporary directory."""
@@ -42,6 +43,7 @@ def vllm_tmp_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
+# AOT 编译保存/加载的参考函数
 def reference_fn(x: torch.Tensor):
     assert x.shape[0] <= 42
     assert x.shape[0] % 2 == 0
@@ -50,6 +52,7 @@ def reference_fn(x: torch.Tensor):
     return x
 
 
+# AOT 编译保存/加载的参考函数（返回元组）
 def reference_fn_tuple(x: torch.Tensor):
     """Reference function that returns a tuple of tensors."""
     assert x.shape[0] <= 42
@@ -59,6 +62,7 @@ def reference_fn_tuple(x: torch.Tensor):
     return x, x * 2
 
 
+# 支持 torch.compile 的编译模块，用于 AOT 编译测试
 @support_torch_compile
 class CompiledMod(torch.nn.Module):
     def __init__(self, **kwargs):
@@ -68,6 +72,7 @@ class CompiledMod(torch.nn.Module):
         return reference_fn(x)
 
 
+# 支持 torch.compile 的编译模块（返回元组），用于验证元组输出的缓存一致性
 @support_torch_compile
 class CompiledModTuple(torch.nn.Module):
     """A compiled module that returns a tuple of tensors."""
@@ -79,6 +84,7 @@ class CompiledModTuple(torch.nn.Module):
         return reference_fn_tuple(x)
 
 
+# 创建 VLLM_COMPILE 模式的默认 VllmConfig
 def make_vllm_config() -> VllmConfig:
     return VllmConfig(
         compilation_config=CompilationConfig(
@@ -88,12 +94,14 @@ def make_vllm_config() -> VllmConfig:
     )
 
 
+# 设置 vllm_config 上下文的辅助上下文管理器
 @contextmanager
 def use_vllm_config(vllm_config: VllmConfig):
     with set_forward_context({}, vllm_config), set_current_vllm_config(vllm_config):
         yield
 
 
+# 测试 AOT 编译模式下不会创建 Dynamo 缓存条目，避免重编译
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_no_dynamo_cache_entry(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as m:
@@ -118,6 +126,7 @@ def test_no_dynamo_cache_entry(monkeypatch: pytest.MonkeyPatch):
             assert torch.allclose(actual, expected)
 
 
+# 测试强制 AOT 加载时缓存不存在会抛出 FileNotFoundError
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_force_aot_load(monkeypatch: pytest.MonkeyPatch):
     with tempfile.TemporaryDirectory() as tmpdirname, monkeypatch.context() as m:
@@ -132,6 +141,7 @@ def test_force_aot_load(monkeypatch: pytest.MonkeyPatch):
             CompiledMod(vllm_config=vllm_config)(*args)
 
 
+# 测试 AOT 编译产物的保存和加载，验证从磁盘缓存加载后结果一致
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_save_and_load(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as m:
@@ -160,6 +170,7 @@ def test_save_and_load(monkeypatch: pytest.MonkeyPatch):
             assert torch.allclose(ret, expected)
 
 
+# 测试包含 slice 操作的图的序列化和反序列化
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_save_and_load_slice(monkeypatch: pytest.MonkeyPatch):
     def foo(x: torch.Tensor):
@@ -180,6 +191,7 @@ def test_save_and_load_slice(monkeypatch: pytest.MonkeyPatch):
     assert gm.code == fn.graph_module.code
 
 
+# 测试缓存加载后单张量输出的类型一致性（不会被包装成列表）
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_cache_load_returns_tuple_consistency(monkeypatch: pytest.MonkeyPatch):
     """
@@ -239,6 +251,7 @@ def test_cache_load_returns_tuple_consistency(monkeypatch: pytest.MonkeyPatch):
             )
 
 
+# 测试缓存加载后元组输出的类型一致性
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_cache_load_returns_tuple_consistency_tuple_output(
     monkeypatch: pytest.MonkeyPatch,
@@ -308,6 +321,7 @@ def test_cache_load_returns_tuple_consistency_tuple_output(
             )
 
 
+# 测试形状环境（shape_env）在缓存保存和加载后正确保留
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_shape_env(monkeypatch: pytest.MonkeyPatch):
     """
@@ -345,6 +359,7 @@ def test_shape_env(monkeypatch: pytest.MonkeyPatch):
                 assert guards_string == " - s77 <= 42\n - Eq(Mod(s77, 2), 0)"
 
 
+# 测试从 AOT 缓存加载时分区包装器（partition wrapper）被正确应用
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_partition_wrapper_applied_on_aot_load(
     monkeypatch: pytest.MonkeyPatch, vllm_tmp_cache: Path, mocker
@@ -436,6 +451,7 @@ def test_partition_wrapper_applied_on_aot_load(
         )
 
 
+# 测试 GPT-2 模型第二次编译命中缓存，且不创建新的符号变量
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 @create_new_process_for_each_test("spawn")
 def test_gpt2_cache_hit(monkeypatch: pytest.MonkeyPatch):
@@ -500,6 +516,7 @@ def test_gpt2_cache_hit(monkeypatch: pytest.MonkeyPatch):
         symbolic_shapes_module.make_symbol = original_make_symbol
 
 
+# StandaloneCompiledArtifacts 的单元测试：插入、获取、去重、序列化、加载
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 class TestStandaloneCompiledArtifacts:
     def test_init(self):
@@ -674,6 +691,7 @@ class TestStandaloneCompiledArtifacts:
         assert len(restored_cache.loaded_submodule_store) == 0
 
 
+# StandaloneCompiledArtifacts 的集成测试：多产物插入、去重和 pickle 往返
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 class TestStandaloneCompiledArtifactsIntegration:
     def test_add_pickle_unpickle(self):
@@ -767,6 +785,7 @@ class TestStandaloneCompiledArtifactsIntegration:
         assert config["bundled_autograd_cache"] is True
 
 
+# 测试禁用编译缓存时 AOT 产物不会被保存到磁盘
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_disable_compile_cache_skips_aot_save(
     monkeypatch: pytest.MonkeyPatch, fresh_vllm_cache: str
@@ -803,6 +822,7 @@ def test_disable_compile_cache_skips_aot_save(
                 )
 
 
+# 测试禁用编译缓存时不会从磁盘加载 AOT 产物
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_disable_compile_cache_skips_aot_load(
     monkeypatch: pytest.MonkeyPatch, fresh_vllm_cache: str
@@ -841,6 +861,7 @@ def test_disable_compile_cache_skips_aot_load(
     assert not mod.was_aot_compile_fn_loaded_from_disk
 
 
+# 验证 AOT 编译计数器在保存和加载阶段的正确递增
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
 def test_aot_counters_on_save_and_load(
     monkeypatch: pytest.MonkeyPatch, fresh_vllm_cache: str

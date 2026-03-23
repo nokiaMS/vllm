@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试用例过滤和参数化工具：按模态类型筛选测试、生成参数组合、处理图像尺寸包装
 """Utils for determining which subset of model tests belong to a specific
 modality, getting all combinations (similar to pytest's parametrization),
 handling multimodal placeholder substitution, and so on.

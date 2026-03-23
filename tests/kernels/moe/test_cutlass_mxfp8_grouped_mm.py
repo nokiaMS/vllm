@@ -19,11 +19,13 @@ random.seed(42)
 set_random_seed(42)
 
 
+# [中文注释] 对齐函数：将值向上对齐到指定对齐边界（默认128）
 def align(val: int, alignment: int = 128) -> int:
     return int((val + alignment - 1) // alignment * alignment)
 
 
 # Copy from: https://github.com/deepseek-ai/DeepGEMM/blob/main/deep_gemm/utils.py
+# [中文注释] 计算两个张量之间的相对差异（最大绝对差/均值绝对值）
 def calc_diff(x, y):
     x, y = x.double(), y.double()
     denominator = (x * x + y * y).sum()
@@ -31,12 +33,14 @@ def calc_diff(x, y):
     return 1 - sim
 
 
+# [中文注释] 检查当前GPU是否支持SM100（Blackwell架构）
 def is_sm100_supported() -> bool:
     return current_platform.is_cuda() and current_platform.is_device_capability_family(
         100
     )
 
 
+# [中文注释] 计算SM100 MXFP8分组MoE的参考输出，使用torch逐专家计算
 def compute_ref_output(
     input_tensor: torch.Tensor,
     weight_list: list[torch.Tensor],
@@ -61,6 +65,7 @@ def compute_ref_output(
     )
 
 
+# [中文注释] 使用CUTLASS MXFP8分组矩阵乘法内核计算MoE输出
 def compute_kernel_output(
     input_tensor: torch.Tensor,
     weight_tensor: torch.Tensor,
@@ -152,6 +157,7 @@ def compute_kernel_output(
 )
 @pytest.mark.parametrize("num_experts", [8, 16, 32, 64])
 @pytest.mark.parametrize("out_dtype", [torch.half, torch.bfloat16])
+# [中文注释] 测试SM100 CUTLASS MXFP8分组矩阵乘法内核与参考实现的数值一致性
 def test_cutlass_mxfp8_grouped_mm(num_experts, out_dtype):
     device = "cuda"
     alignment = 128

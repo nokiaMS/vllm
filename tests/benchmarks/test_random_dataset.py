@@ -14,12 +14,14 @@ from vllm.benchmarks.datasets import (
 )
 
 
+# [中文注释] 会话级fixture，加载gpt2分词器供测试使用
 @pytest.fixture(scope="session")
 def hf_tokenizer() -> PreTrainedTokenizerBase:
     # Use a small, commonly available tokenizer
     return AutoTokenizer.from_pretrained("gpt2")
 
 
+# [中文注释] 随机数据集测试参数的命名元组，包含请求数、前缀长度、范围比例、输入/输出长度
 class Params(NamedTuple):
     num_requests: int
     prefix_len: int
@@ -35,11 +37,13 @@ def random_dataset_params() -> Params:
     )
 
 
+# [中文注释] 将SampleRequest投影为可比较的元组，用于验证随机数据集的确定性
 def _fingerprint_sample(req: SampleRequest) -> tuple[str, int, int]:
     """Project a SampleRequest into a comparable tuple."""
     return (req.prompt, req.prompt_len, req.expected_output_len)
 
 
+# [中文注释] 收集RandomDataset的样本并返回指纹列表，用于种子确定性验证
 def _collect_samples(
     dataset: RandomDataset,
     tokenizer: PreTrainedTokenizerBase,
@@ -60,6 +64,7 @@ def _collect_samples(
     return [_fingerprint_sample(s) for s in samples]
 
 
+# [中文注释] 测试相同种子生成相同输出，验证RandomDataset不依赖全局随机数生成器
 @pytest.mark.benchmark
 def test_random_dataset_same_seed(
     hf_tokenizer: PreTrainedTokenizerBase, random_dataset_params: Params
@@ -101,6 +106,7 @@ def test_random_dataset_same_seed(
     assert a == b
 
 
+# [中文注释] 测试不同种子生成不同输出，确保随机数据集的多样性
 @pytest.mark.benchmark
 def test_random_dataset_different_seeds(
     hf_tokenizer: PreTrainedTokenizerBase, random_dataset_params: Params
@@ -141,6 +147,7 @@ def test_random_dataset_different_seeds(
 # -----------------------------
 
 
+# [中文注释] 为多模态样本创建紧凑指纹，包含提示、长度、多模态项数和类型前缀
 def _mm_fingerprint_sample(
     req: SampleRequest,
 ) -> tuple[str, int, int, int, list[str]]:
@@ -174,6 +181,7 @@ def _mm_fingerprint_sample(
     )
 
 
+# [中文注释] 收集RandomMultiModalDataset的多模态样本，支持图片和视频配置
 def _collect_mm_samples(
     dataset: RandomMultiModalDataset,
     tokenizer: PreTrainedTokenizerBase,
@@ -208,6 +216,7 @@ def _collect_mm_samples(
     )
 
 
+# [中文注释] 测试多模态数据集相同种子产生相同结果
 @pytest.mark.benchmark
 def test_random_mm_same_seed(hf_tokenizer: PreTrainedTokenizerBase) -> None:
     seed = 42
@@ -220,6 +229,7 @@ def test_random_mm_same_seed(hf_tokenizer: PreTrainedTokenizerBase) -> None:
     assert fa == fb
 
 
+# [中文注释] 测试多模态数据集不同种子产生不同结果
 @pytest.mark.benchmark
 def test_random_mm_different_seeds(
     hf_tokenizer: PreTrainedTokenizerBase,
@@ -233,6 +243,7 @@ def test_random_mm_different_seeds(
     assert fa != fb
 
 
+# [中文注释] 测试多模态数据集遵守每个提示的多模态项数限制，超限时应抛出ValueError
 @pytest.mark.benchmark
 def test_random_mm_respects_limits(
     hf_tokenizer: PreTrainedTokenizerBase,
@@ -252,6 +263,7 @@ def test_random_mm_respects_limits(
         )
 
 
+# [中文注释] 测试零概率的桶配置项在归一化后被正确移除
 @pytest.mark.benchmark
 def test_random_mm_zero_prob_entries_are_removed(
     hf_tokenizer: PreTrainedTokenizerBase,
@@ -275,6 +287,7 @@ def test_random_mm_zero_prob_entries_are_removed(
             assert it.get("type") == "image_url"
 
 
+# [中文注释] 测试请求零个多模态项时返回空列表
 @pytest.mark.benchmark
 def test_random_mm_zero_items(hf_tokenizer: PreTrainedTokenizerBase) -> None:
     ds = RandomMultiModalDataset(random_seed=0)
@@ -291,6 +304,7 @@ def test_random_mm_zero_items(hf_tokenizer: PreTrainedTokenizerBase) -> None:
         assert s.multi_modal_data == []
 
 
+# [中文注释] 测试每个提示的固定和可变多模态项数量控制
 @pytest.mark.benchmark
 def test_random_mm_num_items_per_prompt(hf_tokenizer: PreTrainedTokenizerBase) -> None:
     ds = RandomMultiModalDataset(random_seed=0)
@@ -315,6 +329,7 @@ def test_random_mm_num_items_per_prompt(hf_tokenizer: PreTrainedTokenizerBase) -
             assert it.get("type") == "image_url"
 
 
+# [中文注释] 测试采样过程不会修改原始桶配置字典
 @pytest.mark.benchmark
 def test_random_mm_bucket_config_not_mutated(
     hf_tokenizer: PreTrainedTokenizerBase,
@@ -361,6 +376,7 @@ def test_random_mm_bucket_config_not_mutated(
             assert it.get("type") == "image_url"
 
 
+# [中文注释] 测试多模态数据集的视频采样功能，验证图片和视频混合生成
 @pytest.mark.benchmark
 def test_random_mm_video_sampling(hf_tokenizer: PreTrainedTokenizerBase) -> None:
     """Test video sampling functionality in RandomMultiModalDataset."""
@@ -411,6 +427,7 @@ def test_random_mm_video_sampling(hf_tokenizer: PreTrainedTokenizerBase) -> None
     assert image_count > 0
 
 
+# [中文注释] 测试仅使用视频桶配置时的纯视频采样
 @pytest.mark.benchmark
 def test_random_mm_video_only_sampling(hf_tokenizer: PreTrainedTokenizerBase) -> None:
     """Test sampling with only video buckets."""
@@ -444,6 +461,7 @@ def test_random_mm_video_only_sampling(hf_tokenizer: PreTrainedTokenizerBase) ->
         assert url.startswith("data:video/mp4;base64,")
 
 
+# [中文注释] 测试视频采样在相同种子下的确定性
 @pytest.mark.benchmark
 def test_random_mm_video_deterministic_sampling(
     hf_tokenizer: PreTrainedTokenizerBase,

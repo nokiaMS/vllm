@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试FP8量化模型的推理正确性，包括GPU和CPU后端的KV-cache精度测试
 # flake8: noqa
 """Tests fp8 models against ground truth generation
 Note: these tests will only pass on L4 GPU.

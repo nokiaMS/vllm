@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试提示验证：空提示、超出词表 token_id 和 prompt_embeds 的加载/安全验证]
 
 import io
 from unittest.mock import Mock
@@ -18,6 +19,7 @@ from ...utils import RemoteOpenAIServer
 
 
 @pytest.mark.asyncio
+# [测试空提示和空 prompt_embeds 应返回 BadRequest 错误]
 async def test_empty_prompt():
     model_name = "gpt2"
     server_args = ["--enforce-eager"]
@@ -38,6 +40,7 @@ async def test_empty_prompt():
 
 
 @pytest.mark.asyncio
+# [测试超出词表范围的 token_id 应返回 BadRequest 错误]
 async def test_out_of_vocab_token_ids():
     model_name = "gpt2"
     server_args = ["--enforce-eager"]
@@ -58,6 +61,7 @@ async def test_out_of_vocab_token_ids():
 )
 @pytest.mark.parametrize("seq_len", [2, 10])
 @pytest.mark.parametrize("hidden_size", [2, 10])
+# [测试各种 dtype/layout/尺寸的 prompt_embeds 加载和转换]
 def test_load_prompt_embeds(
     dtype: torch.dtype, layout: torch.layout, seq_len: int, hidden_size: int
 ):
@@ -99,6 +103,7 @@ def test_load_prompt_embeds(
 @pytest.mark.parametrize("dtype", [torch.float32])
 @pytest.mark.parametrize("seq_len", [2])
 @pytest.mark.parametrize("hidden_size", [2])
+# [测试未启用 --enable-prompt-embeds 时加载嵌入应报错]
 def test_disable_prompt_embeds(dtype: torch.dtype, seq_len: int, hidden_size: int):
     model_config = Mock(spec=ModelConfig)
     model_config.enable_prompt_embeds = False

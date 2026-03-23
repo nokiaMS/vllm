@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 SigLIP 视觉语言对齐模型的文本和图像嵌入功能，对比 vLLM 与 HF 的输出
 
 from typing import Any
 

@@ -13,12 +13,14 @@ from vllm.reasoning import ReasoningParser, ReasoningParserManager
 parser_name = "nemotron_v3"
 
 
+# [中文注释] 推理测试用例类型定义：包含输出、推理和内容字段
 class ReasoningCase(TypedDict):
     output: str
     reasoning: str | None
     content: str | None
 
 
+# [中文注释] Nemotron V3伪分词器：模拟<think>和</think>特殊token的分词行为
 class FakeNemotronTokenizer:
     def __init__(self):
         self._vocab = {
@@ -87,6 +89,7 @@ def tokenizer():
         ),
     ],
 )
+# [中文注释] 参数化测试Nemotron V3推理提取：使用FakeTokenizer模拟分词行为
 def test_nemotron_v3_reasoning(
     tokenizer: FakeNemotronTokenizer,
     streaming: bool,
@@ -106,6 +109,7 @@ def test_nemotron_v3_reasoning(
     assert content == param_dict["content"]
 
 
+# [中文注释] 测试禁用thinking时直接返回内容
 def test_nemotron_v3_without_thinking_returns_content(
     tokenizer: FakeNemotronTokenizer,
 ):
@@ -128,6 +132,7 @@ def test_nemotron_v3_without_thinking_returns_content(
     assert content == "This is plain content"
 
 
+# [中文注释] 测试force_nonempty_content选项将推理内容作为content返回
 def test_nemotron_v3_force_nonempty_content_returns_content(
     tokenizer: FakeNemotronTokenizer,
 ):
@@ -150,6 +155,7 @@ def test_nemotron_v3_force_nonempty_content_returns_content(
     assert content == "This is plain content"
 
 
+# [中文注释] 测试启用thinking时保留截断的推理内容
 def test_nemotron_v3_with_thinking_keeps_truncated_reasoning(
     tokenizer: FakeNemotronTokenizer,
 ):

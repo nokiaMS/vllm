@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# [在线嵌入测试模块：全面验证 OpenAI 兼容嵌入 API 的各种功能，包括基础请求、批量处理、截断、聊天格式、多种编码格式及归一化参数]
+
 import base64
 import json
 
@@ -66,6 +68,7 @@ ROCM_DETERMINISM_ARGS: list[str] = (
 )
 
 
+# [测试夹具：启动 multilingual-e5-small 嵌入模型的远程服务器，配置自定义聊天模板]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -85,18 +88,21 @@ def server():
         yield remote_server
 
 
+# [异步客户端夹具：从远程服务器获取异步 OpenAI 客户端]
 @pytest_asyncio.fixture
 async def client(server):
     async with server.get_async_client() as async_client:
         yield async_client
 
 
+# [HuggingFace 参考模型夹具：用于嵌入正确性对比验证]
 @pytest.fixture(scope="module")
 def hf_model(hf_runner):
     with hf_runner(MODEL_NAME, dtype=DTYPE, is_sentence_transformer=True) as hf_model:
         yield hf_model
 
 
+# [测试基础功能：验证 /v1/models 和 /tokenize 端点]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_basic(
@@ -120,6 +126,7 @@ async def test_basic(
     assert response.json()["tokens"] == input_tokens
 
 
+# [测试嵌入请求：验证字符串和 token 列表输入的嵌入结果与 HF 模型对比]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_completion_request(
@@ -166,6 +173,7 @@ async def test_completion_request(
     run_embedding_correctness_test(hf_model, [input_text], vllm_outputs)
 
 
+# [测试批量嵌入请求：验证多条输入的批量嵌入处理与 HF 模型对比]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_completion_request_batched(
@@ -215,6 +223,7 @@ async def test_completion_request_batched(
     run_embedding_correctness_test(hf_model, input_texts, vllm_outputs)
 
 
+# [测试提示截断：验证有效和无效的 truncate_prompt_tokens 参数行为]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_truncate_prompt_tokens(client: openai.AsyncOpenAI, model_name: str):
@@ -292,6 +301,7 @@ async def test_truncate_prompt_tokens(client: openai.AsyncOpenAI, model_name: st
         )
 
 
+# [测试聊天格式嵌入请求：验证聊天模板应用、add_generation_prompt、continue_final_message 等参数]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_chat_request(
@@ -419,6 +429,7 @@ async def test_chat_request(
     )
 
 
+# [测试 invocations 端点（补全请求）：验证 invocations 与标准嵌入端点结果一致]
 @pytest.mark.asyncio
 async def test_invocations_completion_request(
     server: RemoteOpenAIServer, client: openai.AsyncOpenAI
@@ -452,6 +463,7 @@ async def test_invocations_completion_request(
         )
 
 
+# [测试 invocations 端点（聊天请求）：验证聊天格式下 invocations 与嵌入端点结果一致]
 @pytest.mark.asyncio
 async def test_invocations_chat_request(server: RemoteOpenAIServer):
     messages = [
@@ -499,6 +511,7 @@ async def test_invocations_chat_request(server: RemoteOpenAIServer):
         )
 
 
+# [测试 base64 编码嵌入：验证 float、base64 和默认编码格式返回一致的嵌入结果]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_base64_embedding(hf_model, client: openai.AsyncOpenAI, model_name: str):
@@ -532,6 +545,7 @@ async def test_base64_embedding(hf_model, client: openai.AsyncOpenAI, model_name
     run_embedding_correctness_test(hf_model, input_texts, default_data)
 
 
+# [测试 base64 编码的数据类型与字节序：验证不同 embed_dtype 和 endianness 组合下 base64 编码结果与 float 一致]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_base64_embed_dtype_and_endianness(
@@ -571,6 +585,7 @@ async def test_base64_embed_dtype_and_endianness(
             )
 
 
+# [测试 bytes 编码的数据类型与字节序：验证不同 embed_dtype 和 endianness 组合下 bytes 格式结果与 float 一致]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_bytes_embed_dtype_and_endianness(
@@ -611,6 +626,7 @@ async def test_bytes_embed_dtype_and_endianness(
             )
 
 
+# [测试 bytes_only 编码格式：验证无 metadata 头的纯二进制编码嵌入结果与 float 一致]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_bytes_only_embed_dtype_and_endianness(
@@ -660,6 +676,7 @@ async def test_bytes_only_embed_dtype_and_endianness(
             )
 
 
+# [测试不支持的参数值：验证传入无效的 encoding_format、embed_dtype 或 endianness 时返回 400 错误]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("param_name", ["encoding_format", "embed_dtype", "endianness"])
@@ -681,6 +698,7 @@ async def test_params_not_supported(
     assert f"bad_{param_name}" in responses_base64.json()["error"]["message"]
 
 
+# [测试激活函数（归一化）控制：验证在线 API 中 use_activation 参数对嵌入归一化的影响]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_use_activation(server: RemoteOpenAIServer, model_name: str):
@@ -710,6 +728,7 @@ async def test_use_activation(server: RemoteOpenAIServer, model_name: str):
     )
 
 
+# [测试通用 pooling 端点的 embed 任务：验证嵌入向量维度]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_pooling_embed(server: RemoteOpenAIServer, model_name: str):
@@ -730,6 +749,7 @@ async def test_pooling_embed(server: RemoteOpenAIServer, model_name: str):
     assert len(poolings.data[0].data) == 384
 
 
+# [测试通用 pooling 端点的 token_embed 任务：验证每个 token 的嵌入向量维度]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_pooling_token_embed(server: RemoteOpenAIServer, model_name: str):
@@ -751,6 +771,7 @@ async def test_pooling_token_embed(server: RemoteOpenAIServer, model_name: str):
     assert len(poolings.data[0].data[0]) == 384
 
 
+# [测试 pooling 端点不支持的任务：验证 classify、token_classify、plugin 任务返回错误]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("task", ["classify", "token_classify", "plugin"])

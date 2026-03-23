@@ -48,6 +48,7 @@ from .mk_objects import (
 from .parallel_utils import ProcessGroupInfo
 
 
+# [中文注释] 辅助函数：描述张量的形状、数据类型和设备信息，用于调试输出
 def _describe_tensor(t: torch.Tensor | None, name: str) -> str:
     if t is None:
         return f"{name} : None"
@@ -55,6 +56,7 @@ def _describe_tensor(t: torch.Tensor | None, name: str) -> str:
         return f"{name} : {t.shape} {t.dtype} {t.device}"
 
 
+# [中文注释] 模块化MoE内核的测试配置类，包含模型维度、专家数量、量化参数、并行配置等核心测试参数
 @dataclass
 class Config:
     Ms: list[int] | int
@@ -278,6 +280,7 @@ class Config:
         return True, None
 
 
+# [中文注释] 权重张量数据类，封装MoE的w1/w2权重及其量化缩放因子，支持按rank切片和设备迁移
 @dataclass
 class WeightTensors:
     w1: torch.Tensor
@@ -350,6 +353,7 @@ class WeightTensors:
         )
 
 
+# [中文注释] 单个rank的张量数据类，包含隐藏状态、TopK路由权重/ID和专家映射表
 @dataclass
 class RankTensors:
     hidden_states: torch.Tensor
@@ -438,6 +442,7 @@ class RankTensors:
         )
 
 
+# [中文注释] MoE参考实现：使用torch_experts计算正确结果，支持FP8和NVFP4量化，作为测试基准
 def reference_moe_impl(
     config: Config, weights: WeightTensors, rank_tensors: RankTensors
 ) -> torch.Tensor:
@@ -549,6 +554,7 @@ def _make_gscale(num_experts: int) -> torch.Tensor:
     )
 
 
+# [中文注释] 构建模块化MoE内核：组装PrepareFinalize和FusedExperts组件，返回FusedMoEKernel实例
 def make_modular_kernel(
     config: Config,
     vllm_config: VllmConfig,
@@ -609,6 +615,7 @@ def make_modular_kernel(
     return modular_kernel
 
 
+# [中文注释] 执行模块化MoE内核：设置前向上下文，运行内核并返回输出结果
 def run_modular_kernel(
     pgi: ProcessGroupInfo,
     vllm_config: VllmConfig,

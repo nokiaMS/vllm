@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试rotary_embedding自定义算子的opcheck合规性，
+# 覆盖不同max_position、neox风格、head步长连续性和带/不带key的场景
 """
 Tests for miscellaneous utilities
 """
@@ -11,6 +13,7 @@ from tests.kernels.utils import opcheck
 from vllm.model_executor.layers.rotary_embedding import RotaryEmbedding
 
 
+# 对rotary_embedding算子执行opcheck合规性检查
 def rotary_embedding_opcheck(
     rot,
     positions: torch.Tensor,
@@ -35,6 +38,7 @@ def rotary_embedding_opcheck(
 @pytest.mark.parametrize("seq_len", [11, 1024])
 @pytest.mark.parametrize("use_key", [True, False])
 @pytest.mark.parametrize("head_stride_is_contiguous", [True, False])
+# 测试rotary_embedding算子在多种参数组合下的opcheck合规性
 def test_rotary_embedding_opcheck(
     default_vllm_config,
     dist_init,

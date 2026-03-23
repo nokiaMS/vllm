@@ -9,6 +9,8 @@ from vllm.v1.outputs import AsyncModelRunnerOutput, LogprobsTensors, ModelRunner
 from vllm.v1.worker.gpu.sample.output import SamplerOutput
 
 
+# 异步输出类：利用独立的 CUDA 拷贝流将采样结果（token ID、logprobs 等）
+# 从 GPU 异步传输到 CPU，避免阻塞主计算流，从而实现计算与数据传输的流水线重叠。
 class AsyncOutput(AsyncModelRunnerOutput):
     def __init__(
         self,
@@ -46,6 +48,7 @@ class AsyncOutput(AsyncModelRunnerOutput):
             }
             self.copy_event.record(copy_stream)
 
+    # 同步拷贝事件并将 NumPy 数组转换为 Python 列表，组装最终的模型输出。
     def get_output(self) -> ModelRunnerOutput:
         self.copy_event.synchronize()
 
@@ -70,6 +73,8 @@ class AsyncOutput(AsyncModelRunnerOutput):
         return self.model_runner_output
 
 
+# 异步池化输出类：与 AsyncOutput 类似，但专用于池化模型（如嵌入模型）。
+# 将池化层的输出张量异步拷贝到 CPU，并处理无效结果的掩码。
 class AsyncPoolingOutput(AsyncModelRunnerOutput):
     def __init__(
         self,
@@ -94,6 +99,7 @@ class AsyncPoolingOutput(AsyncModelRunnerOutput):
                 self.is_valid_cpu = None
             self.copy_event.record(copy_stream)
 
+    # 同步拷贝事件，将池化输出拆分为每个请求的独立张量，并将无效请求标记为 None。
     def get_output(self) -> ModelRunnerOutput:
         pooler_output = list(self.pooler_output_cpu.unbind(dim=0))
         self.copy_event.synchronize()
@@ -106,10 +112,13 @@ class AsyncPoolingOutput(AsyncModelRunnerOutput):
         return self.model_runner_output
 
 
+# 将 GPU 张量异步拷贝到 CPU 并转换为 NumPy 数组（非阻塞操作）。
 def async_copy_to_np(x: torch.Tensor) -> np.ndarray:
     return x.to("cpu", non_blocking=True).numpy()
 
 
+# 轻量级 CUDA 流切换上下文管理器：切换到目标流执行操作，退出时恢复原始流。
+# 相比 torch.cuda.stream() 避免了当前流和设备的额外查询开销。
 @contextlib.contextmanager
 def stream(to_stream: torch.cuda.Stream, from_stream: torch.cuda.Stream):
     """Lightweight version of torch.cuda.stream() context manager which

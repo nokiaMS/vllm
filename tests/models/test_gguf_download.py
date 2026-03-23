@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试GGUF模型下载和加载功能，包括单文件下载、分片文件下载、子目录下载等场景
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,6 +13,7 @@ from vllm.model_executor.model_loader.gguf_loader import GGUFModelLoader
 from vllm.model_executor.model_loader.weight_utils import download_gguf
 
 
+# 测试GGUF模型文件的下载功能
 class TestGGUFDownload:
     """Test GGUF model downloading functionality."""
 
@@ -96,6 +99,7 @@ class TestGGUFDownload:
             download_gguf("unsloth/Qwen3-0.6B-GGUF", "IQ1_S")
 
 
+# 测试GGUFModelLoader类的权重准备方法
 class TestGGUFModelLoader:
     """Test GGUFModelLoader class methods."""
 

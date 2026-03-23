@@ -25,6 +25,17 @@ from vllm.v1.kv_cache_interface import (
 from vllm.v1.request import Request
 
 
+# [中文注释] 单一注意力类型的 KV cache 管理器抽象基类。
+#   每种注意力类型（FullAttention、SlidingWindow、Mamba 等）继承此类并实现特有逻辑。
+#   核心数据结构：
+#     req_to_blocks: dict[request_id → list[KVCacheBlock]] — 每个请求分配的 block 列表
+#     num_cached_block: dict[request_id → int] — 每个请求已缓存的 block 数
+#   关键方法：
+#     get_num_blocks_to_allocate() — 计算需要分配的新 block 数（考虑窗口跳过和驱逐候选）
+#     allocate_new_computed_blocks() — 将前缀缓存命中的 block 关联到请求
+#     allocate_new_blocks() — 从 block pool 分配新 block
+#     find_longest_cache_hit() — 子类实现：查找最长前缀缓存命中
+#     remove_skipped_blocks() — 释放注意力窗口外的 block（替换为 null_block）
 class SingleTypeKVCacheManager(ABC):
     """
     An abstract base class for a manager that handle the kv cache management
@@ -416,6 +427,10 @@ class SingleTypeKVCacheManager(ABC):
         return None
 
 
+# [中文注释] 全注意力管理器。
+#   find_longest_cache_hit(): 从左到右顺序扫描 block hash 链，遇到未缓存的 hash 即停止。
+#   支持 EAGLE：命中时丢弃最后一个 block（强制重算以获取 hidden states）。
+#   get_num_common_prefix_blocks(): 统计 ref_cnt == 总请求数的前缀 block 数（用于 cascade attention）。
 class FullAttentionManager(SingleTypeKVCacheManager):
     @classmethod
     def find_longest_cache_hit(
@@ -477,6 +492,10 @@ class FullAttentionManager(SingleTypeKVCacheManager):
         return num_common_blocks
 
 
+# [中文注释] 滑动窗口注意力管理器。
+#   find_longest_cache_hit(): 从右到左搜索，找到窗口大小内连续命中的 block。
+#   get_num_skipped_tokens(): 返回窗口外的 token 数，用于释放不需要的 block。
+#   示例：sliding_window=4, computed=7 → 跳过 token 0~3（窗口外），保留 4~7。
 class SlidingWindowManager(SingleTypeKVCacheManager):
     def __init__(self, kv_cache_spec: SlidingWindowSpec, **kwargs) -> None:
         super().__init__(kv_cache_spec, **kwargs)
@@ -610,6 +629,10 @@ class SlidingWindowManager(SingleTypeKVCacheManager):
         return 0
 
 
+# [中文注释] 分块局部注意力管理器（如 LLaMA4 的 local attention）。
+#   find_longest_cache_hit(): 将注意力窗口外的 block 标记为 null，窗口内的 block 查缓存。
+#   get_num_skipped_tokens(): 返回当前 chunk 起始位置之前的所有 token 数。
+#   与 SlidingWindow 的区别：chunk 以固定大小对齐，而非连续滑动。
 class ChunkedLocalAttentionManager(SingleTypeKVCacheManager):
     def __init__(self, kv_cache_spec: ChunkedLocalAttentionSpec, **kwargs) -> None:
         super().__init__(kv_cache_spec, **kwargs)
@@ -760,6 +783,13 @@ class ChunkedLocalAttentionManager(SingleTypeKVCacheManager):
         return 0
 
 
+# [中文注释] Mamba（SSM 状态空间模型）管理器。
+#   find_longest_cache_hit(): 从右到左搜索，只需最后一个匹配 block（SSM 只需最新状态）。
+#   align 模式：每步只分配 1 个新 block + 投机 block，通过 null_block 跳过中间位置。
+#     - last_state_block_idx 记录两步前分配的 block 索引，用于延迟释放。
+#     - cached_blocks_this_step 记录当前步缓存的 block hash，
+#       防止同一步中其他请求命中尚未完成计算的 block。
+#   get_num_skipped_tokens(): Mamba 只需最后一个 token 的状态，跳过 computed-1 个 token。
 class MambaManager(SingleTypeKVCacheManager):
     def __init__(
         self, kv_cache_spec: MambaSpec, block_pool: BlockPool, **kwargs
@@ -1033,6 +1063,9 @@ class MambaManager(SingleTypeKVCacheManager):
         self.cached_blocks_this_step.clear()
 
 
+# [中文注释] 交叉注意力管理器（用于编码器-解码器模型如 Whisper）。
+#   不支持前缀缓存（编码器输出因输入不同而各请求独立）。
+#   一次性分配所有 encoder token 的 block，无增量分配。
 class CrossAttentionManager(SingleTypeKVCacheManager):
     """Manager for cross-attention KV cache in encoder-decoder models."""
 
@@ -1082,6 +1115,9 @@ class CrossAttentionManager(SingleTypeKVCacheManager):
         raise NotImplementedError("CrossAttentionManager does not support caching")
 
 
+# [中文注释] Sink Full Attention 管理器。
+#   在初始化时预分配 sink_len / block_size 个 sink block，
+#   这些 block 始终保留在内存中（不参与 LRU 驱逐），用于 attention sink 机制。
 class SinkFullAttentionManager(FullAttentionManager):
     def __init__(
         self,
@@ -1106,6 +1142,8 @@ class SinkFullAttentionManager(FullAttentionManager):
         self.sink_blocks = self.block_pool.free_block_queue.popleft_n(num_sink_block)
 
 
+# [中文注释] KVCacheSpec 类型 → SingleTypeKVCacheManager 子类的映射表。
+#   get_manager_for_kv_cache_spec() 工厂函数根据此映射创建对应的管理器实例。
 spec_manager_map: dict[type[KVCacheSpec], type[SingleTypeKVCacheManager]] = {
     FullAttentionSpec: FullAttentionManager,
     MLAAttentionSpec: FullAttentionManager,

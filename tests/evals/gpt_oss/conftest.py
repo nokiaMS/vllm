@@ -7,6 +7,7 @@ Pytest configuration for GPT-OSS evaluation tests.
 from pathlib import Path
 
 
+# [中文注释] 添加--config-list-file命令行选项，指定评估配置文件列表
 def pytest_addoption(parser):
     """Add custom command line options."""
     parser.addoption(
@@ -16,6 +17,7 @@ def pytest_addoption(parser):
     )
 
 
+# [中文注释] 从配置文件列表动态生成测试参数，支持相对路径和绝对路径
 def pytest_generate_tests(metafunc):
     """Generate test parameters from config files."""
     if "config_filename" in metafunc.fixturenames:

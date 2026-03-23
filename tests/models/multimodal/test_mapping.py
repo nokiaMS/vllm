@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试多模态模型的 HuggingFace 权重名称到 vLLM 权重名称的映射是否正确
 from collections.abc import Iterable
 
 import pytest
@@ -16,6 +17,7 @@ from vllm.transformers_utils.config import try_get_safetensors_metadata
 from ..registry import _MULTIMODAL_EXAMPLE_MODELS, HF_EXAMPLE_MODELS
 
 
+# 根据 safetensors 检查点元数据创建虚拟权重，用于权重映射验证
 def create_repo_dummy_weights(repo: str) -> Iterable[tuple[str, torch.Tensor]]:
     """Create weights from safetensors checkpoint metadata"""
     metadata = try_get_safetensors_metadata(repo)
@@ -24,6 +26,7 @@ def create_repo_dummy_weights(repo: str) -> Iterable[tuple[str, torch.Tensor]]:
         return ((name, torch.empty(0)) for name in weight_names)
 
 
+# 使用 meta 设备创建虚拟的 HF 基础模型实例，用于名称转换测试
 def create_dummy_base_model(repo: str, model_arch: str) -> PreTrainedModel:
     """
     Create weights from a dummy meta deserialized hf base model with name conversion
@@ -34,6 +37,7 @@ def create_dummy_base_model(repo: str, model_arch: str) -> PreTrainedModel:
     return model
 
 
+# 使用 meta 设备创建完整的 HF 模型实例，包含所有参数名称
 def create_dummy_model(repo: str, model_arch: str) -> PreTrainedModel:
     """
     Create weights from a dummy meta deserialized hf model with name conversion
@@ -45,6 +49,7 @@ def create_dummy_model(repo: str, model_arch: str) -> PreTrainedModel:
     return model
 
 
+# 筛选出支持检查点转换映射的模型架构列表，用于参数化测试
 def model_architectures_for_test() -> list[str]:
     arch_to_test = list[str]()
     for model_arch, info in _MULTIMODAL_EXAMPLE_MODELS.items():
@@ -55,6 +60,7 @@ def model_architectures_for_test() -> list[str]:
     return arch_to_test
 
 
+# 测试 HF 模型权重映射器：验证原始权重经映射后与 HF 转换后的权重名称一致
 @pytest.mark.core_model
 @pytest.mark.parametrize("model_arch", model_architectures_for_test())
 def test_hf_model_weights_mapper(model_arch: str):

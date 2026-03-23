@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 Llama3 JSON 格式工具解析器，覆盖简单/多重/深层嵌套/正则超时等场景
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,6 +17,7 @@ def parser(default_tokenizer: TokenizerLike):
     return Llama3JsonToolParser(default_tokenizer)
 
 
+# 测试简单工具调用的提取
 def test_extract_tool_calls_simple(parser):
     # Test with a simple tool call
     model_output = (
@@ -32,6 +35,7 @@ def test_extract_tool_calls_simple(parser):
     assert result.content is None
 
 
+# 测试带参数的工具调用提取
 def test_extract_tool_calls_with_arguments(parser):
     # Test with a tool call that has arguments
     model_output = (
@@ -46,6 +50,7 @@ def test_extract_tool_calls_with_arguments(parser):
     assert '"limit": 10' in result.tool_calls[0].function.arguments
 
 
+# 测试不含 JSON 的文本输出正确返回为普通内容
 def test_extract_tool_calls_no_json(parser):
     # Test with text that doesn't contain a JSON object
     model_output = "This is just some text without any tool calls"
@@ -56,6 +61,7 @@ def test_extract_tool_calls_no_json(parser):
     assert result.content == model_output
 
 
+# 测试无效 JSON 输入时的降级处理
 def test_extract_tool_calls_invalid_json(parser):
     # Test with invalid JSON
     model_output = '{"name": "invalidTool", "parameters": {invalid json}'
@@ -66,6 +72,7 @@ def test_extract_tool_calls_invalid_json(parser):
     assert result.content == model_output
 
 
+# 测试使用 "arguments" 而非 "parameters" 键的工具调用提取
 def test_extract_tool_calls_with_arguments_key(parser):
     # Test with a tool call that uses "arguments" instead of "parameters"
     model_output = '{"name": "searchTool", "arguments": {"query": "test"}}'
@@ -77,6 +84,7 @@ def test_extract_tool_calls_with_arguments_key(parser):
     assert '"query": "test"' in result.tool_calls[0].function.arguments
 
 
+# 测试多个工具调用（分号分隔）的提取
 def test_extract_tool_calls_multiple_json(parser):
     # Test with multiple JSONs separated by semicolons
     model_output = (
@@ -102,6 +110,7 @@ def test_extract_tool_calls_multiple_json(parser):
     assert '"query": "test2"' in result.tool_calls[2].function.arguments
 
 
+# 测试带额外空白的多个工具调用提取
 def test_extract_tool_calls_multiple_json_with_whitespace(parser):
     # Test with multiple JSONs separated by semicolons and extra whitespace
     model_output = (
@@ -118,6 +127,7 @@ def test_extract_tool_calls_multiple_json_with_whitespace(parser):
     assert result.tool_calls[2].function.name == "searchTool"
 
 
+# 测试包含前后文本的多个工具调用提取
 def test_extract_tool_calls_multiple_json_with_surrounding_text(parser):
     # Test with multiple JSONs and surrounding text
     model_output = (
@@ -136,6 +146,7 @@ def test_extract_tool_calls_multiple_json_with_surrounding_text(parser):
     assert result.tool_calls[2].function.name == "searchTool"
 
 
+# 测试深层嵌套 JSON 参数的工具调用提取
 def test_extract_tool_calls_deeply_nested_json(parser):
     # Test with deeply nested JSON parameters (5 levels)
     model_output = (
@@ -160,6 +171,7 @@ def test_extract_tool_calls_deeply_nested_json(parser):
     assert args["level1"]["level2"]["level3"]["level4"]["value"] == "deep"
 
 
+# 测试多个工具调用中部分包含深层嵌套参数的场景
 def test_extract_tool_calls_multiple_with_deep_nesting(parser):
     # Test with multiple tool calls where some have deeply nested parameters
     model_output = (
@@ -185,6 +197,7 @@ def test_extract_tool_calls_multiple_with_deep_nesting(parser):
     assert args1["config"]["database"]["connection"]["pool"]["size"] == 10
 
 
+# 测试字符串值中包含花括号和方括号的工具调用提取
 def test_extract_tool_calls_with_quotes_and_brackets_in_string(parser):
     # Test with quotes and brackets inside quoted string values
     model_output = (
@@ -207,6 +220,7 @@ def test_extract_tool_calls_with_quotes_and_brackets_in_string(parser):
     assert args["nested"]["inner"] == "more {brackets}"
 
 
+# 测试嵌套 JSON 中含有转义引号的工具调用提取
 def test_extract_tool_calls_with_escaped_quotes_in_nested_json(parser):
     # Test with escaped quotes in deeply nested JSON
     model_output = (
@@ -224,6 +238,7 @@ def test_extract_tool_calls_with_escaped_quotes_in_nested_json(parser):
     assert args["text"] == 'He said "Hello {world}"'
 
 
+# 测试缺少 "name" 键时返回普通内容
 def test_extract_tool_calls_missing_name_key(parser):
     # Test that missing "name" key returns content
     model_output = '{"parameters": {}}'
@@ -234,6 +249,7 @@ def test_extract_tool_calls_missing_name_key(parser):
     assert result.content == model_output
 
 
+# 测试同时缺少 "parameters" 和 "arguments" 键时返回普通内容
 def test_extract_tool_calls_missing_parameters_and_arguments_key(parser):
     # Test that missing both "parameters" and "arguments" keys returns content
     model_output = '{"name": "toolWithoutParams"}'
@@ -244,6 +260,7 @@ def test_extract_tool_calls_missing_parameters_and_arguments_key(parser):
     assert result.content == model_output
 
 
+# 测试正则表达式超时时的优雅降级处理
 def test_regex_timeout_handling(parser):
     """Test regex timeout is handled gracefully"""
     fake_problematic_input = "{hello world[A(A=" + "\t)A(A=,\t" * 2

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试分页注意力(Paged Attention)内核v1/v2/rocm版本的正确性
 
 import random
 
@@ -41,6 +42,7 @@ CUDA_DEVICES = [
 ]
 
 
+# 带掩码的注意力参考实现，用于正确性验证
 def ref_masked_attention(
     query: torch.Tensor,
     key: torch.Tensor,
@@ -56,6 +58,7 @@ def ref_masked_attention(
     return out
 
 
+# 单query缓存KV注意力的参考实现，逐序列计算注意力输出
 def ref_single_query_cached_kv_attention(
     output: torch.Tensor,
     query: torch.Tensor,
@@ -111,6 +114,7 @@ def ref_single_query_cached_kv_attention(
         output[i].copy_(out, non_blocking=True)
 
 
+# 测试分页注意力内核在不同版本、头数、头大小、数据类型等参数下的计算正确性
 @pytest.mark.parametrize(
     "version", ["v1", "v2"] if not current_platform.is_rocm() else ["v1", "v2", "rocm"]
 )
@@ -405,6 +409,7 @@ def test_paged_attention(
     torch.testing.assert_close(output, ref_output, atol=atol, rtol=rtol)
 
 
+# 多query KV注意力的参考实现，用于预填充阶段的验证
 def ref_multi_query_kv_attention(
     cu_seq_lens: list[int],
     query: torch.Tensor,
@@ -445,6 +450,7 @@ def ref_multi_query_kv_attention(
     return torch.cat(ref_outputs, dim=0)
 
 
+# 测试当query头数不能被KV头数整除时是否正确抛出断言错误
 @pytest.mark.parametrize("attention_cls", [Attention, MMEncoderAttention])
 def test_num_heads_not_divisible_by_num_kv_heads(attention_cls: type) -> None:
     head_size = 64

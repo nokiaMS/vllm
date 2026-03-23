@@ -638,7 +638,7 @@ async def build_and_serve_renderer(
         **uvicorn_kwargs,
     )
 
-
+# 服务器设置。
 async def run_server(args, **uvicorn_kwargs) -> None:
     """Run a single-worker API server."""
 
@@ -660,6 +660,7 @@ async def run_server_worker(
     if args.reasoning_parser_plugin and len(args.reasoning_parser_plugin) > 3:
         ReasoningParserManager.import_reasoning_parser(args.reasoning_parser_plugin)
 
+    # 构建一个异步的engine client，并在上下文中运行服务器。确保在引擎客户端的生命周期内运行服务器，并在退出上下文后正确关闭套接字。
     async with build_async_engine_client(
         args,
         client_config=client_config,

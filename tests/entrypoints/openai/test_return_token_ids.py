@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 return_token_ids 功能：验证补全/聊天中 token_ids 和 prompt_token_ids 的返回]
 
 import pytest
 
@@ -28,6 +29,7 @@ def server():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("return_token_ids", [True, False, None])
+# [测试基本补全的 token_ids 返回：含 emoji 的提示和可选启用/禁用]
 async def test_basic_completion_with_emoji(server, return_token_ids: bool | None):
     """Test basic completion with emoji to verify token_ids field."""
     extra_body = None
@@ -97,6 +99,7 @@ async def test_basic_completion_with_emoji(server, return_token_ids: bool | None
 
 
 @pytest.mark.asyncio
+# [测试带工具调用的聊天补全中 token_ids 和 prompt_token_ids 的正确性]
 async def test_chat_completion_with_tool_use(server):
     """Test chat completion with tool use (get_weather function)."""
     tools = [
@@ -188,6 +191,7 @@ async def test_chat_completion_with_tool_use(server):
 
 
 @pytest.mark.asyncio
+# [测试 token_ids 与 logprobs/prompt_logprobs 的一致性，含流式模式]
 async def test_comparison_with_prompt_logprobs_and_logprobs(server):
     """
     Test that token_ids align with prompt_logprobs and
@@ -284,6 +288,7 @@ async def test_comparison_with_prompt_logprobs_and_logprobs(server):
 
 
 @pytest.mark.asyncio
+# [测试含 emoji 的聊天补全中 token_ids 的流式和非流式返回]
 async def test_chat_completion_with_emoji_and_token_ids(server):
     """Test chat completion with emojis to verify token_ids handling."""
     chat_messages = [

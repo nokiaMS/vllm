@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试各种模型架构能否成功初始化，使用dummy权重避免实际前向传播
+
 from functools import partial
 from unittest.mock import patch
 
@@ -53,6 +55,7 @@ OTHER_MODEL_ARCH_LIST = set(HF_EXAMPLE_MODELS.get_supported_archs()) - set(
 
 
 @create_new_process_for_each_test()
+# 验证指定模型架构能否成功初始化LLM实例
 def can_initialize(
     model_arch: str, monkeypatch: pytest.MonkeyPatch, EXAMPLE_MODELS: HfExampleModels
 ):
@@ -174,12 +177,14 @@ def can_initialize(
 
 
 @pytest.mark.parametrize("model_arch", MINIMAL_MODEL_ARCH_LIST)
+# 测试核心模型子集的初始化能力
 def test_can_initialize_small_subset(model_arch: str, monkeypatch: pytest.MonkeyPatch):
     """Test initializing small subset of supported models"""
     can_initialize(model_arch, monkeypatch, HF_EXAMPLE_MODELS)
 
 
 @pytest.mark.parametrize("model_arch", OTHER_MODEL_ARCH_LIST)
+# 测试其余全部模型架构的初始化能力
 def test_can_initialize_large_subset(model_arch: str, monkeypatch: pytest.MonkeyPatch):
     """Test initializing large subset of supported models
 
@@ -190,5 +195,6 @@ def test_can_initialize_large_subset(model_arch: str, monkeypatch: pytest.Monkey
 
 
 @pytest.mark.parametrize("model_arch", AUTO_EXAMPLE_MODELS.get_supported_archs())
+# 测试自动转换模型（如序列分类适配器）的初始化能力
 def test_implicit_converted_models(model_arch: str, monkeypatch: pytest.MonkeyPatch):
     can_initialize(model_arch, monkeypatch, AUTO_EXAMPLE_MODELS)

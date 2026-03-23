@@ -36,6 +36,10 @@ if TYPE_CHECKING:
 logger = init_logger(__name__)
 
 
+# KV 连接器功能混入类，为 ModelRunner（GPU/TPU）提供 KV 缓存传输能力。
+# 设计目的：在分离式推理（disaggregated inference）场景中，
+# 实现 prefill 和 decode 实例间的 KV 缓存异步传输。
+# 提供统一的 KV 缓存布局管理和跨层 KV 缓存分配接口。
 # Defined as a kv connector functionality mixin for ModelRunner (GPU, TPU)
 class KVConnectorModelRunnerMixin:
     @staticmethod
@@ -44,6 +48,8 @@ class KVConnectorModelRunnerMixin:
         if has_kv_transfer_group and has_kv_transfer_group():  # type: ignore[truthy-function]
             ensure_kv_transfer_shutdown()
 
+    # 在无实际计算的步骤中执行 KV 缓存的发送/接收操作。
+    # 用于调度器决定不执行前向传播但仍需要完成 KV 传输的场景。
     @staticmethod
     def kv_connector_no_forward(
         scheduler_output: "SchedulerOutput", vllm_config: VllmConfig
@@ -88,6 +94,9 @@ class KVConnectorModelRunnerMixin:
             kv_connector.wait_for_save()
             kv_connector.clear_connector_metadata()
 
+    # KV 连接器生命周期的上下文管理器，必须在活跃的 forward context 内使用。
+    # 流程：绑定连接器元数据 → 启动异步 KV 加载 → yield 执行模型前向 →
+    # 等待保存完成 → 收集已完成的发送/接收请求和错误信息。
     # This context manager must be used within an active forward context.
     # It encapsulates the entire KV connector lifecycle within execute_model
     @staticmethod
@@ -128,6 +137,10 @@ class KVConnectorModelRunnerMixin:
             if not defer_finalize:
                 kv_connector.clear_connector_metadata()
 
+    # 判断是否应使用统一 KV 缓存布局（所有层共享同一底层张量）。
+    # 统一布局使得同一 block 号下所有层的 KV 数据连续存储，
+    # 可高效地一次性传输所有层的 KV 数据，适用于 KV 连接器场景。
+    # 需同时满足：单一 KV 缓存组、连接器偏好跨层 block、注意力后端支持层维度。
     @staticmethod
     def use_uniform_kv_cache(
         attn_groups: list[list[AttentionGroup]],
@@ -194,6 +207,9 @@ class KVConnectorModelRunnerMixin:
         # check that attention backend include a layers dimension
         return len(kv_cache_stride_order) == len(kv_cache_shape) + 1
 
+    # 分配统一 KV 缓存张量：创建一个所有层共享的连续内存块，
+    # 根据注意力后端的步幅排序要求进行 reshape，
+    # 然后为每一层创建指向对应切片的视图。
     @staticmethod
     def allocate_uniform_kv_caches(
         kv_cache_config: KVCacheConfig,

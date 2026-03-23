@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试ApplyRotaryEmb自定义算子的分发行为，
+# 验证RotaryEmbedding的forward_native/forward_cuda/forward方法正确调用对应的ApplyRotaryEmb方法
 """
 Tests for ApplyRotaryEmb CustomOp dispatch behavior.
 
@@ -28,6 +30,7 @@ CUDA_DEVICES = ["cuda:0"]
 
 
 @dataclass
+# 旋转嵌入分发测试用例配置
 class RotaryEmbeddingTestCase:
     """Test case configuration for RotaryEmbedding dispatch tests."""
 
@@ -40,6 +43,7 @@ class RotaryEmbeddingTestCase:
     expect_forward: bool  # Should call ApplyRotaryEmb.forward()
 
 
+# 生成MRotaryEmbedding、XDRotaryEmbedding、Ernie4_5_VLRotaryEmbedding的测试用例
 def get_test_cases() -> list[RotaryEmbeddingTestCase]:
     """Generate test cases for all RotaryEmbedding classes."""
     from vllm.model_executor.layers.rotary_embedding.ernie45_vl_rope import (
@@ -104,6 +108,7 @@ def get_test_cases() -> list[RotaryEmbeddingTestCase]:
     ]
 
 
+# 执行分发测试：通过调用跟踪验证方法分发路径的正确性
 def run_dispatch_test(
     test_case: RotaryEmbeddingTestCase,
     device: str,
@@ -190,6 +195,7 @@ def run_dispatch_test(
 )
 @pytest.mark.parametrize("test_case", get_test_cases(), ids=lambda tc: tc.name)
 @pytest.mark.parametrize("device", CUDA_DEVICES)
+# 测试各RotaryEmbedding子类的方法分发是否指向正确的ApplyRotaryEmb方法
 def test_rotary_embedding_dispatch(
     test_case: RotaryEmbeddingTestCase,
     device: str,

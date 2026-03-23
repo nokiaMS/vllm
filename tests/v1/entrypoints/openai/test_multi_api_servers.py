@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试多API服务器实例：单次/流式补全在多服务器和数据并行下的请求负载均衡
 import asyncio
 import os
 
@@ -50,6 +51,7 @@ async def client(server):
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试多服务器下的单次补全和批量请求负载均衡
 async def test_single_completion(
     client: openai.AsyncOpenAI, server: RemoteOpenAIServer, model_name: str
 ) -> None:
@@ -105,6 +107,7 @@ async def test_single_completion(
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试多服务器下的流式补全和批量流式请求负载均衡
 async def test_completion_streaming(
     client: openai.AsyncOpenAI, server: RemoteOpenAIServer, model_name: str
 ) -> None:

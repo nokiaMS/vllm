@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# NVFP4量化测试的工具函数集，包含FP4反量化、swizzle布局转换和全局缩放因子计算
 import torch
 
 from vllm._custom_ops import scaled_fp4_quant
@@ -13,6 +14,7 @@ kE2M1ToFloat = torch.tensor(
 )
 
 
+# 将128x4 swizzle布局的缩放因子转换为线性布局
 def convert_swizzled_to_linear(a_sf_swizzled: torch.Tensor, m, k, block_size):
     m_tiles = (m + 128 - 1) // 128
     f = block_size * 4
@@ -23,6 +25,7 @@ def convert_swizzled_to_linear(a_sf_swizzled: torch.Tensor, m, k, block_size):
     return out[0:m, 0:k]
 
 
+# 将8x4 swizzle布局的缩放因子转换为线性布局
 def convert_swizzled_8x4_layout_to_linear(
     a_sf_swizzled: torch.Tensor, m, k, block_size
 ):
@@ -35,6 +38,7 @@ def convert_swizzled_8x4_layout_to_linear(
     return out[0:m, 0:k]
 
 
+# 将NVFP4量化张量反量化回高精度浮点类型
 def dequantize_nvfp4_to_dtype(
     tensor_fp4,
     tensor_sf,
@@ -64,6 +68,7 @@ def dequantize_nvfp4_to_dtype(
     return out.to(dtype=dtype)
 
 
+# 将uint8字节拆分为两个FP4值并转换为浮点数
 def break_fp4_bytes(a, dtype):
     assert a.dtype == torch.uint8
     m, n = a.shape
@@ -88,10 +93,12 @@ def break_fp4_bytes(a, dtype):
     return values.reshape(m, n * 2).to(dtype=dtype)
 
 
+# 计算NVFP4量化的全局缩放因子
 def get_nvfp4_global_scale(a: torch.Tensor):
     return (FLOAT8_E4M3_MAX * FLOAT4_E2M1_MAX) / torch.abs(a).max().to(torch.float32)
 
 
+# 对张量执行NVFP4量化，返回量化值、块缩放因子和全局缩放因子
 def quant_nvfp4_tensor(a: torch.Tensor):
     a_global_scale = get_nvfp4_global_scale(a)
     a_quant, a_block_scale = scaled_fp4_quant(a, a_global_scale)

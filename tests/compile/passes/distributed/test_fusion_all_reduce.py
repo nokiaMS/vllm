@@ -38,6 +38,7 @@ from vllm.utils.system_utils import update_environment_variables
 from vllm.utils.torch_utils import set_random_seed
 
 
+# AllReduce + RMSNorm 融合测试模型（无量化）
 class TestAllReduceRMSNormModel(torch.nn.Module):
     def __init__(self, hidden_size=16, token_num=16, eps=1e-6):
         super().__init__()
@@ -75,6 +76,7 @@ class TestAllReduceRMSNormModel(torch.nn.Module):
         return [torch.ops.vllm.flashinfer_trtllm_fused_allreduce_norm.default]
 
 
+# AllReduce + RMSNorm + FP8 静态量化融合测试模型
 class TestAllReduceRMSNormStaticQuantFP8Model(torch.nn.Module):
     quant_key = kFp8StaticTensorSym
 
@@ -126,6 +128,7 @@ class TestAllReduceRMSNormStaticQuantFP8Model(torch.nn.Module):
         ]
 
 
+# AllReduce + FusedAdd+RMSNorm + FP4 量化融合测试模型（需 Blackwell）
 class TestAllReduceFusedAddRMSNormStaticQuantFP4Model(torch.nn.Module):
     def __init__(self, hidden_size=16, token_num=16, eps=1e-6):
         super().__init__()
@@ -207,6 +210,7 @@ class TestAllReduceFusedAddRMSNormStaticQuantFP4Model(torch.nn.Module):
     reason="flashinfer is not found or flashinfer "
     "is not compiled with allreduce_fusion",
 )
+# 测试 AllReduceFusionPass 将 all_reduce+RMSNorm 替换为 flashinfer 融合操作
 def test_all_reduce_fusion_pass_replace(
     test_model: torch.nn.Module,
     batch_size: int,
@@ -247,6 +251,7 @@ def test_all_reduce_fusion_pass_replace(
     run_torch_spawn(all_reduce_fusion_pass_on_test_model, num_processes)
 
 
+# 在分布式环境中运行 AllReduce 融合 pass 并验证融合结果和输出正确性
 def all_reduce_fusion_pass_on_test_model(
     local_rank: int,
     world_size: int,

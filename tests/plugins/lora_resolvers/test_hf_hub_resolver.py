@@ -7,6 +7,8 @@ from huggingface_hub.constants import HF_HUB_CACHE
 
 from vllm.plugins.lora_resolvers.hf_hub_resolver import HfHubResolver
 
+# 测试 HuggingFace Hub LoRA 适配器解析器的各种路径解析场景
+
 LORA_LIB_MODEL_NAME = "ibm-granite/granite-3.3-8b-instruct"
 # Repo with multiple LoRAs contained in it
 LORA_LIB = "ibm-granite/granite-3.3-8b-rag-agent-lib"

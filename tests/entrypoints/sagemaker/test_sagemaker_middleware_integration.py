@@ -6,6 +6,9 @@
 Tests that customer middlewares get called correctly with a vLLM server.
 """
 
+# 集成测试 SageMaker 中间件加载器：验证客户自定义中间件（装饰器、环境变量）
+# 在 chat/completions、invocations、ping 等端点上的正确执行
+
 import os
 import tempfile
 
@@ -18,6 +21,7 @@ from .conftest import (
 )
 
 
+# 中间件与 vLLM 服务器的集成测试
 class TestMiddlewareIntegration:
     """Integration test for middleware with vLLM server."""
 

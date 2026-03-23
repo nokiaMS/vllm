@@ -11,6 +11,7 @@ from vllm import LLM
 from vllm.config import CompilationConfig, CompilationMode
 from vllm.platforms import current_platform
 
+# 测试各注意力后端与 CUDA 图模式的组合兼容性
 # test attention backend and cudagraph_mode combo
 # (backend_name, cudagraph_mode, supported)
 if current_platform.is_rocm():

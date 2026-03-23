@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试池化/嵌入模型的分块预填充和前缀缓存功能
 import pytest
 import torch.nn as nn
 
@@ -37,6 +38,7 @@ Oh, Lord, yeah
 """
 
 
+# [中文注释] 包装池化层，记录每次前向传播接收的hidden_states分块大小
 class WrapperPooler(nn.Module):
     def __init__(self, pooler):
         super().__init__()
@@ -55,12 +57,14 @@ class WrapperPooler(nn.Module):
         return self.pooler(hidden_states, pooling_metadata)
 
 
+# [中文注释] 将原始池化层替换为WrapperPooler以跟踪分块情况
 def inject_pooler(self):
     model = self.get_model()
     wrapper = WrapperPooler(model.pooler)
     model.pooler = wrapper
 
 
+# [中文注释] 从WrapperPooler中提取已记录的分块大小列表
 def retrieve_chunks(self):
     model = self.get_model()
     chunks = model.pooler.chunks
@@ -68,6 +72,7 @@ def retrieve_chunks(self):
     return chunks
 
 
+# [中文注释] 测试池化模型的分块预填充：验证启用时分块正确，禁用时不分块
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="CUDA not available")
 def test_pooling_chunked_prefill(vllm_runner, monkeypatch):
     """Test chunked prefill for pooling models with LastPool."""
@@ -121,6 +126,7 @@ def test_pooling_chunked_prefill(vllm_runner, monkeypatch):
         assert chunks[0] == prompt_len
 
 
+# [中文注释] 测试池化模型的前缀缓存：验证共享前缀的提示能利用缓存减少计算量
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="CUDA not available")
 def test_pooling_prefix_cache(vllm_runner, monkeypatch):
     """Test chunked prefill for pooling models with LastPool."""

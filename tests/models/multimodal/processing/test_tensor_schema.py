@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 TensorSchema 张量模式验证框架，验证多模态输入的形状和绑定约束
 import tempfile
 from collections.abc import Iterable
 from contextlib import contextmanager

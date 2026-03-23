@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试Gemma系列模型（gemma-2b/gemma-2-2b/gemma-3-4b-it）的困惑度
+
 import pytest
 
 from tests.models.utils import GenerateModelInfo

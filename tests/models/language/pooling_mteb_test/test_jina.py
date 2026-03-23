@@ -44,6 +44,7 @@ RERANK_MODELS = [
 ]
 
 
+# 测试 Jina 嵌入模型（jina-embeddings-v3）在 MTEB 基准上的评分
 @pytest.mark.parametrize("model_info", EMBEDDING_MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     def hf_model_callback(model):
@@ -54,6 +55,7 @@ def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -
     )
 
 
+# 测试 Jina 嵌入模型的输出正确性：与 HuggingFace 模型的嵌入进行对比
 @pytest.mark.parametrize("model_info", EMBEDDING_MODELS)
 def test_embed_models_correctness(
     hf_runner, vllm_runner, model_info: EmbedModelInfo, example_prompts
@@ -70,6 +72,7 @@ def test_embed_models_correctness(
     )
 
 
+# 测试 Jina 重排序模型在 MTEB 重排序基准上的性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
     mteb_test_rerank_models(vllm_runner, model_info)
@@ -78,6 +81,7 @@ def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
 @pytest.mark.parametrize("model_info", EMBEDDING_MODELS)
 @pytest.mark.parametrize("dtype", ["half"])
 @pytest.mark.parametrize("dimensions", [16, 32])
+# 测试 Jina 模型的 Matryoshka 嵌入功能：验证不同维度的嵌入截断是否与 SentenceTransformers 一致
 def test_matryoshka(
     hf_runner,
     vllm_runner,

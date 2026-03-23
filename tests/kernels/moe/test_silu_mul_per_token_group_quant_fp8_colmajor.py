@@ -17,6 +17,7 @@ FLOAT8_DTYPE = torch.float8_e4m3fn
 GROUP_SIZE = 128
 
 
+# [中文注释] 参考量化函数：使用Triton内核进行逐token组FP8列主序量化
 def reference_quant(x: torch.Tensor, use_ue8m0: bool):
     """
     Reference triton quant kernel from,
@@ -59,6 +60,7 @@ def reference_quant(x: torch.Tensor, use_ue8m0: bool):
     return x_q, x_s
 
 
+# [中文注释] 完整参考实现：先执行SiLU*Mul激活，再进行FP8量化
 def reference(x: torch.Tensor, use_ue8m0: bool) -> tuple[torch.Tensor, torch.Tensor]:
     T, N = x.size()
     ref_act_out = torch.empty((T, N // 2), dtype=torch.bfloat16, device="cuda")
@@ -72,6 +74,7 @@ def reference(x: torch.Tensor, use_ue8m0: bool) -> tuple[torch.Tensor, torch.Ten
     current_platform.is_rocm(),
     reason="ROCm does not support DeepGemm.",
 )
+# [中文注释] 测试SiLU*Mul+逐token组FP8列主序量化内核与参考实现的数值一致性
 def test_silu_mul_fp8_quant_deep_gemm(T: int, N: int):
     set_random_seed(42)
 

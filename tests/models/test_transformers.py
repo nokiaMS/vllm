@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Transformers建模后端的功能，包括生成、嵌入、量化和分布式推理
 """Test the functionality of the Transformers modeling backend."""
 
 from typing import Any
@@ -12,12 +13,14 @@ from .registry import HF_EXAMPLE_MODELS
 from .utils import check_embeddings_close, check_logprobs_close
 
 
+# 根据架构名获取模型ID，检查transformers版本兼容性
 def get_model(arch: str) -> str:
     model_info = HF_EXAMPLE_MODELS.get_hf_info(arch)
     model_info.check_transformers_version(on_fail="skip")
     return model_info.default
 
 
+# 对比Transformers后端与参考实现的logprobs输出
 def check_implementation(
     runner_ref: type[HfRunner | VllmRunner],
     runner_test: type[VllmRunner],
@@ -65,6 +68,7 @@ def check_implementation(
         ("allenai/OLMoE-1B-7B-0924", "transformers"),  # MoE
     ],
 )  # trust_remote_code=True by default
+# 测试多种模型在Transformers后端下的生成正确性
 def test_models(
     hf_runner: type[HfRunner],
     vllm_runner: type[VllmRunner],
@@ -88,6 +92,7 @@ def test_models(
     )
 
 
+# 测试混合注意力机制模型的Transformers后端正确性
 def test_hybrid_attention(vllm_runner: type[VllmRunner]) -> None:
     prompts, _, _ = prep_prompts(4, (800, 801))
     kwargs_ref = {"max_model_len": 8192, "enforce_eager": True}
@@ -103,6 +108,7 @@ def test_hybrid_attention(vllm_runner: type[VllmRunner]) -> None:
 
 
 @multi_gpu_test(num_gpus=2)
+# 测试Transformers后端在多GPU张量并行下的分布式推理
 def test_distributed(
     hf_runner: type[HfRunner],
     vllm_runner: type[VllmRunner],
@@ -134,6 +140,7 @@ def test_distributed(
 )
 @pytest.mark.parametrize("max_tokens", [32])
 @pytest.mark.parametrize("num_logprobs", [5])
+# 测试Transformers后端对量化模型（AWQ/GPTQ/BitsAndBytes）的支持
 def test_quantization(
     vllm_runner: type[VllmRunner],
     example_prompts: list[str],
@@ -182,6 +189,7 @@ def test_quantization(
         "meta-llama/Llama-3.2-1B-Instruct",
     ],
 )
+# 测试Transformers后端能否正确加载嵌入模型的层结构
 def test_embed_loading(vllm_runner, model):
     with vllm_runner(
         model,
@@ -197,6 +205,7 @@ def test_embed_loading(vllm_runner, model):
 @pytest.mark.parametrize(
     "arch", ["TransformersEmbeddingModel", "TransformersForSequenceClassification"]
 )
+# 测试Transformers后端的池化模型（嵌入和序列分类）
 def test_pooling(hf_runner, vllm_runner, example_prompts, arch):
     model = get_model(arch)
 

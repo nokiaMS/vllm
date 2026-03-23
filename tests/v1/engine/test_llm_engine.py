@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试LLM引擎：并行采样、引擎指标和skip_tokenizer_init兼容性
 import random
 from typing import TYPE_CHECKING
 

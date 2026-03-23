@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试BGE-M3多功能嵌入模型的API服务器功能，
+# 包括稠密嵌入、稀疏词汇匹配和ColBERT多向量交互
+
 import httpx
 import openai
 import pytest

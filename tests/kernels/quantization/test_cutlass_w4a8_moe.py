@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试CUTLASS W4A8分组GEMM内核和完整MoE（混合专家）层的正确性
 """
 Tests for the CUTLASS-based W4A8 grouped GEMM kernel and the full MoE layer.
 """
@@ -24,11 +25,13 @@ IS_SUPPORTED_BY_GPU = (
 )
 
 
+# 将张量裁剪并转换为FP8类型
 def to_fp8(tensor: torch.Tensor) -> torch.Tensor:
     finfo = torch.finfo(torch.float8_e4m3fn)
     return tensor.clamp(min=finfo.min, max=finfo.max).to(dtype=torch.float8_e4m3fn)
 
 
+# 量化权重为W4格式并计算反量化参考值
 def cutlass_quantize(
     atype: torch.dtype,
     w: torch.Tensor,
@@ -63,6 +66,7 @@ def cutlass_quantize(
     return w_ref, w_q, w_s.to(atype), w_zp
 
 
+# 对专家权重和缩放因子执行CUTLASS编码重排序和打包
 def cutlass_preprocess(
     w_q_experts: list[torch.Tensor], w_s_experts: list[torch.Tensor]
 ):
@@ -96,6 +100,7 @@ TEST_SHAPES = [
 ALIGNMENT = 16  # torch._scaled_mm alignment for M, needed for reference check
 
 
+# W4A8 MoE测试配置数据类，包含所有专家的权重、缩放因子和激活张量
 @dataclass
 class MoETestSetup:
     num_experts: int
@@ -119,6 +124,7 @@ class MoETestSetup:
     group_scale_strides: torch.Tensor
 
 
+# 创建W4A8 MoE测试的完整张量配置
 def make_moe_test_setup(
     num_experts: int,
     K: int,
@@ -216,6 +222,7 @@ def make_moe_test_setup(
     )
 
 
+# 使用torch._scaled_mm逐专家计算MoE参考输出
 def compute_moe_reference_output(setup: MoETestSetup) -> torch.Tensor:
     """Compute reference output using torch._scaled_mm per expert."""
     out_ref = torch.empty_like(setup.out)
@@ -241,6 +248,7 @@ def compute_moe_reference_output(setup: MoETestSetup) -> torch.Tensor:
     return out_ref
 
 
+# 端到端测试W4A8 MoE分组GEMM的正确性（含随机零token专家场景）
 @pytest.mark.skipif(
     not IS_SUPPORTED_BY_GPU,
     reason="W4A8 Grouped GEMM is not supported on this GPU type.",
@@ -275,6 +283,7 @@ def test_cutlass_w4a8_moe_mm_end_to_end(shape, random_zero):
     torch.testing.assert_close(setup.out, out_ref, rtol=1e-2, atol=1e-2)
 
 
+# 用于验证CUDA Graph兼容性的W4A8 MoE层封装
 class W4A8MoELayer(torch.nn.Module):
     """
     Minimal wrapper module to test cuda graphs
@@ -304,6 +313,7 @@ class W4A8MoELayer(torch.nn.Module):
         return s.out
 
 
+# 测试W4A8 MoE分组GEMM在CUDA Graph模式下的正确性
 @pytest.mark.skipif(
     not IS_SUPPORTED_BY_GPU,
     reason="W4A8 Grouped GEMM is not supported on this GPU type.",

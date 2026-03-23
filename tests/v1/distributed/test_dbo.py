@@ -54,6 +54,7 @@ DEEPEP_BACKENDS = [
         "(doesn't meet expectation of MIN_ACCURACY = 0.62)"
     ),
 )
+# [中文注释] 测试双批次重叠(DBO)在数据并行+专家并行场景下的GSM8K评估正确性
 def test_dbo_dp_ep_gsm8k(all2all_backend: str, num_gpus_available):
     """
     Test DBO with DP+EP using GSM8K evaluation.

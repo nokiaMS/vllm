@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试补全错误处理：finish_reason='error' 的非流式/流式行为、json_schema 验证和负 token ID 验证]
 
 from dataclasses import dataclass, field
 from typing import Any
@@ -70,6 +71,7 @@ class MockVllmConfig:
     parallel_config: MockParallelConfig
 
 
+# [构建用于测试的 OpenAIServingCompletion 实例]
 def _build_serving_completion(engine: AsyncLLM) -> OpenAIServingCompletion:
     models = OpenAIServingModels(
         engine_client=engine,
@@ -102,6 +104,7 @@ def _build_renderer(model_config: MockModelConfig):
 
 
 @pytest.mark.asyncio
+# [测试非流式补全中 finish_reason='error' 返回 500 InternalServerError]
 async def test_completion_error_non_stream():
     """test finish_reason='error' returns 500 InternalServerError (non-streaming)"""
     mock_engine = MagicMock(spec=AsyncLLM)
@@ -152,6 +155,7 @@ async def test_completion_error_non_stream():
 
 
 @pytest.mark.asyncio
+# [测试流式补全中 finish_reason='error' 返回错误消息和 DONE 标记]
 async def test_completion_error_stream():
     """test finish_reason='error' returns 500 InternalServerError (streaming)"""
     mock_engine = MagicMock(spec=AsyncLLM)
@@ -233,6 +237,7 @@ async def test_completion_error_stream():
     assert chunks[-1] == "data: [DONE]\n\n"
 
 
+# [测试 json_schema 响应格式缺少 schema 字段应触发验证错误]
 def test_json_schema_response_format_missing_schema():
     """When response_format type is 'json_schema' but the json_schema field
     is not provided, request construction should raise a validation error
@@ -246,6 +251,7 @@ def test_json_schema_response_format_missing_schema():
         )
 
 
+# [测试嵌套列表中的负 token ID 应触发验证错误]
 def test_negative_prompt_token_ids_nested():
     """Negative token IDs in prompt (nested list) should raise validation error."""
     with pytest.raises(Exception, match="greater than or equal to 0"):
@@ -256,6 +262,7 @@ def test_negative_prompt_token_ids_nested():
         )
 
 
+# [测试扁平列表中的负 token ID 应触发验证错误]
 def test_negative_prompt_token_ids_flat():
     """Negative token IDs in prompt (flat list) should raise validation error."""
     with pytest.raises(Exception, match="greater than or equal to 0"):

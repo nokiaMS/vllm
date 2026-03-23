@@ -3,6 +3,8 @@
 
 """Shared fixtures and utilities for SageMaker tests."""
 
+# SageMaker 测试的共享 fixture：模型常量、LoRA 文件下载、带 LoRA 的服务器实例和异步客户端
+
 import pytest
 import pytest_asyncio
 

@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试各种嵌入模型（解码器/编码器/交叉编码器）的输出正确性，
+# 对比HF sentence-transformers与vLLM的嵌入结果
+
 import pytest
 
 from vllm.config import PoolerConfig

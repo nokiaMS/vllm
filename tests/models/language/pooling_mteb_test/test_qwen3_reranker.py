@@ -44,6 +44,7 @@ RERANK_MODELS = [
 ]
 
 
+# HuggingFace Qwen3 重排序运行器：使用因果语言模型和 "yes"/"no" token 的 log_softmax 进行相关性评分
 class Qwen3RerankerHfRunner(MtebCrossEncoderMixin, HfRunner):
     def __init__(
         self, model_name: str, dtype: str = "auto", *args: Any, **kwargs: Any
@@ -108,11 +109,13 @@ class Qwen3RerankerHfRunner(MtebCrossEncoderMixin, HfRunner):
         return torch.Tensor(scores)
 
 
+# 测试 Qwen3 重排序模型在 MTEB 重排序基准上的性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
     mteb_test_rerank_models(vllm_runner, model_info, hf_runner=Qwen3RerankerHfRunner)
 
 
+# 测试 Qwen3 重排序模型在多 GPU 张量并行（TP=2）下的 MTEB 重排序性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 @multi_gpu_test(num_gpus=2)
 def test_rerank_models_mteb_tp(vllm_runner, model_info: RerankModelInfo) -> None:

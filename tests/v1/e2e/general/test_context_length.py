@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试解码器模型的最大上下文长度验证，确保超出限制时抛出正确的ValueError
 """
 Tests for vLLM `vllm/v1/engine/processor.Processor._validate_model_input()`
 handling of maximum context length for decoder models.
@@ -17,6 +18,7 @@ from tests.conftest import VllmRunner
 from tests.utils import create_new_process_for_each_test
 
 
+# [中文注释] 测试当提示长度接近或达到最大模型长度时，解码器模型输入验证的边界情况
 @create_new_process_for_each_test()
 @pytest.mark.parametrize("model, max_model_len", [("JackFram/llama-160m", 2048)])
 @pytest.mark.parametrize(

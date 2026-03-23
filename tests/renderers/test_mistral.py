@@ -50,6 +50,7 @@ class MockVllmConfig:
     parallel_config: MockParallelConfig
 
 
+# [中文注释] 测试MistralRenderer的异步分词不会阻塞事件循环
 @pytest.mark.asyncio
 async def test_async_mistral_tokenizer_does_not_block_event_loop():
     expected_tokens = [1, 2, 3]
@@ -90,6 +91,7 @@ async def test_async_mistral_tokenizer_does_not_block_event_loop():
     assert blocked_count == 0, "Event loop blocked during tokenization"
 
 
+# [中文注释] 测试Mistral聊天模板中thinking chunk的正确处理，验证THINK标签的渲染
 def test_apply_mistral_chat_template_thinking_chunk():
     messages = [
         {

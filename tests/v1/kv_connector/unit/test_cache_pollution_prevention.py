@@ -26,6 +26,7 @@ from .utils import (
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 辅助函数：创建get_num_new_matched_tokens回调，根据请求ID返回预设匹配token数。
 def _make_get_num_new_matched_tokens(
     req_num_new_matched_tokens: dict[str, int],
     async_load: bool,
@@ -37,6 +38,7 @@ def _make_get_num_new_matched_tokens(
     return get_num_new_matched_tokens
 
 
+# [中文注释] 测试夹具：创建使用'fail'策略的调度器，用于测试失败场景。
 @pytest.fixture
 def fail_scheduler():
     """scheduler with kv_load_failure_policy='fail'"""
@@ -45,6 +47,7 @@ def fail_scheduler():
     return create_scheduler(vllm_config)
 
 
+# [中文注释] 测试用例：验证同步加载失败时无效块会从前缀缓存中驱逐，防止缓存污染被后续请求复用。
 def test_invalid_blocks_evicted_prevents_cache_pollution(
     fail_scheduler: Scheduler,
 ):

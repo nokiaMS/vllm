@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 PyNccl 通信库的各种操作（AllReduce、AllGather、ReduceScatter、Send/Recv、Broadcast 等）
 
 import os
 

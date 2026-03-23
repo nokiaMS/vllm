@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Mamba SSM（选择性状态空间模型）内核的正确性，
+# 覆盖选择性扫描、状态更新、变长序列、批量索引、多头和推测解码令牌场景
 
 import pytest
 import torch
@@ -16,6 +18,7 @@ from vllm.utils.torch_utils import set_random_seed
 from vllm.v1.attention.backends.utils import PAD_SLOT_ID
 
 
+# 选择性状态更新的参考实现，支持多头、分组和门控z
 def selective_state_update_ref(
     state, x, dt, A, B, C, D=None, z=None, dt_bias=None, dt_softplus=False
 ):
@@ -88,6 +91,7 @@ def selective_state_update_ref(
     return out
 
 
+# 选择性扫描的参考实现，逐时间步递推计算SSM输出
 def selective_scan_ref(
     u,
     delta,
@@ -164,6 +168,7 @@ def selective_scan_ref(
     return out if not return_last_state else (out, final_state_out)
 
 
+# 对选择性扫描自定义算子执行opcheck验证（schema和faketensor）
 def selective_scan_opcheck_fn(
     u,
     delta,
@@ -251,6 +256,7 @@ def selective_scan_opcheck_fn(
 @pytest.mark.parametrize("is_variable_C", [True])
 @pytest.mark.parametrize("is_variable_B", [True])
 @pytest.mark.parametrize("scan_chunks", [1, 3])
+# 测试选择性扫描内核的正确性，支持分块扫描和可变B/C矩阵
 def test_selective_scan(
     is_variable_B,
     is_variable_C,
@@ -397,6 +403,7 @@ def test_selective_scan(
 @pytest.mark.parametrize("has_z", [False, True])
 @pytest.mark.parametrize("dstate", [16, 64])
 @pytest.mark.parametrize("dim", [2048, 2048 + 16, 4096])
+# 测试单步选择性状态更新内核的基本正确性
 def test_selective_state_update(dim, dstate, has_z, itype):
     device = "cuda"
     rtol, atol = (3e-4, 1e-3) if itype == torch.float32 else (5e-3, 1e-2)
@@ -434,6 +441,7 @@ def test_selective_state_update(dim, dstate, has_z, itype):
 @pytest.mark.parametrize("dstate", [16, 64])
 @pytest.mark.parametrize("dim", [2048, 2048 + 16, 4096])
 @pytest.mark.parametrize("max_seq_len", [1, 2, 4])
+# 测试变长序列下选择性状态更新，逐token与参考实现对比
 def test_selective_state_update_varlen(dim, dstate, has_z, itype, max_seq_len):
     device = "cuda"
     rtol, atol = (3e-4, 1e-3) if itype == torch.float32 else (5e-3, 1e-2)
@@ -516,6 +524,7 @@ def test_selective_state_update_varlen(dim, dstate, has_z, itype, max_seq_len):
 @pytest.mark.parametrize("is_variable_B", [True])
 # tests correctness in case subset of the sequences are padded
 @pytest.mark.parametrize("with_padding", [False, True])
+# 测试变长序列下选择性扫描的正确性，包含PAD填充和初始状态处理
 def test_selective_scan_varlen(
     with_padding,
     is_variable_B,
@@ -688,6 +697,7 @@ def test_selective_scan_varlen(
 @pytest.mark.parametrize("dim", [2048, 2048 + 16, 4096])
 # tests correctness in case subset of the sequences are padded
 @pytest.mark.parametrize("with_padding", [True, False])
+# 测试带批量索引和PAD填充的选择性状态更新，验证未使用状态不被修改
 def test_selective_state_update_with_batch_indices(
     with_padding, dim, dstate, has_z, itype
 ):
@@ -778,6 +788,7 @@ def test_selective_state_update_with_batch_indices(
 @pytest.mark.parametrize("ngroups", [1, 4])
 @pytest.mark.parametrize("dstate", [16, 64])
 @pytest.mark.parametrize("dim", [2048, 4096])
+# 测试多头模式下带批量索引的选择性状态更新，支持tie_hdim和分组
 def test_selective_state_update_with_heads_with_batch_indices(
     dim, dstate, ngroups, has_z, tie_hdim, itype
 ):
@@ -851,6 +862,7 @@ def test_selective_state_update_with_heads_with_batch_indices(
 @pytest.mark.parametrize("dstate", [16, 64])
 @pytest.mark.parametrize("dim", [2048, 4096])
 @pytest.mark.parametrize("max_seq_len", [2, 4])
+# 测试推测解码场景下的状态更新，验证num_accepted_tokens控制的状态写入正确性
 def test_selective_state_update_with_num_accepted_tokens(
     dim, dstate, has_z, itype, max_seq_len
 ):
@@ -977,6 +989,7 @@ def test_selective_state_update_with_num_accepted_tokens(
 @pytest.mark.parametrize("dstate", [16, 64])
 @pytest.mark.parametrize("dim", [2048, 4096])
 @pytest.mark.parametrize("max_seq_len", [2, 4])
+# 测试变长序列+推测解码令牌数下的状态更新，验证每个目标槽位的状态正确性
 def test_selective_state_update_varlen_with_num_accepted(
     dim, dstate, has_z, itype, max_seq_len
 ):

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 LoRA 管理器的适配器加载、卸载、LRU 缓存和并发管理功能
 
 import os
 

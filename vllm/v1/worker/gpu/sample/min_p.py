@@ -5,6 +5,11 @@ import torch
 from vllm.triton_utils import tl, triton
 
 
+# Triton Min-P 采样过滤内核
+# Min-P 是一种动态截断策略：以最大 logit 值为基准，过滤掉概率低于 min_p * max_prob 的 token
+# 算法：先找到全局最大 logit，计算阈值 threshold = max_logit + log(min_p)，
+# 然后将低于阈值的 logit 设为 -inf
+# 在 log 空间中比较等价于在概率空间中比较 p < min_p * max_prob
 @triton.jit
 def _min_p_kernel(
     logits_ptr,
@@ -45,6 +50,7 @@ def _min_p_kernel(
         tl.store(logits_ptr + token_idx * logits_stride + block, logits, mask=mask)
 
 
+# Min-P 过滤的入口函数，对每个 token 位置启动一个 Triton 内核实例
 def apply_min_p(
     logits: torch.Tensor, expanded_idx_mapping: torch.Tensor, min_p: torch.Tensor
 ) -> None:

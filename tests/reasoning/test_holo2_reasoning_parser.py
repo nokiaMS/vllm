@@ -14,11 +14,13 @@ from vllm.reasoning.identity_reasoning_parser import IdentityReasoningParser
 REASONING_MODEL_NAME = "HCompany/Holo2-4B"
 
 
+# [中文注释] 加载Holo2模型分词器夹具
 @pytest.fixture(scope="module")
 def tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
 
 
+# [中文注释] 测试Holo2根据thinking参数选择DeepSeekR1或Identity解析器
 @pytest.mark.parametrize(
     "thinking,expected_parser_type",
     [
@@ -37,12 +39,14 @@ def test_parser_selection(tokenizer, thinking, expected_parser_type):
     assert isinstance(parser._parser, expected_parser_type)
 
 
+# [中文注释] 测试Holo2默认使用DeepSeekR1解析器
 def test_holo2_default_parser_is_deepseekr1(tokenizer):
     parser = Holo2ReasoningParser(tokenizer)
 
     assert isinstance(parser._parser, DeepSeekR1ReasoningParser)
 
 
+# [中文注释] 测试Holo2支持结构化输出：验证推理结束判断在StructuredOutputManager中的正确性
 def test_holo2_supports_structured_output(tokenizer):
     # Structured output manager uses the reasoning parser to check if the
     # reasoning content is ended before applying the grammar. The main function
@@ -166,6 +170,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试Holo2推理提取：支持chat_template_kwargs控制thinking行为
 @pytest.mark.parametrize("streaming, param_dict, chat_template_kwargs", TEST_CASES)
 def test_reasoning(
     streaming: bool,

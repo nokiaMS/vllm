@@ -17,6 +17,7 @@ from vllm.transformers_utils.utils import (
 )
 
 
+# [中文注释] 测试GCS（Google Cloud Storage）路径检测
 def test_is_gcs():
     assert is_gcs("gs://model-path")
     assert not is_gcs("s3://model-path/path-to-model")
@@ -24,6 +25,7 @@ def test_is_gcs():
     assert not is_gcs("nfs://nfs-fqdn.local")
 
 
+# [中文注释] 测试S3路径检测
 def test_is_s3():
     assert is_s3("s3://model-path/path-to-model")
     assert not is_s3("gs://model-path")
@@ -31,6 +33,7 @@ def test_is_s3():
     assert not is_s3("nfs://nfs-fqdn.local")
 
 
+# [中文注释] 测试云存储路径检测（GCS和S3均为云存储）
 def test_is_cloud_storage():
     assert is_cloud_storage("gs://model-path")
     assert is_cloud_storage("s3://model-path/path-to-model")
@@ -38,6 +41,7 @@ def test_is_cloud_storage():
     assert not is_cloud_storage("nfs://nfs-fqdn.local")
 
 
+# [中文注释] 测试is_remote_gguf函数：远程GGUF格式识别（repo:quant_type模式）
 class TestIsRemoteGGUF:
     """Test is_remote_gguf utility function."""
 
@@ -111,6 +115,7 @@ class TestIsRemoteGGUF:
         assert not is_remote_gguf("gs://repo/model:Q8_0")
 
 
+# [中文注释] 测试split_remote_gguf函数：解析repo_id和quant_type的拆分
 class TestSplitRemoteGGUF:
     """Test split_remote_gguf utility function."""
 
@@ -159,6 +164,7 @@ class TestSplitRemoteGGUF:
             split_remote_gguf("s3://bucket/repo/model:Q2_K")
 
 
+# [中文注释] 测试is_gguf函数：本地和远程GGUF模型文件的综合检测
 class TestIsGGUF:
     """Test is_gguf utility function."""
 

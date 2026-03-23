@@ -5,6 +5,7 @@ import pytest
 from vllm.utils.collection_utils import common_prefix, swap_dict_values
 
 
+# [中文注释] 测试common_prefix函数：验证多个字符串的最长公共前缀计算
 @pytest.mark.parametrize(
     ("inputs", "expected_output"),
     [
@@ -21,6 +22,7 @@ def test_common_prefix(inputs, expected_output):
     assert common_prefix(inputs) == expected_output
 
 
+# [中文注释] 测试swap_dict_values函数：验证交换字典中两个键对应值的各种情况
 @pytest.mark.parametrize(
     ("obj", "key1", "key2"),
     [

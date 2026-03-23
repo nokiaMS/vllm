@@ -13,6 +13,7 @@ from vllm.config import PoolerConfig
     ["jason9693/Qwen2.5-1.5B-apeach", "papluca/xlm-roberta-base-language-detection"],
 )
 @pytest.mark.parametrize("dtype", ["half"])
+# 测试 PoolerConfig 的 use_activation 参数对分类模型输出的影响，验证激活函数（softmax）是否正确应用
 def test_classify_models_using_activation(
     hf_runner,
     vllm_runner,
@@ -55,6 +56,7 @@ def test_classify_models_using_activation(
     ],
 )
 @pytest.mark.parametrize("dtype", ["half"])
+# 测试 PoolerConfig 的 use_activation 参数对嵌入模型的归一化效果，验证 L2 归一化是否正确应用
 def test_embed_models_using_normalize(
     hf_runner,
     vllm_runner,
@@ -93,6 +95,7 @@ def test_embed_models_using_normalize(
     ],
 )
 @pytest.mark.parametrize("dtype", ["half"])
+# 测试 PoolerConfig 的 use_activation 参数对奖励模型输出的影响，验证激活函数是否正确应用
 def test_reward_models_using_activation(
     hf_runner,
     vllm_runner,
@@ -135,6 +138,7 @@ def test_reward_models_using_activation(
     ],
 )
 @pytest.mark.parametrize("dtype", ["half"])
+# 测试 PoolerConfig 的 use_activation 参数对多向量检索模型的归一化效果
 def test_multi_vector_retrieval_models_using_normalize(
     hf_runner,
     vllm_runner,

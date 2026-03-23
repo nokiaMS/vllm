@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 Anthropic Messages API 兼容端点：简单消息、系统消息、流式、工具调用]
 
 import anthropic
 import pytest
@@ -34,6 +35,7 @@ async def client(server):
 
 
 @pytest.mark.asyncio
+# [测试简单的 Anthropic Messages 请求和响应]
 async def test_simple_messages(client: anthropic.AsyncAnthropic):
     resp = await client.messages.create(
         model="claude-3-7-sonnet-latest",
@@ -47,6 +49,7 @@ async def test_simple_messages(client: anthropic.AsyncAnthropic):
 
 
 @pytest.mark.asyncio
+# [测试带系统消息的 Anthropic Messages 请求]
 async def test_system_message(client: anthropic.AsyncAnthropic):
     resp = await client.messages.create(
         model="claude-3-7-sonnet-latest",
@@ -61,6 +64,7 @@ async def test_system_message(client: anthropic.AsyncAnthropic):
 
 
 @pytest.mark.asyncio
+# [测试 Anthropic Messages 流式响应：验证 message_start 和 usage 信息]
 async def test_anthropic_streaming(client: anthropic.AsyncAnthropic):
     resp = await client.messages.create(
         model="claude-3-7-sonnet-latest",
@@ -88,6 +92,7 @@ async def test_anthropic_streaming(client: anthropic.AsyncAnthropic):
 
 
 @pytest.mark.asyncio
+# [测试 Anthropic Messages 的非流式工具调用]
 async def test_anthropic_tool_call(client: anthropic.AsyncAnthropic):
     resp = await client.messages.create(
         model="claude-3-7-sonnet-latest",
@@ -121,6 +126,7 @@ async def test_anthropic_tool_call(client: anthropic.AsyncAnthropic):
 
 
 @pytest.mark.asyncio
+# [测试 Anthropic Messages 的流式工具调用]
 async def test_anthropic_tool_call_streaming(client: anthropic.AsyncAnthropic):
     resp = await client.messages.create(
         model="claude-3-7-sonnet-latest",

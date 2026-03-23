@@ -12,6 +12,7 @@ from unittest.mock import patch
 import pytest
 
 
+# [中文注释] 测试AITER MLA FP8支持检测函数的错误处理和结果缓存
 class TestAiterMlaFp8SupportCheck:
     """Test cases for _check_aiter_mla_fp8_support() function."""
 

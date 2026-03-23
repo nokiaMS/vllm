@@ -13,6 +13,7 @@ from vllm.model_executor.models.utils import WeightsMapper, maybe_prefix
 from vllm.sequence import IntermediateTensors
 
 
+# 测试用的虚拟 Gemma2 嵌入模型，返回全零嵌入向量
 class MyGemma2Embedding(nn.Module):
     is_pooling_model = True
 

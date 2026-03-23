@@ -65,6 +65,7 @@ MNK_FACTORS = [
 vllm_config = VllmConfig(parallel_config=ParallelConfig(pipeline_parallel_size=1))
 
 
+# [中文注释] 对多批次输入进行逐张量FP8量化
 def quant_fp8_per_tensor_batches(a):
     num_batches = a.size(0)
     a_quant = []
@@ -83,6 +84,7 @@ def quant_fp8_per_tensor_batches(a):
     return result_a_quant, result_a_scales
 
 
+# [中文注释] 检查精度：验证实际输出与参考输出在给定容差内的匹配百分比
 def check_accuracy(ref_output, actual_output, atol=0.1, rtol=0.85, percent=0.925):
     close = torch.isclose(ref_output, actual_output, atol=atol, rtol=rtol)
     match_ratio = close.float().mean()
@@ -98,6 +100,7 @@ def check_accuracy(ref_output, actual_output, atol=0.1, rtol=0.85, percent=0.925
 
 
 @dataclass
+# [中文注释] FlashInfer MoE测试数据容器，包含权重、缩放因子和路由信息
 class TestData:
     hidden_states: torch.Tensor
     w13_quantized: torch.Tensor
@@ -192,6 +195,7 @@ class TestData:
 @pytest.mark.parametrize("e", NUM_EXPERTS)
 @pytest.mark.parametrize("topk", TOP_KS)
 @pytest.mark.parametrize("activation", [MoEActivation.SILU, MoEActivation.RELU2_NO_MUL])
+# [中文注释] 测试FlashInfer逐张量FP8 MoE（TRT-LLM后端）与参考实现的数值一致性
 def test_flashinfer_per_tensor_moe_fp8_no_graph(
     m: int,
     n: int,
@@ -277,6 +281,7 @@ def test_flashinfer_per_tensor_moe_fp8_no_graph(
 @pytest.mark.parametrize("e", NUM_EXPERTS)
 @pytest.mark.parametrize("topk", TOP_KS)
 @pytest.mark.parametrize("activation", [MoEActivation.SILU, MoEActivation.RELU2_NO_MUL])
+# [中文注释] 测试FlashInfer CUTLASS FP8 MoE内核在不同配置下的计算正确性
 def test_flashinfer_cutlass_moe_fp8_no_graph(
     m: int,
     n: int,
@@ -392,6 +397,7 @@ def test_flashinfer_cutlass_moe_fp8_no_graph(
         (64, 4096, 4096),
     ],
 )
+# [中文注释] 测试MoE权重到FlashInfer TRT-LLM块布局的转换正确性
 def test_convert_moe_weights_to_flashinfer_trtllm_block_layout(
     num_experts, intermediate, hidden
 ):

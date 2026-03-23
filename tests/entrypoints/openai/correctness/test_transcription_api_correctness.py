@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [通过计算 WER（词错误率）评估转录 API 的正确性]
 """
 Evaluate Transcription API correctness by computing Word Error Rate (WER)
 on a given ASR dataset. When provided, it will also compare the WER against
@@ -24,6 +25,7 @@ from transformers import AutoTokenizer
 from ....utils import RemoteOpenAIServer
 
 
+# [将音频数组转换为 WAV 格式的字节流]
 def to_bytes(y, sr):
     buffer = io.BytesIO()
     soundfile.write(buffer, y, sr, format="WAV")
@@ -31,6 +33,7 @@ def to_bytes(y, sr):
     return buffer
 
 
+# [异步转录单个音频并返回延迟、token 数和文本]
 async def transcribe_audio(client, tokenizer, y, sr):
     # Send loaded audio directly instead of loading from disk,
     # don't account for that time though
@@ -51,6 +54,7 @@ async def transcribe_audio(client, tokenizer, y, sr):
     return latency, num_output_tokens, transcription.text
 
 
+# [使用信号量限制并发的转录请求并归一化输出]
 async def bound_transcribe(sem, client, tokenizer, audio, reference):
     # Use semaphore to limit concurrent requests.
     async with sem:
@@ -61,6 +65,7 @@ async def bound_transcribe(sem, client, tokenizer, audio, reference):
         return result[:2] + (out, ref)
 
 
+# [并发处理整个数据集的转录任务]
 async def process_dataset(model, client, data, concurrent_request):
     sem = asyncio.Semaphore(concurrent_request)
 
@@ -81,6 +86,7 @@ async def process_dataset(model, client, data, concurrent_request):
     return await asyncio.gather(*tasks)
 
 
+# [打印转录性能指标：延迟、吞吐量等]
 def print_performance_metrics(results, total_time):
     latencies = [res[0] for res in results]
     total_tokens = sum([res[1] for res in results])
@@ -105,6 +111,7 @@ def add_duration(sample):
     return sample
 
 
+# [加载并过滤 HuggingFace ASR 数据集（最大 30 秒音频）]
 def load_hf_dataset(dataset_repo: str, split="validation", **hf_kwargs):
     ## Load and filter the dataset
     dataset = load_dataset(dataset_repo, split=split, **hf_kwargs)
@@ -117,6 +124,7 @@ def load_hf_dataset(dataset_repo: str, split="validation", **hf_kwargs):
     return dataset
 
 
+# [运行转录评估并计算 WER 分数]
 def run_evaluation(
     model: str,
     client,
@@ -152,6 +160,7 @@ def run_evaluation(
 # NOTE: Expected WER measured with equivalent hf.transformers args:
 # whisper-large-v3 + esb-datasets-earnings22-validation-tiny-filtered.
 @pytest.mark.parametrize("expected_wer", [12.744980])
+# [测试 Whisper 模型的 WER 正确性与预期基线对比]
 def test_wer_correctness(
     model_name, dataset_repo, expected_wer, n_examples=-1, max_concurrent_request=None
 ):

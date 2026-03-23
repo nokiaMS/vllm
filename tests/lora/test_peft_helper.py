@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 PEFT（参数高效微调）辅助工具的配置解析和适配器信息提取
 
 import json
 import math

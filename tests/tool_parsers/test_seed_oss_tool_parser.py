@@ -24,6 +24,7 @@ from vllm.tool_parsers.seed_oss_tool_parser import SeedOssToolParser
 MODEL = "ByteDance-Seed/Seed-OSS-36B-Instruct"
 
 
+# [中文注释] 加载SeedOSS工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def seed_oss_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL, trust_remote_code=True)

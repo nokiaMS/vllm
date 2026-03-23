@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 AudioFlamingo3 模型的多模态预处理，验证 vLLM 与 HF 处理器输出一致
 
 # Copyright 2025 The vLLM team.
 # Copyright 2025 NVIDIA CORPORATION and the HuggingFace Inc. team. All rights

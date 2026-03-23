@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试输入预处理：验证多模态模型的输入预处理器始终使用多模态代码路径]
 
 import pytest
 
@@ -9,6 +10,7 @@ from vllm.inputs.preprocess import InputPreprocessor
 pytestmark = pytest.mark.cpu_test
 
 
+# [测试对空字符串和空 token 列表输入，预处理器仍能正确添加 sep token（多模态路径）]
 @pytest.mark.parametrize("model_id", ["facebook/chameleon-7b"])
 @pytest.mark.parametrize("prompt", ["", {"prompt_token_ids": []}])
 @pytest.mark.skip(

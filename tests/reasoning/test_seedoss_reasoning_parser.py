@@ -17,6 +17,7 @@ end_token = "</seed:think>"
 REASONING_MODEL_NAME = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 
 
+# [中文注释] 加载SeedOSS分词器夹具：添加自定义<seed:think>/<\/seed:think>特殊token
 @pytest.fixture(scope="module")
 def seedoss_tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -76,6 +77,7 @@ NO_TOKENS: dict[str, Any] = {
 }
 
 
+# [中文注释] 测试SeedOSS推理解析器的创建和注册
 def test_seedoss_reasoning_parser_creation(seedoss_tokenizer):
     """Test that the SeedOSS reasoning parser can be created and registered."""
     parser_cls = ReasoningParserManager.get_reasoning_parser(parser_name)
@@ -85,6 +87,7 @@ def test_seedoss_reasoning_parser_creation(seedoss_tokenizer):
     assert parser.end_token == end_token
 
 
+# [中文注释] 测试SeedOSS基本推理提取：双标记场景
 @pytest.mark.parametrize("streaming", [True, False])
 def test_simple_reasoning(seedoss_tokenizer, streaming):
     """Test basic reasoning extraction with both tokens."""
@@ -99,6 +102,7 @@ def test_simple_reasoning(seedoss_tokenizer, streaming):
     assert content == SIMPLE_REASONING["content"]
 
 
+# [中文注释] 测试推理后无内容的场景
 @pytest.mark.parametrize("streaming", [True, False])
 def test_complete_reasoning(seedoss_tokenizer, streaming):
     """Test reasoning extraction when there's no content after reasoning."""
@@ -113,6 +117,7 @@ def test_complete_reasoning(seedoss_tokenizer, streaming):
     assert content == COMPLETE_REASONING["content"]
 
 
+# [中文注释] 测试无结束标记时所有内容视为推理
 @pytest.mark.parametrize("streaming", [True, False])
 def test_no_content(seedoss_tokenizer, streaming):
     """Test when there's no end token - everything is reasoning content."""
@@ -127,6 +132,7 @@ def test_no_content(seedoss_tokenizer, streaming):
     assert content == NO_CONTENT["content"]
 
 
+# [中文注释] 测试多行推理内容的提取
 @pytest.mark.parametrize("streaming", [True, False])
 def test_multiple_lines(seedoss_tokenizer, streaming):
     """Test reasoning extraction with multiline content."""
@@ -141,6 +147,7 @@ def test_multiple_lines(seedoss_tokenizer, streaming):
     assert content == MULTIPLE_LINES["content"]
 
 
+# [中文注释] 测试同时包含开始和结束标记的推理提取
 @pytest.mark.parametrize("streaming", [True, False])
 def test_with_start_token(seedoss_tokenizer, streaming):
     """Test reasoning extraction with both start and end tokens."""
@@ -155,6 +162,7 @@ def test_with_start_token(seedoss_tokenizer, streaming):
     assert content == WITH_START_TOKEN["content"]
 
 
+# [中文注释] 测试仅有结束标记的典型SeedOSS行为
 @pytest.mark.parametrize("streaming", [True, False])
 def test_only_end_token(seedoss_tokenizer, streaming):
     """
@@ -172,6 +180,7 @@ def test_only_end_token(seedoss_tokenizer, streaming):
     assert content == ONLY_END_TOKEN["content"]
 
 
+# [中文注释] 测试完全没有推理标记的场景
 @pytest.mark.parametrize("streaming", [True, False])
 def test_no_tokens(seedoss_tokenizer, streaming):
     """Test when there are no reasoning tokens at all."""
@@ -186,6 +195,7 @@ def test_no_tokens(seedoss_tokenizer, streaming):
     assert content == NO_TOKENS["content"]
 
 
+# [中文注释] 测试is_reasoning_end方法的推理结束判断
 def test_is_reasoning_end(seedoss_tokenizer):
     """Test the is_reasoning_end method."""
     parser_cls = ReasoningParserManager.get_reasoning_parser(parser_name)
@@ -199,6 +209,7 @@ def test_is_reasoning_end(seedoss_tokenizer):
     assert parser.is_reasoning_end([1, 2, 3, 4]) is False
 
 
+# [中文注释] 测试extract_content_ids方法：从token ID列表中提取推理结束后的内容ID
 def test_extract_content_ids(seedoss_tokenizer):
     """Test the extract_content_ids method."""
     parser_cls = ReasoningParserManager.get_reasoning_parser(parser_name)
@@ -222,6 +233,7 @@ def test_extract_content_ids(seedoss_tokenizer):
     assert content_ids == []
 
 
+# [中文注释] 测试SeedOSS流式增量处理
 def test_streaming_delta_processing(seedoss_tokenizer):
     """Test streaming processing with small deltas."""
     parser_cls = ReasoningParserManager.get_reasoning_parser(parser_name)

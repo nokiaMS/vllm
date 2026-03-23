@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试引擎核心对预处理错误的优雅处理
 
 import pytest
 import torch.cuda

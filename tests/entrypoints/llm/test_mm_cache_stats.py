@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试多模态处理器缓存的统计指标：查询次数、命中次数、命中率日志以及缓存重置
+
 import logging
 
 import pytest

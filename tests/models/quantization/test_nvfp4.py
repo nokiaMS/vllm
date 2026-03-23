@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试NVIDIA FP4（NVFP4）量化模型的生成结果，包括不同GEMM后端的兼容性
 # flake8: noqa
 """Tests Model Optimizer nvfp4 models against ground truth generation
 Note: these tests will only pass on B200

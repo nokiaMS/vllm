@@ -31,6 +31,7 @@ def model_config():
     )
 
 
+# [中文注释] 将张量编码为base64字节串，用于模拟API请求
 def _encode_tensor(tensor: torch.Tensor) -> bytes:
     """Helper to encode a tensor as base64 bytes."""
     buffer = io.BytesIO()
@@ -39,6 +40,7 @@ def _encode_tensor(tensor: torch.Tensor) -> bytes:
     return base64.b64encode(buffer.read())
 
 
+# [中文注释] 创建恶意稀疏COO张量，索引超出声明的形状范围
 def _create_malicious_sparse_tensor() -> torch.Tensor:
     """
     Create a malicious sparse COO tensor with out-of-bounds indices.
@@ -57,6 +59,7 @@ def _create_malicious_sparse_tensor() -> torch.Tensor:
     return sparse_tensor
 
 
+# [中文注释] 创建有效的稀疏COO张量用于基线测试
 def _create_valid_sparse_tensor() -> torch.Tensor:
     """Create a valid sparse COO tensor for baseline testing."""
     indices = torch.tensor([[0, 1, 2], [0, 1, 2]])
@@ -67,11 +70,13 @@ def _create_valid_sparse_tensor() -> torch.Tensor:
     return sparse_tensor
 
 
+# [中文注释] 创建有效的密集张量用于基线测试
 def _create_valid_dense_tensor() -> torch.Tensor:
     """Create a valid dense tensor for baseline testing."""
     return torch.randn(10, 768, dtype=torch.float32)  # (seq_len, hidden_size)
 
 
+# [中文注释] 测试Completions API中prompt embedding的稀疏张量安全验证
 class TestPromptEmbedsValidation:
     """Test sparse tensor validation in prompt embeddings (Completions API)."""
 
@@ -139,6 +144,7 @@ class TestPromptEmbedsValidation:
             safe_load_prompt_embeds(model_config, encoded)
 
 
+# [中文注释] 测试Chat API中图片embedding的稀疏张量安全验证
 class TestImageEmbedsValidation:
     """Test sparse tensor validation in image embeddings (Chat API)."""
 
@@ -191,6 +197,7 @@ class TestImageEmbedsValidation:
             io_handler.load_bytes(buffer.read())
 
 
+# [中文注释] 测试Chat API中音频embedding的稀疏张量安全验证
 class TestAudioEmbedsValidation:
     """Test sparse tensor validation in audio embeddings (Chat API)."""
 
@@ -243,6 +250,7 @@ class TestAudioEmbedsValidation:
             io_handler.load_bytes(buffer.read())
 
 
+# [中文注释] 集成测试：验证完整的恶意稀疏张量攻击链在所有入口点被阻止
 class TestSparseTensorValidationIntegration:
     """
     These tests verify the complete attack chain is blocked at all entry points.

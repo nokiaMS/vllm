@@ -24,6 +24,7 @@ FieldName = Literal[
 ]
 
 
+# [中文注释] 解码OpenTelemetry AnyValue protobuf消息为Python值
 def decode_value(value: AnyValue):
     """Decode an OpenTelemetry AnyValue protobuf message to a Python value."""
     field_decoders: dict[FieldName, Callable] = {
@@ -41,11 +42,13 @@ def decode_value(value: AnyValue):
     raise ValueError(f"Couldn't decode value: {value}")
 
 
+# [中文注释] 将OpenTelemetry KeyValue属性列表解码为Python字典
 def decode_attributes(attributes: Iterable[KeyValue]) -> dict[str, Any]:
     """Decode OpenTelemetry KeyValue attributes to a Python dictionary."""
     return {kv.key: decode_value(kv.value) for kv in attributes}
 
 
+# [中文注释] 模拟gRPC trace服务：收集span数据用于测试OpenTelemetry导出
 class FakeTraceService(TraceServiceServicer):
     """A fake gRPC trace service for testing OpenTelemetry trace exports."""
 
@@ -107,6 +110,7 @@ class FakeTraceService(TraceServiceServicer):
         self.evt.clear()
 
 
+# [中文注释] 等待gRPC服务器就绪，通过socket连接检测
 def _wait_for_server_ready(address: str, timeout: float = 5.0) -> bool:
     """Wait for the gRPC server to be ready to accept connections."""
     import socket
@@ -123,6 +127,7 @@ def _wait_for_server_ready(address: str, timeout: float = 5.0) -> bool:
     return False
 
 
+# [中文注释] fixture：启动模拟gRPC trace服务器并在测试后关闭
 @pytest.fixture
 def trace_service() -> Generator[FakeTraceService, None, None]:
     """Fixture to set up a fake gRPC trace service."""
@@ -144,6 +149,7 @@ def trace_service() -> Generator[FakeTraceService, None, None]:
     server.stop(grace=None)
 
 
+# [中文注释] fixture：返回模拟trace服务器地址
 @pytest.fixture
 def trace_server_address() -> str:
     """Returns the address of the fake trace server."""

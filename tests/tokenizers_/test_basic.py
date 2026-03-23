@@ -14,15 +14,18 @@ from vllm.tokenizers.hf import HfTokenizer
 from vllm.tokenizers.mistral import MistralTokenizer
 
 
+# [中文注释] 检查对象是否缺少TokenizerLike协议所需的属性
 def _get_missing_attrs(obj: object, target: type):
     return [k for k in _get_protocol_attrs(target) if not hasattr(obj, k)]
 
 
+# [中文注释] 断言分词器对象不缺少TokenizerLike协议所需的属性
 def _assert_tokenizer_like(tokenizer: object):
     missing_attrs = _get_missing_attrs(tokenizer, TokenizerLike)
     assert not missing_attrs, f"Missing attrs: {missing_attrs}"
 
 
+# [中文注释] 测试各种分词器（HF/Mistral/Grok2/DeepSeek等）是否符合TokenizerLike协议
 def test_tokenizer_like_protocol():
     tokenizer = get_tokenizer("gpt2", use_fast=True)
     assert isinstance(tokenizer, PreTrainedTokenizerFast)
@@ -56,6 +59,7 @@ def test_tokenizer_like_protocol():
     assert "WithoutImagePad" in tokenizer.__class__.__name__
 
 
+# [中文注释] 测试分词器的revision参数：有效分支加载成功，无效分支抛出异常
 @pytest.mark.parametrize("tokenizer_name", ["facebook/opt-125m", "gpt2"])
 def test_tokenizer_revision(tokenizer_name: str):
     # Assume that "main" branch always exists
@@ -67,6 +71,7 @@ def test_tokenizer_revision(tokenizer_name: str):
         get_tokenizer(tokenizer_name, revision="never")
 
 
+# [中文注释] 测试特殊token（如[UNK]）编码后的长度包含首尾特殊token
 @pytest.mark.parametrize("tokenizer_name", ["BAAI/bge-base-en"])
 @pytest.mark.parametrize("n_tokens", [510])
 def test_special_tokens(tokenizer_name: str, n_tokens: int):

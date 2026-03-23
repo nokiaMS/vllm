@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试KV缓存相关操作内核：reshape_and_cache、swap_blocks、FP8转换、MLA缓存等
 
 import random
 
@@ -45,6 +46,7 @@ KV_CACHE_DTYPE = ["auto", "fp8"]
 RESHAPE_FLASH_IMPLEMENTATIONS = ["cuda", "triton"]
 
 
+# 测试reshape_and_cache操作在不同KV缓存数据类型和块配置下的正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -164,6 +166,7 @@ def test_reshape_and_cache(
         torch.testing.assert_close(value_cache, cloned_value_cache)
 
 
+# 测试reshape_and_cache_flash操作在Flash格式（NHD/HND布局）和FP8缩放下的正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -350,6 +353,7 @@ def test_reshape_and_cache_flash(
         torch.testing.assert_close(value_cache_compact, cloned_value_cache)
 
 
+# 测试KV缓存块在不同设备间（CUDA/CPU）的交换操作正确性
 @pytest.mark.parametrize("direction", COPYING_DIRECTION)
 @pytest.mark.parametrize("num_mappings", NUM_MAPPINGS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
@@ -473,6 +477,7 @@ def test_swap_blocks(
         )
 
 
+# 测试FP8 E4M3格式与原始精度之间双向转换的正确性
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
 @pytest.mark.parametrize("block_size", BLOCK_SIZES)
@@ -507,6 +512,7 @@ def test_fp8_e4m3_conversion(
     torch.testing.assert_close(cache, converted_cache, atol=0.001, rtol=0.1)
 
 
+# 创建MLA缓存张量的辅助函数
 def _create_mla_cache(
     num_blocks: int,
     block_size: int,
@@ -521,6 +527,7 @@ def _create_mla_cache(
     )
 
 
+# 用随机数据填充MLA缓存（支持FP8量化）
 def _fill_mla_cache(cache: torch.Tensor, kv_cache_dtype: str):
     rand_dtype = torch.float16 if kv_cache_dtype == "fp8" else cache.dtype
 
@@ -532,6 +539,7 @@ def _fill_mla_cache(cache: torch.Tensor, kv_cache_dtype: str):
     cache.copy_(vals)
 
 
+# 测试MLA缓存的拼接写入操作（将kv_c和k_pe合并写入分页缓存）
 @pytest.mark.parametrize("kv_lora_rank", KV_LORA_RANKS)
 @pytest.mark.parametrize("qk_rope_head_dim", QK_ROPE_HEAD_DIMS)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS_MLA)
@@ -606,6 +614,7 @@ def test_concat_and_cache_mla(
         torch.testing.assert_close(kv_cache, ref_kv_cache)
 
 
+# 测试DeepSeek MLA的FP8分块量化缓存写入（fp8_ds_mla格式，含tile级scale）
 @pytest.mark.parametrize("kv_lora_rank", KV_LORA_RANKS)
 @pytest.mark.parametrize("qk_rope_head_dim", QK_ROPE_HEAD_DIMS)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS_MLA)
@@ -725,6 +734,7 @@ def test_concat_and_cache_ds_mla(
         torch.testing.assert_close(kv_rope, ref_rope, atol=0.001, rtol=0.1)
 
 
+# 测试MLA缓存块的交换操作正确性
 @pytest.mark.parametrize("kv_lora_rank", KV_LORA_RANKS)
 @pytest.mark.parametrize("qk_rope_head_dim", QK_ROPE_HEAD_DIMS)
 @pytest.mark.parametrize("block_size", BLOCK_SIZES_MLA)
@@ -789,6 +799,7 @@ def test_swap_blocks_mla(
         )
 
 
+# 测试MLA缓存的gather和可选反量化操作（支持FP8到FP32的反量化）
 @pytest.mark.parametrize("kv_lora_rank", [512])
 @pytest.mark.parametrize("qk_rope_head_dim", [64])
 @pytest.mark.parametrize("block_size", [16])
@@ -900,6 +911,7 @@ def test_gather_and_maybe_dequant_cache_mla(
     torch.testing.assert_close(dst, expected)
 
 
+# 测试MLA缓存的cp_gather（连续拷贝gather）操作正确性
 @pytest.mark.parametrize("kv_lora_rank", [512])
 @pytest.mark.parametrize("qk_rope_head_dim", [64])
 @pytest.mark.parametrize("block_size", [16])
@@ -976,6 +988,7 @@ def test_cp_gather_cache_mla(
     torch.testing.assert_close(dst, expected)
 
 
+# 测试CPU平台上MLA缓存拼接写入操作的正确性
 @pytest.mark.parametrize("kv_lora_rank", KV_LORA_RANKS)
 @pytest.mark.parametrize("qk_rope_head_dim", QK_ROPE_HEAD_DIMS)
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS_MLA)

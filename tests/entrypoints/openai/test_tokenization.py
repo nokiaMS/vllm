@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试分词/反分词端点：补全分词、聊天分词、工具分词、token_strs 返回和 tokenizer_info]
 
 import pytest
 import pytest_asyncio
@@ -48,6 +49,7 @@ async def client(server):
     [(MODEL_NAME, MODEL_NAME)],
     indirect=["tokenizer_name"],
 )
+# [测试补全提示的分词结果与本地 tokenizer 一致]
 async def test_tokenize_completions(
     server: RemoteOpenAIServer,
     model_name: str,
@@ -82,6 +84,7 @@ async def test_tokenize_completions(
     [(MODEL_NAME, MODEL_NAME)],
     indirect=["tokenizer_name"],
 )
+# [测试聊天消息的分词：含 add_generation_prompt 和 continue_final 变体]
 async def test_tokenize_chat(
     server: RemoteOpenAIServer,
     model_name: str,
@@ -135,6 +138,7 @@ async def test_tokenize_chat(
     [(MODEL_NAME, MODEL_NAME)],
     indirect=["tokenizer_name"],
 )
+# [测试带工具定义的聊天消息分词]
 async def test_tokenize_chat_with_tools(
     server: RemoteOpenAIServer,
     model_name: str,
@@ -205,6 +209,7 @@ async def test_tokenize_chat_with_tools(
     [(MODEL_NAME, MODEL_NAME)],
     indirect=["tokenizer_name"],
 )
+# [测试分词端点的 return_token_strs 选项]
 async def test_tokenize_with_return_token_strs(
     server: RemoteOpenAIServer,
     model_name: str,
@@ -235,6 +240,7 @@ async def test_tokenize_with_return_token_strs(
     [(MODEL_NAME, MODEL_NAME)],
     indirect=["tokenizer_name"],
 )
+# [测试反分词端点：token ID 列表转回文本]
 async def test_detokenize(
     server: RemoteOpenAIServer,
     model_name: str,
@@ -259,6 +265,7 @@ async def test_detokenize(
     [(MODEL_NAME, MODEL_NAME)],
     indirect=["tokenizer_name"],
 )
+# [测试 tokenizer_info 端点返回基本分词器信息]
 async def test_tokenizer_info_basic(
     server: RemoteOpenAIServer,
     model_name: str,
@@ -274,6 +281,7 @@ async def test_tokenizer_info_basic(
 
 
 @pytest.mark.asyncio
+# [测试 tokenizer_info 响应符合预期的 schema 类型]
 async def test_tokenizer_info_schema(server: RemoteOpenAIServer):
     """Test that the response matches expected schema types."""
     response = requests.get(server.url_for("tokenizer_info"))
@@ -302,6 +310,7 @@ async def test_tokenizer_info_schema(server: RemoteOpenAIServer):
 
 
 @pytest.mark.asyncio
+# [测试 tokenizer_info 的 max_length 与分词端点的 max_model_len 一致性]
 async def test_tokenizer_info_consistency_with_tokenize(
     server: RemoteOpenAIServer,
 ):
@@ -324,6 +333,7 @@ async def test_tokenizer_info_consistency_with_tokenize(
 
 
 @pytest.mark.asyncio
+# [测试 tokenizer_info 端点包含聊天模板信息]
 async def test_tokenizer_info_chat_template(server: RemoteOpenAIServer):
     """Test chat template is properly included."""
     response = requests.get(server.url_for("tokenizer_info"))

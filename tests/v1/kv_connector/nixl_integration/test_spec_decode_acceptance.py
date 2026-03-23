@@ -33,6 +33,7 @@ MODEL_NAME = os.environ.get("TEST_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
 
 
 @dataclass
+# [中文注释] EAGLE3模型配置数据类，存储投机解码测试所需的模型和drafter信息。
 class Eagle3ModelConfig:
     verifier: str
     drafter: str
@@ -59,6 +60,7 @@ DEFAULT_OUTPUT_LEN = 256
 DEFAULT_RTOL = 0.05
 
 
+# [中文注释] 辅助函数：根据环境变量获取EAGLE3模型配置。
 def _get_model_config() -> Eagle3ModelConfig:
     """Get the model config matching MODEL_NAME."""
     for config in EAGLE3_MODEL_CONFIGS:
@@ -70,6 +72,7 @@ def _get_model_config() -> Eagle3ModelConfig:
     )
 
 
+# [中文注释] 辅助函数：加载MT-Bench提示词数据集，用于投机解码接受长度测试。
 def _get_mt_bench_prompts() -> list[str]:
     """Load MT-Bench prompts via vllm.benchmarks.datasets.get_samples."""
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -99,6 +102,7 @@ def _get_mt_bench_prompts() -> list[str]:
     return [sample.prompt for sample in samples]
 
 
+# [中文注释] 辅助函数：从decode服务器的Prometheus /metrics端点获取指定指标值。
 def _fetch_metric(metric_name: str) -> float:
     """Fetch a single counter metric from the decode server's /metrics."""
     url = f"http://localhost:{DECODE_PORT}/metrics"
@@ -109,6 +113,7 @@ def _fetch_metric(metric_name: str) -> float:
     raise ValueError(f"Metric {metric_name} not found in decode /metrics")
 
 
+# [中文注释] 辅助函数：获取每个位置的投机解码接受率指标。
 def _fetch_per_position_acceptance() -> dict[int, float]:
     """Fetch per-position acceptance counts from decode /metrics."""
     url = f"http://localhost:{DECODE_PORT}/metrics"
@@ -125,6 +130,7 @@ def _fetch_per_position_acceptance() -> dict[int, float]:
     return counts
 
 
+# [中文注释] 测试用例：验证P/D分离模式下EAGLE3投机解码的接受长度是否与独立运行基线匹配。
 def test_spec_decode_acceptance_length():
     """Validate PD+SD acceptance length against standalone baseline.
 

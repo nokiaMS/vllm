@@ -29,6 +29,7 @@ SIMPLE_PROMPT = (
 MODEL_NAME = os.environ.get("TEST_MODEL", "Qwen/Qwen3-0.6B")
 
 
+# [中文注释] 辅助函数：向OpenAI兼容服务器发送简单提示词，验证服务器基本响应能力。
 def run_simple_prompt():
     client = openai.OpenAI(api_key="EMPTY", base_url=BASE_URL)
     completion = client.completions.create(model=MODEL_NAME, prompt=SIMPLE_PROMPT)
@@ -39,6 +40,7 @@ def run_simple_prompt():
     print("-" * 50)
 
 
+# [中文注释] 端到端精度测试：使用lm_eval在GSM8K基准上评估NixlConnector的准确率是否符合预期阈值。
 def test_accuracy():
     """Run the end to end accuracy test."""
     run_simple_prompt()

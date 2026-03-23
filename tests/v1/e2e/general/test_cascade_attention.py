@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试级联注意力机制在不同注意力后端(FLASH_ATTN、FLASHINFER)下的正确性
 
 import pytest
 
@@ -8,6 +9,7 @@ from vllm import LLM, SamplingParams
 from ....utils import create_new_process_for_each_test
 
 
+# [中文注释] 测试级联注意力：验证批量共享前缀的提示与单个提示生成结果一致
 @create_new_process_for_each_test()
 @pytest.mark.parametrize("attn_backend", ["FLASH_ATTN", "FLASHINFER"])
 def test_cascade_attention(example_system_message, attn_backend):

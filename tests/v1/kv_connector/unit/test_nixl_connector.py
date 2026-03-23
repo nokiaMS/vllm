@@ -68,6 +68,7 @@ from .utils import (
 
 
 @pytest.fixture(scope="module", autouse=True)
+# [中文注释] 测试夹具：确保测试结束后清理全局KV连接器代理，防止影响其他测试模块。
 def clear_kv_transfer():
     """
     The test cases in this file use `VLLM_ENABLE_V1_MULTIPROCESSING=0`,
@@ -87,6 +88,7 @@ def clear_kv_transfer():
         ensure_kv_transfer_shutdown()
 
 
+# [中文注释] 辅助函数：创建默认的传输遥测数据，用于模拟nixl传输统计。
 def get_default_xfer_telemetry(
     xferDurationS: float = 1,
     postDurationS: float = 1,
@@ -108,6 +110,7 @@ def get_default_xfer_telemetry(
     )
 
 
+# [中文注释] 模拟的NixlWrapper：在无nixl库的环境下模拟RDMA传输操作。
 class FakeNixlWrapper:
     """Mock implementation of NixlWrapper for testing.
 
@@ -195,6 +198,7 @@ class FakeNixlWrapper:
 
 
 @contextlib.contextmanager
+# [中文注释] 上下文管理器：创建临时的fake nixl包，使import能解析到FakeNixlWrapper。
 def _make_fake_nixl_pkg():
     """Context manager that creates a temporary package making
        `from nixl._api import nixl_agent` resolve to our FakeNixlWrapper.
@@ -236,6 +240,7 @@ nixl_agent = FakeNixlWrapper
         yield td
 
 
+# [中文注释] 测试用例：验证NixlConnector基本接口功能，包括调度和元数据生成。
 def test_basic_interface():
     """Unit test for basic NixlConnector interface functionality."""
 
@@ -276,6 +281,7 @@ def test_basic_interface():
         assert block_id == block.block_id
 
 
+# [中文注释] 测试用例：验证提示词长度小于块大小时的处理逻辑。
 def test_prompt_less_than_block_size():
     """
     Test that we can handle case where prompt is < block.
@@ -314,6 +320,7 @@ def test_prompt_less_than_block_size():
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证KV传输handshake流程的正确性。
 def test_kv_transfer_handshake(dist_init):
     """Unit test for basic NixlConnector interface functionality."""
     from vllm.config import set_current_vllm_config
@@ -419,6 +426,7 @@ def test_kv_transfer_handshake(dist_init):
         scheduler_connector.shutdown()
 
 
+# [中文注释] 测试用NixlConnectorWorker子类：使用FakeNixlWrapper替代真实RDMA实现。
 class FakeNixlConnectorWorker(NixlConnectorWorker):
     REMOTE_ENGINE_ID = "remote_engine"
 
@@ -509,6 +517,7 @@ class FakeNixlConnectorWorker(NixlConnectorWorker):
         return remote_agents
 
 
+# [中文注释] 测试类：验证Nixl handshake的各种场景（注册、KV缓存注册、传输、批量处理等）。
 class TestNixlHandshake:
     @patch(
         "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
@@ -1020,6 +1029,7 @@ class TestNixlHandshake:
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证KV连接器统计信息的收集和报告。
 def test_kv_connector_stats(default_vllm_config, dist_init):
     """Test that KV transfer stats are properly recorded and retrieved."""
     vllm_config = create_vllm_config()
@@ -1089,6 +1099,7 @@ def test_kv_connector_stats(default_vllm_config, dist_init):
     assert stats_after_reset is None
 
 
+# [中文注释] 测试用例：验证KV连接器统计信息的聚合逻辑。
 def test_kv_connector_stats_aggregation():
     """
     Test KV transfer stats aggregation across TP ranks using
@@ -1156,6 +1167,7 @@ def test_kv_connector_stats_aggregation():
     assert cli_stats["Avg number of descriptors"] == 1.5
 
 
+# [中文注释] 测试用例：验证MultiConnector统计信息的聚合逻辑。
 def test_multi_kv_connector_stats_aggregation():
     """
     Test MultiKVConnectorStats aggregation across TP ranks using
@@ -1235,6 +1247,7 @@ def test_multi_kv_connector_stats_aggregation():
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证调度器层面的KV连接器统计聚合。
 def test_scheduler_kv_connector_stats_aggregation():
     """Test scheduler and worker KV connector stats aggregation."""
     from vllm.v1.core.sched.output import SchedulerOutput
@@ -1303,6 +1316,7 @@ def test_scheduler_kv_connector_stats_aggregation():
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证prefill端请求超时中止的处理。
 def test_abort_timeout_on_prefiller(monkeypatch, distributed_executor_backend):
     """
     Test lifecycle of an aborted Remote Prefill request hitting the timeout.
@@ -1357,6 +1371,7 @@ def test_abort_timeout_on_prefiller(monkeypatch, distributed_executor_backend):
         run_test_and_cleanup()
 
 
+# [中文注释] 请求ID映射器：将生成的请求ID映射回原始提示词，用于验证中止超时行为。
 class RequestIdMapper:
     """Helper class to map external request IDs to internal request IDs."""
 
@@ -1373,6 +1388,7 @@ class RequestIdMapper:
         return self.req_id_mapping[external_req_id]
 
 
+# [中文注释] 辅助函数：运行中止超时测试，验证超时后请求被正确清理。
 def _run_abort_timeout_test(llm: LLM, timeout: int):
     """Helper function to run the abort timeout test logic."""
     remote_prefill_opts = {
@@ -1447,6 +1463,7 @@ def _run_abort_timeout_test(llm: LLM, timeout: int):
         "TRITON_ATTN",
     ],
 )
+# [中文注释] 测试用例：验证KV缓存注册、内存类型映射和描述符创建。
 def test_register_kv_caches(
     default_vllm_config, dist_init, attn_backend, enable_cross_layers
 ):
@@ -1682,6 +1699,7 @@ def test_register_kv_caches(
         assert connector.connector_worker.block_size == 16
 
 
+# [中文注释] 模拟平台类：用于测试不同设备类型下的内存类型映射。
 class FakePlatform(Platform):
     device_type: str = "oot"
 
@@ -1707,6 +1725,7 @@ class FakePlatform(Platform):
         ("oot", "VRAM"),
     ],
 )
+# [中文注释] 测试用例：验证KV缓存缓冲区到nixl内存类型的映射正确性。
 def test_kv_buffer_to_nixl_memory_types(
     default_vllm_config, dist_init, kv_buffer_device, nixl_memory_type
 ):
@@ -1756,6 +1775,7 @@ def test_kv_buffer_to_nixl_memory_types(
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证shutdown时所有资源（句柄、描述符等）被正确清理。
 def test_shutdown_cleans_up_resources(default_vllm_config, dist_init):
     """Test that shutdown() properly cleans up all resources."""
     vllm_config = create_vllm_config()
@@ -1821,6 +1841,7 @@ def test_shutdown_cleans_up_resources(default_vllm_config, dist_init):
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证批次中被中止的请求从worker中正确移除。
 def test_aborted_request_removed_from_worker_in_batch(default_vllm_config, dist_init):
     """
     Create and schedule a request so that P adds it to in-batch tracking via
@@ -1886,6 +1907,7 @@ def test_aborted_request_removed_from_worker_in_batch(default_vllm_config, dist_
     #### Model Runner end ####
 
 
+# [中文注释] 故障注入NixlWrapper：在指定操作上触发失败，用于测试传输失败的日志和处理。
 class FailingNixlWrapper(FakeNixlWrapper):
     """Mock NixlWrapper that fails on specific operations."""
 
@@ -1953,6 +1975,7 @@ class FailingNixlWrapper(FakeNixlWrapper):
     ],
 )
 @pytest.mark.parametrize("enable_hma", [False, True])
+# [中文注释] 测试用例：验证传输失败时的日志记录和错误处理行为。
 def test_transfer_failure_logging(
     default_vllm_config,
     dist_init,
@@ -2098,6 +2121,7 @@ def test_transfer_failure_logging(
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FailingNixlWrapper,
 )
+# [中文注释] 测试用例：验证handshake失败时返回finished状态的处理。
 def test_handshake_failure_returns_finished(default_vllm_config, dist_init):
     """Test that handshake failures mark blocks invalid and return via get_finished."""
     vllm_config = create_vllm_config()
@@ -2150,6 +2174,7 @@ def test_handshake_failure_returns_finished(default_vllm_config, dist_init):
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FailingNixlWrapper,
 )
+# [中文注释] 测试用例：验证传输设置失败时返回finished状态的处理。
 def test_transfer_setup_failure_returns_finished(default_vllm_config, dist_init):
     """Test that transfer setup failures mark blocks invalid
     and return via get_finished."""
@@ -2227,6 +2252,7 @@ def test_transfer_setup_failure_returns_finished(default_vllm_config, dist_init)
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证兼容性hash的计算和校验逻辑。
 def test_compatibility_hash_validation(
     default_vllm_config,
     dist_init,
@@ -2363,6 +2389,7 @@ def test_compatibility_hash_validation(
     "vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.NixlWrapper",
     FakeNixlWrapper,
 )
+# [中文注释] 测试用例：验证handshake解码错误的各种场景和错误处理。
 def test_handshake_decode_errors(default_vllm_config, dist_init, error_scenario):
     """
     Test that msgspec decode errors are properly handled during handshake.

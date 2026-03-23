@@ -39,6 +39,8 @@ except ImportError:
     EncryptionParams = tensorizer.placeholder_attr("EncryptionParams")
 
 
+# 测试 Tensorizer 模型序列化/反序列化的正确性，包括加密、分片、参数传递等场景
+
 class TensorizerCaughtError(Exception):
     pass
 
@@ -106,6 +108,7 @@ def write_keyfile(keyfile_path: str):
 
 
 @pytest.mark.skipif(not is_curl_installed(), reason="cURL is not installed")
+# 测试加密后序列化再反序列化的模型输出是否一致
 def test_deserialized_encrypted_vllm_model_has_same_outputs(
     model_ref, vllm_runner, tmp_path, model_path
 ):
@@ -137,6 +140,7 @@ def test_deserialized_encrypted_vllm_model_has_same_outputs(
         assert outputs == deserialized_outputs
 
 
+# 测试从 HuggingFace 模型序列化后反序列化的输出是否一致
 def test_deserialized_hf_model_has_same_outputs(
     hf_runner, vllm_runner, tmp_path, model_ref, model_path
 ):
@@ -162,6 +166,7 @@ def test_deserialized_hf_model_has_same_outputs(
         assert outputs == deserialized_outputs
 
 
+# 测试未指定 tensorizer 加载格式时传入额外配置应抛出错误
 def test_load_without_tensorizer_load_format(vllm_runner, capfd, model_ref):
     model = None
     try:
@@ -181,6 +186,7 @@ def test_load_without_tensorizer_load_format(vllm_runner, capfd, model_ref):
         torch.accelerator.empty_cache()
 
 
+# 测试使用无效加载格式时应抛出 ValueError
 def test_raise_value_error_on_invalid_load_format(vllm_runner, capfd, model_ref):
     model = None
     try:
@@ -204,6 +210,7 @@ def test_raise_value_error_on_invalid_load_format(vllm_runner, capfd, model_ref)
 
 
 @pytest.mark.skipif(torch.accelerator.device_count() < 2, reason="Requires 2 GPUs")
+# 测试张量并行模式下未使用路径模板时应报错
 def test_tensorizer_with_tp_path_without_template(vllm_runner, capfd):
     try:
         model_ref = "EleutherAI/pythia-1.4b"
@@ -232,6 +239,7 @@ def test_tensorizer_with_tp_path_without_template(vllm_runner, capfd):
 
 
 @pytest.mark.skipif(torch.accelerator.device_count() < 2, reason="Requires 2 GPUs")
+# 测试张量并行下加密序列化/反序列化的模型输出一致性
 def test_deserialized_encrypted_vllm_model_with_tp_has_same_outputs(
     vllm_runner, tmp_path
 ):
@@ -279,6 +287,7 @@ def test_deserialized_encrypted_vllm_model_with_tp_has_same_outputs(
 
 
 @pytest.mark.flaky(reruns=3)
+# 测试 vLLM 序列化后的模型输出与原始模型一致
 def test_vllm_tensorized_model_has_same_outputs(
     model_ref, vllm_runner, tmp_path, model_path
 ):
@@ -302,6 +311,7 @@ def test_vllm_tensorized_model_has_same_outputs(
         assert outputs == deserialized_outputs
 
 
+# 测试仅使用模型张量文件进行加载的向后兼容性
 def test_load_with_just_model_tensors(just_serialize_model_tensors, model_ref):
     # For backwards compatibility, ensure Tensorizer can be still be loaded
     # for inference by passing the model reference name, not a local/S3 dir,
@@ -325,6 +335,7 @@ def test_load_with_just_model_tensors(just_serialize_model_tensors, model_ref):
         pass
 
 
+# 测试序列化参数是否正确传递给 TensorSerializer
 def test_assert_serialization_kwargs_passed_to_tensor_serializer(tmp_path):
     serialization_params = {
         "limit_cpu_concurrency": 2,
@@ -368,6 +379,7 @@ def test_assert_serialization_kwargs_passed_to_tensor_serializer(tmp_path):
     assert assert_from_collective_rpc(llm, serialization_test, kwargs)
 
 
+# 测试反序列化参数是否正确传递给 TensorDeserializer
 def test_assert_deserialization_kwargs_passed_to_tensor_deserializer(tmp_path, capfd):
     deserialization_kwargs = {
         "num_readers": "bar",  # illegal value
@@ -408,6 +420,7 @@ def test_assert_deserialization_kwargs_passed_to_tensor_deserializer(tmp_path, c
     )
 
 
+# 测试流参数是否正确传递给 open_stream
 def test_assert_stream_kwargs_passed_to_tensor_deserializer(tmp_path, capfd):
     deserialization_kwargs = {
         "num_readers": 1,
@@ -452,6 +465,7 @@ def test_assert_stream_kwargs_passed_to_tensor_deserializer(tmp_path, capfd):
 
 
 @pytest.mark.asyncio
+# 测试序列化和服务入口点的端到端流程
 async def test_serialize_and_serve_entrypoints(tmp_path):
     model_ref = "facebook/opt-125m"
 
@@ -530,6 +544,7 @@ async def test_serialize_and_serve_entrypoints(tmp_path):
 
 
 @pytest.mark.parametrize("illegal_value", BLACKLISTED_TENSORIZER_ARGS)
+# 测试黑名单参数在加载时应被拒绝
 def test_blacklisted_parameter_for_loading(tmp_path, vllm_runner, capfd, illegal_value):
     serialization_params = {
         "limit_cpu_concurrency": 2,

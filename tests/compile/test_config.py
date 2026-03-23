@@ -31,6 +31,7 @@ from vllm.v1.cudagraph_dispatcher import CudagraphDispatcher
 from . import silly_attention  # noqa: F401
 
 
+# 测试 PyTorch 版本比较逻辑
 def test_version():
     # Test the version comparison logic using the private function
     assert _is_torch_equal_or_newer("2.8.0.dev20250624+cu128", "2.8.0.dev")
@@ -40,6 +41,7 @@ def test_version():
     assert not _is_torch_equal_or_newer("2.7.1", "2.8.0.dev")
 
 
+# 测试 get_raw_stream 补丁仅在 torch 2.9.x 版本应用
 def test_get_raw_stream_patch():
     """Test that get_raw_stream patch is applied only for torch 2.9.0 or 2.9.1."""
     import builtins
@@ -63,6 +65,7 @@ def test_get_raw_stream_patch():
         assert get_raw_stream is _cuda_getCurrentRawStream
 
 
+# 测试 InductorPass 的深拷贝能正确保留编译配置
 def test_copy_pass():
     vllm_config = VllmConfig()
     inductor_pass = FixFunctionalizationPass(vllm_config)
@@ -77,6 +80,7 @@ def test_copy_pass():
     )
 
 
+# 测试 custom_ops 配置项的语法验证（需要 +/- 前缀）
 def test_custom_op():
     # proper syntax
     _ = CompilationConfig(custom_ops=["+quant_fp8", "-silu_and_mul"])
@@ -91,6 +95,7 @@ def test_custom_op():
 # on the state of the cache directory on the current machine, which
 # may be influenced by other tests.
 @pytest.mark.parametrize("val", ["1"])
+# 测试 VLLM_DISABLE_COMPILE_CACHE=1 时不更新缓存条目也不保存编译产物
 def test_VLLM_DISABLE_COMPILE_CACHE(vllm_runner, monkeypatch, val):
     # Disable multiprocessing so that the counter is in the same process
     monkeypatch.setenv("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
@@ -124,6 +129,7 @@ def test_VLLM_DISABLE_COMPILE_CACHE(vllm_runner, monkeypatch, val):
         (CUDAGraphMode.FULL_AND_PIECEWISE, 14),
     ],
 )
+# 测试不同 CUDA Graph 模式下捕获的图数量符合预期
 def test_use_cudagraphs(
     vllm_runner, monkeypatch, cudagraph_mode, num_cudagraph_captured
 ):
@@ -153,6 +159,7 @@ def test_use_cudagraphs(
 
 # forked needed to workaround https://github.com/vllm-project/vllm/issues/21073
 @pytest.mark.forked
+# 测试 STOCK_TORCH_COMPILE 模式触发一次标准 torch.compile
 def test_stock_torch_compile(vllm_runner, monkeypatch):
     # Disable multiprocessing so that the counter is in the same process
     monkeypatch.setenv("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
@@ -171,6 +178,7 @@ def test_stock_torch_compile(vllm_runner, monkeypatch):
 
 # forked needed to workaround https://github.com/vllm-project/vllm/issues/21073
 @pytest.mark.forked
+# 测试 NONE 模式下不进行任何编译
 def test_no_compilation(vllm_runner, monkeypatch):
     # Disable multiprocessing so that the counter is in the same process
     monkeypatch.setenv("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
@@ -188,6 +196,7 @@ def test_no_compilation(vllm_runner, monkeypatch):
 
 # forked needed to workaround https://github.com/vllm-project/vllm/issues/21073
 @pytest.mark.forked
+# 测试 enforce_eager=True 时不进行编译
 def test_enforce_eager(vllm_runner, monkeypatch):
     # Disable multiprocessing so that the counter is in the same process
     monkeypatch.setenv("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
@@ -202,6 +211,7 @@ def test_enforce_eager(vllm_runner, monkeypatch):
         pass
 
 
+# 测试 splitting_ops 的动态配置：默认值、inductor 分区、attn 融合交互
 def test_splitting_ops_dynamic():
     # Default config
     config = VllmConfig()
@@ -268,6 +278,7 @@ def test_splitting_ops_dynamic():
     assert config.compilation_config.cudagraph_mode == CUDAGraphMode.PIECEWISE
 
 
+# 测试 DeepEP HT 模式下 MoE splitting_ops 与 inductor 分区的配合
 def test_moe_splitting_ops_deepep_ht_inductor_partition():
     # Inductor partition case: user-provided splitting_ops should be
     # preserved and MoE ops should be appended for DeepEP HT with dp>1.
@@ -294,6 +305,7 @@ def test_moe_splitting_ops_deepep_ht_inductor_partition():
     ]
 
 
+# 测试 should_split 函数对 OpOverloadPacket 和 OpOverload 的匹配逻辑
 def test_should_split():
     import torch
 
@@ -396,6 +408,7 @@ def test_should_split():
         (None, 0, 1, False, 2048, CUDAGraphMode.FULL_AND_PIECEWISE, ValidationError),
     ],
 )
+# 测试 CUDA Graph 捕获尺寸的初始化验证：截断、SP 过滤、边界条件
 def test_cudagraph_sizes_post_init(
     cudagraph_capture_sizes,
     max_cudagraph_capture_size,
@@ -440,6 +453,7 @@ def test_cudagraph_sizes_post_init(
         )
 
 
+# 测试 set_current_vllm_config 能正确清除缓存的编译配置并使用新配置
 def test_cached_compilation_config(default_vllm_config):
     import torch
     from torch._inductor.utils import run_and_get_code
@@ -482,6 +496,7 @@ def test_cached_compilation_config(default_vllm_config):
     assert "torch.ops._C.static_scaled_fp8_quant.default(" in code
 
 
+# 创建用于填充验证测试的模拟 VllmConfig
 def _create_vllm_config_for_validation(
     compilation_config: CompilationConfig,
 ) -> MagicMock:
@@ -495,6 +510,7 @@ def _create_vllm_config_for_validation(
     return mock_config
 
 
+# 测试 compile_sizes 中会被 CUDA Graph 填充的尺寸应报错
 def test_compile_sizes_padding_validation():
     """Test that compile_sizes with values that would be padded raises an error."""
     # cudagraph_capture_sizes=[1, 2, 4, 8] means:
@@ -593,6 +609,7 @@ def test_compile_sizes_padding_validation():
         ([1, 2, 4], 4, 0, [1, 2, 4], 4),
     ],
 )
+# 测试 Mamba 缓存块数量对 CUDA Graph 捕获尺寸的截断
 def test_adjust_cudagraph_sizes_for_mamba_cache(
     capture_sizes, max_size, num_blocks, expected_sizes, expected_max
 ):

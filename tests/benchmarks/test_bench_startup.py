@@ -5,6 +5,7 @@ import subprocess
 import pytest
 
 
+# [中文注释] 测试vllm bench startup CLI命令是否能正常执行并返回成功状态码
 @pytest.mark.benchmark
 def test_bench_startup():
     command = [

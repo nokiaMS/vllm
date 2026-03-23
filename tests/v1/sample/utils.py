@@ -14,6 +14,7 @@ from vllm.v1.sample.logits_processor import BatchUpdate, LogitsProcessor
 from vllm.v1.sample.metadata import SamplingMetadata
 
 
+# [中文注释] 枚举类：定义测试批次中logprobs配置的组合类型
 class BatchLogprobsComposition(Enum):
     """Types of logprobs configs to include in test batch"""
 
@@ -26,6 +27,7 @@ class BatchLogprobsComposition(Enum):
 BatchLogprobsSpecType = list[tuple[int | None, int | None]]
 
 
+# [中文注释] 辅助函数：根据logprobs组合类型生成测试批次的logprobs配置
 def get_test_batch(
     batch_logprobs_composition: BatchLogprobsComposition,
 ) -> BatchLogprobsSpecType:
@@ -169,6 +171,7 @@ def create_prompt_tokens_tensor(
     )
 
 
+# [中文注释] 命名元组：封装用于测试的伪造logits处理器相关数据
 class LogitsprocsTestFakes(NamedTuple):
     """Wraps fake data structures to support testing"""
 

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试FusedRMSNormGated在torch.compile下的分解正确性，
+# 验证forward_native编译路径与forward_cuda Triton内核的输出一致性
 """Tests that FusedRMSNormGated decomposes correctly under torch.compile,
 matching the eager triton kernel output."""
 
@@ -25,6 +27,7 @@ SEEDS = [0]
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("seed", SEEDS)
 @torch.inference_mode()
+# 测试2D输入下torch.compile编译的forward_native与eager模式forward_cuda的一致性
 def test_compiled_vs_eager(
     default_vllm_config,
     num_tokens: int,
@@ -70,6 +73,7 @@ def test_compiled_vs_eager(
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("seed", SEEDS)
 @torch.inference_mode()
+# 测试多维输入（3D/4D）下torch.compile编译路径与eager模式的一致性
 def test_compiled_vs_eager_multidim(
     default_vllm_config,
     shape: tuple,

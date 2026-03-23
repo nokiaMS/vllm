@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试分类模型的head_dtype配置，验证float32和model精度模式下的输出正确性
+
 import pytest
 import torch
 from transformers import AutoModelForSequenceClassification

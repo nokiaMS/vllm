@@ -17,6 +17,7 @@ from vllm.config import CompilationConfig, CompilationMode, CUDAGraphMode
 MODEL = "microsoft/Phi-tiny-MoE-instruct"
 
 
+# 运行 vLLM 推理，用于冷启动/热启动编译计数测试
 def _run_vllm(vllm_runner):
     with vllm_runner(
         MODEL,
@@ -33,6 +34,7 @@ def _run_vllm(vllm_runner):
         pass
 
 
+# 冷启动：首次编译，验证所有产物保存到磁盘且未从缓存加载
 def _cold_start(vllm_runner):
     counters.clear()
     with compilation_counter.expect(
@@ -45,6 +47,7 @@ def _cold_start(vllm_runner):
     assert counters["aot_autograd"]["autograd_cache_hit"] == 0
 
 
+# 测试 MoE 模型的冷启动（fork 子进程）和热启动（加载磁盘缓存）编译流程
 def test_moe_startup(monkeypatch, vllm_runner, fresh_vllm_cache):
     monkeypatch.setenv("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
 

@@ -11,6 +11,7 @@ from safetensors import safe_open
 from vllm import LLM, ModelRegistry, SamplingParams
 
 
+# [中文注释] 辅助函数：验证模型输出中的隐藏状态路径存在，并检查保存的tensor形状和内容是否符合预期。
 def get_and_check_output(output, expected_shape):
     assert output.kv_transfer_params is not None
     hidden_states_path = output.kv_transfer_params.get("hidden_states_path")
@@ -38,6 +39,7 @@ def get_and_check_output(output, expected_shape):
     return token_ids, hidden_states
 
 
+# [中文注释] 测试夹具：创建最小化的LlamaConfig配置目录，供PredictableLlamaForCausalLM使用。
 @pytest.fixture(scope="module")
 def predictable_llama_config_path(tmp_path_factory):
     """Create a minimal LlamaConfig for PredictableLlamaForCausalLM."""
@@ -70,6 +72,7 @@ def predictable_llama_config_path(tmp_path_factory):
     return str(config_dir)
 
 
+# [中文注释] 测试夹具：将PredictableLlamaForCausalLM注册到ModelRegistry中，确保测试可发现该模型。
 @pytest.fixture(scope="module", autouse=True)
 def register_predictable_model():
     """Register the PredictableLlamaForCausalLM model."""
@@ -82,6 +85,7 @@ def register_predictable_model():
     yield
 
 
+# [中文注释] 测试用例：使用可预测的虚拟模型验证隐藏状态提取的正确性，检查非顺序层ID的提取值和排序。
 def test_extract_hidden_states_with_predictable_dummy_model(
     predictable_llama_config_path, tmp_path
 ):

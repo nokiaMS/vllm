@@ -12,6 +12,8 @@ import pytest
 
 from tests.quantization.utils import is_quant_method_supported
 
+# 测试 FPQuant（NVFP4/MXFP4）量化模型的加载和推理
+
 MODELS = [
     "ISTA-DASLab/Qwen3-0.6B-RTN-NVFP4",
     "ISTA-DASLab/Qwen3-0.6B-RTN-MXFP4",

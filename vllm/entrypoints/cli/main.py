@@ -12,7 +12,7 @@ from vllm.logger import init_logger
 
 logger = init_logger(__name__)
 
-
+# vllm server的入口函数。
 def main():
     import vllm.entrypoints.cli.benchmark.main
     import vllm.entrypoints.cli.collect_env

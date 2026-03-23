@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Helion内核配置管理系统ConfigManager和ConfigSet的单元测试，
+# 覆盖配置创建、JSON序列化/反序列化、per-platform文件加载/保存、单例模式等场景
 """
 Unit tests for Helion ConfigManager and ConfigSet.
 
@@ -37,6 +39,7 @@ def reset_config_manager_singleton():
     ConfigManager.reset_instance()
 
 
+# ConfigSet测试套件：验证配置集的创建、字典构造、键查询和序列化
 class TestConfigSet:
     """Test suite for ConfigSet class."""
 
@@ -140,6 +143,7 @@ class TestConfigSet:
         assert result_data == original_data
 
 
+# ConfigManager测试套件：验证目录管理、配置加载/保存、平台配置查询和单例模式
 class TestConfigManager:
     """Test suite for ConfigManager class."""
 

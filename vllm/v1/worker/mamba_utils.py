@@ -20,6 +20,8 @@ from vllm.v1.worker.gpu_input_batch import CachedRequestState
 from vllm.v1.worker.lora_model_runner_mixin import GPUInputBatch
 
 
+# Triton JIT 编译的批量内存拷贝内核，用于在 GPU 上并行执行多段内存拷贝
+# 每个 program 实例负责将一对 (src, dst) 之间的数据按 BLOCK_SIZE 分块拷贝
 @triton.jit
 def batch_memcpy_kernel(src_ptrs, dst_ptrs, sizes, BLOCK_SIZE: tl.constexpr):
     pid = tl.program_id(0)
@@ -39,6 +41,8 @@ def batch_memcpy_kernel(src_ptrs, dst_ptrs, sizes, BLOCK_SIZE: tl.constexpr):
         tl.store(curr_dst_ptr, data, mask=mask)
 
 
+# 批量内存拷贝的入口函数，封装 Triton 内核调用
+# 以 batch 维度启动 grid，每个 program 处理一组 src->dst 拷贝
 def batch_memcpy(src_ptrs, dst_ptrs, sizes):
     batch = src_ptrs.shape[0]
     assert dst_ptrs.shape[0] == batch
@@ -49,6 +53,8 @@ def batch_memcpy(src_ptrs, dst_ptrs, sizes):
     batch_memcpy_kernel[grid](src_ptrs, dst_ptrs, sizes, BLOCK_SIZE=BLOCK_SIZE)
 
 
+# 从 KV 缓存配置中提取所有 Mamba 类型的缓存组 ID 和对应的 MambaSpec
+# 确保模型中至少存在 Mamba 层，并验证所有 Mamba 层具有相同的规格
 def get_mamba_groups(kv_cache_config: KVCacheConfig) -> tuple[list[int], MambaSpec]:
     mamba_group_ids: list[int] = []
     mamba_specs: list[MambaSpec] = []
@@ -62,6 +68,8 @@ def get_mamba_groups(kv_cache_config: KVCacheConfig) -> tuple[list[int], MambaSp
     return mamba_group_ids, mamba_specs[0]
 
 
+# Mamba 状态拷贝操作所需的缓冲区集合
+# 存储源地址、目标地址和拷贝大小的 CPU/GPU 双缓冲区，用于批量发起异步内存拷贝
 @dataclasses.dataclass
 class MambaCopyBuffers:
     src_ptrs: CpuGpuBuffer
@@ -90,6 +98,8 @@ class MambaCopyBuffers:
         )
 
 
+# 收集单个请求在所有 Mamba 层上的状态拷贝元信息（源地址、目标地址、大小）
+# 将拷贝信息写入 MambaCopyBuffers 的 numpy 数组中，为后续批量 GPU 拷贝做准备
 def collect_mamba_copy_meta(
     copy_bufs: MambaCopyBuffers,
     kv_cache_config: KVCacheConfig,
@@ -129,6 +139,8 @@ def collect_mamba_copy_meta(
     copy_bufs.offset = offset
 
 
+# 执行已收集的 Mamba 状态块拷贝操作
+# 将 CPU 端缓冲区传输到 GPU 并调用批量内存拷贝内核
 def do_mamba_copy_block(copy_bufs: MambaCopyBuffers):
     n = copy_bufs.offset
     if n == 0:
@@ -140,6 +152,8 @@ def do_mamba_copy_block(copy_bufs: MambaCopyBuffers):
     )
 
 
+# Mamba 前处理：在前向推理之前，将上一步的运行状态拷贝到最后一个非投机块
+# 处理已完成、被抢占和恢复的请求的状态索引清理，确保状态一致性
 def preprocess_mamba(
     scheduler_output: SchedulerOutput,
     kv_cache_config: KVCacheConfig,
@@ -214,6 +228,8 @@ def preprocess_mamba(
     do_mamba_copy_block(copy_bufs)
 
 
+# Mamba 后处理：当部分块在本步变为完整块时，将运行状态拷贝到新的完整块中
+# 确保缓存的 Mamba 状态与 token 计算进度保持同步
 def postprocess_mamba(
     scheduler_output: SchedulerOutput,
     kv_cache_config: KVCacheConfig,

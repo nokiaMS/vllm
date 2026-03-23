@@ -22,6 +22,8 @@ from .utils import request_memory
 logger = init_logger(__name__)
 
 
+# XPU 工作进程类，继承自 GPU Worker 并针对 Intel XPU 设备进行适配
+# 负责 XPU 设备初始化、oneCCL 分布式通信环境配置、内存快照管理和模型运行器创建
 class XPUWorker(Worker):
     """A XPU worker class."""
 

@@ -12,6 +12,7 @@ from vllm.utils.network_utils import get_distributed_init_method, get_ip, get_op
 from vllm.v1.executor import UniProcExecutor
 from vllm.v1.worker.worker_base import WorkerWrapperBase
 
+# Tensorizer 序列化/反序列化测试的配置和辅助工具
 MODEL_REF = "facebook/opt-125m"
 
 
@@ -55,11 +56,13 @@ def model_path(model_ref, tmp_path):
     yield tmp_path / model_ref / "model.tensors"
 
 
+# 辅助函数：通过 collective_rpc 在引擎上执行闭包并验证结果
 def assert_from_collective_rpc(engine: LLM, closure: Callable, closure_kwargs: dict):
     res = engine.collective_rpc(method=closure, kwargs=closure_kwargs)
     return all(res)
 
 
+# 用于 Tensorizer 功能测试的虚拟执行器（不加载模型权重）
 # This is an object pulled from tests/v1/engine/test_engine_core.py
 # Modified to strip the `load_model` method from its `_init_executor`
 # method. It's purely used as a dummy utility to run methods that test

@@ -39,6 +39,9 @@ from vllm.v1.attention.backends.flashinfer import (  # noqa: E402
 )
 
 
+# 集成测试：通过 FlashInfer 管线运行 TRTLLM gen-full 注意力并与 SDPA 参考对比
+
+# 用于测试的最小模拟注意力层
 class MockAttentionLayer:
     """Minimal mock of an attention layer for testing."""
 
@@ -72,6 +75,7 @@ BATCH_SPECS = {
 }
 
 
+# 模拟每层参数获取函数，返回标准缩放因子和无滑动窗口配置
 def _mock_get_per_layer_parameters(vllm_config, layer_names, impl_cls):
     head_size = vllm_config.model_config.get_head_size()
     return {
@@ -84,6 +88,7 @@ def _mock_get_per_layer_parameters(vllm_config, layer_names, impl_cls):
     }
 
 
+# 创建 HND 布局的 KV 缓存并用上下文数据填充
 def _create_hnd_kv_cache(
     k_contexts,
     v_contexts,
@@ -168,6 +173,7 @@ def _create_hnd_kv_cache(
     return kv_cache
 
 
+# 运行完整的 TRTLLM 注意力管线并与 SDPA 参考输出对比
 def _run_trtllm_integration(batch_spec):
     """Run TRTLLM attention through the full FlashInfer pipeline
     and compare against an SDPA reference."""

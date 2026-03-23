@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Llama-4 模型的多模态预处理参数，验证不同图像数量下的 token 数量计算
 """Tests for Llama4's multimodal preprocessing kwargs."""
 
 import pytest

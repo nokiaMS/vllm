@@ -7,6 +7,9 @@ from vllm.triton_utils import tl, triton
 from vllm.v1.worker.gpu.buffer_utils import StagedWriteTensor, UvaBackedTensor
 
 
+# M-RoPE（多维旋转位置编码）状态管理类
+# 用于Qwen2-VL等模型的3D位置编码，将位置信息分为时间、高度、宽度三个维度
+# 设计思路：预计算prefill阶段的M-RoPE位置，decode阶段通过delta偏移量高效计算
 class MRopeState:
     def __init__(
         self,
@@ -43,6 +46,8 @@ class MRopeState:
             (3, max_num_tokens + 1), dtype=torch.int64, device=device
         )
 
+    # 为指定请求初始化prefill阶段的M-RoPE位置编码
+    # 调用模型的get_mrope_input_positions计算3D位置，并写入暂存缓冲区
     def init_prefill_mrope_positions(
         self,
         req_idx: int,
@@ -58,10 +63,13 @@ class MRopeState:
             self.prefill_mrope_positions.stage_write(3 * req_idx + i, 0, pos)
         self.prefill_mrope_delta.np[req_idx] = prefill_mrope_delta
 
+    # 将暂存的写操作实际应用到GPU张量中
     def apply_staged_writes(self) -> None:
         self.prefill_mrope_positions.apply_write()
         self.prefill_mrope_delta.copy_to_uva()
 
+    # 准备当前批次的M-RoPE位置编码
+    # 调用Triton内核，根据prefill/decode状态从预计算位置或delta偏移量生成最终位置
     def prepare_mrope_positions(
         self,
         idx_mapping: torch.Tensor,
@@ -85,6 +93,9 @@ class MRopeState:
         )
 
 
+# Triton内核：为每个请求填充M-RoPE位置编码
+# 关键逻辑：prefill请求直接读取预计算的3D位置；decode请求通过原始位置加delta偏移计算
+# 每个程序实例处理一个请求，遍历其所有query token
 @triton.jit
 def _prepare_mrope_positions_kernel(
     mrope_positions_ptr,

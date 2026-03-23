@@ -16,12 +16,14 @@ from vllm.transformers_utils.runai_utils import (
 )
 
 
+# 测试 URI 格式识别：GCS 和 S3 URI 应被识别，NFS URI 不应被识别
 def test_is_runai_obj_uri():
     assert is_runai_obj_uri("gs://some-gcs-bucket/path")
     assert is_runai_obj_uri("s3://some-s3-bucket/path")
     assert not is_runai_obj_uri("nfs://some-nfs-path")
 
 
+# 测试在本地目录中列出 safetensors 文件
 def test_runai_list_safetensors_local():
     with tempfile.TemporaryDirectory() as tmpdir:
         huggingface_hub.constants.HF_HUB_OFFLINE = False
@@ -37,6 +39,7 @@ def test_runai_list_safetensors_local():
         assert len(safetensors) == len(files)
 
 
+# 测试从 GCS 公共存储桶拉取文件并验证 MD5 校验和
 def test_runai_pull_files_gcs(monkeypatch):
     monkeypatch.setenv("RUNAI_STREAMER_GCS_USE_ANONYMOUS_CREDENTIALS", "true")
     # Bypass default project lookup by setting GOOGLE_CLOUD_PROJECT

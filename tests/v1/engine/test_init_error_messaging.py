@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试KV缓存OOM时的错误消息，包括零内存和不足内存两种情况
 
 import pytest
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 通用多模态生成测试：覆盖多种 VLM 模型的单图、多图、嵌入、视频、音频及自定义输入场景
 """Common tests for testing .generate() functionality for single / multiple
 image, embedding, and video support for different VLMs in vLLM.
 """
@@ -974,6 +975,7 @@ VLM_TEST_SETTINGS = {
 }
 
 
+# 将测试按模型分成多个组，用于 CI 中的并行测试拆分
 def _mark_splits(
     test_settings: dict[str, VLMTestInfo],
     *,
@@ -1025,6 +1027,7 @@ VLM_TEST_SETTINGS = _mark_splits(VLM_TEST_SETTINGS, num_groups=2)
         create_new_process_for_each_test=False,
     ),
 )
+# 测试单张图片输入下各 VLM 模型的生成结果，对比 vLLM 与 HF 的输出
 def test_single_image_models(
     tmp_path: PosixPath,
     model_type: str,
@@ -1052,6 +1055,7 @@ def test_single_image_models(
         create_new_process_for_each_test=False,
     ),
 )
+# 测试多张图片输入下各 VLM 模型的生成结果
 def test_multi_image_models(
     tmp_path: PosixPath,
     model_type: str,
@@ -1079,6 +1083,7 @@ def test_multi_image_models(
         create_new_process_for_each_test=False,
     ),
 )
+# 测试图像嵌入输入下各 VLM 模型的生成结果
 def test_image_embedding_models(
     model_type: str,
     test_case: ExpandableVLMTestArgs,
@@ -1104,6 +1109,7 @@ def test_image_embedding_models(
         create_new_process_for_each_test=False,
     ),
 )
+# 测试视频输入下各 VLM 模型的生成结果
 def test_video_models(
     model_type: str,
     test_case: ExpandableVLMTestArgs,
@@ -1129,6 +1135,7 @@ def test_video_models(
         create_new_process_for_each_test=False,
     ),
 )
+# 测试音频输入下各 VLM 模型的生成结果
 def test_audio_models(
     model_type: str,
     test_case: ExpandableVLMTestArgs,
@@ -1154,6 +1161,7 @@ def test_audio_models(
         create_new_process_for_each_test=False,
     ),
 )
+# 测试自定义输入场景下各 VLM 模型的生成结果
 def test_custom_inputs_models(
     model_type: str,
     test_case: ExpandableVLMTestArgs,
@@ -1179,6 +1187,7 @@ def test_custom_inputs_models(
     ),
 )
 @create_new_process_for_each_test()
+# 重量级单图测试：为每个测试用例创建新进程（用于分布式后端等场景）
 def test_single_image_models_heavy(
     tmp_path: PosixPath,
     model_type: str,
@@ -1207,6 +1216,7 @@ def test_single_image_models_heavy(
     ),
 )
 @create_new_process_for_each_test()
+# 重量级多图测试：为每个测试用例创建新进程
 def test_multi_image_models_heavy(
     tmp_path: PosixPath,
     model_type: str,
@@ -1235,6 +1245,7 @@ def test_multi_image_models_heavy(
     ),
 )
 @create_new_process_for_each_test()
+# 重量级图像嵌入测试：为每个测试用例创建新进程
 def test_image_embedding_models_heavy(
     model_type: str,
     test_case: ExpandableVLMTestArgs,
@@ -1260,6 +1271,7 @@ def test_image_embedding_models_heavy(
         create_new_process_for_each_test=True,
     ),
 )
+# 重量级视频测试：为每个测试用例创建新进程
 def test_video_models_heavy(
     model_type: str,
     test_case: ExpandableVLMTestArgs,
@@ -1285,6 +1297,7 @@ def test_video_models_heavy(
         create_new_process_for_each_test=True,
     ),
 )
+# 重量级音频测试：为每个测试用例创建新进程
 def test_audio_models_heavy(
     model_type: str,
     test_case: ExpandableVLMTestArgs,
@@ -1311,6 +1324,7 @@ def test_audio_models_heavy(
     ),
 )
 @create_new_process_for_each_test()
+# 重量级自定义输入测试：为每个测试用例创建新进程
 def test_custom_inputs_models_heavy(
     model_type: str,
     test_case: ExpandableVLMTestArgs,

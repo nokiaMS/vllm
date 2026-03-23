@@ -21,8 +21,16 @@ if TYPE_CHECKING:
 logger = init_logger(__name__)
 
 
+# ECConnectorModelRunnerMixin：编码器缓存（Encoder Cache）连接器的 Mixin 类
+# 设计目的：为 GPU/TPU 等不同后端的 ModelRunner 提供统一的编码器缓存传输接口
+# 核心功能：
+#   1. 将编码器输出缓存保存到 EC 连接器（用于跨节点/跨设备共享）
+#   2. 查询已完成的缓存传输（发送端和接收端）
+#   3. 通过上下文管理器封装完整的 EC 连接器生命周期（绑定元数据→加载缓存→清理）
 # Defined as a EC connector functionality mixin for ModelRunner (GPU, TPU)
 class ECConnectorModelRunnerMixin:
+    # 将编码器缓存保存到 EC 连接器，供其他节点消费
+    # 如果 EC 传输未初始化则跳过（非 EC 部署场景）
     @staticmethod
     def maybe_save_ec_to_connector(
         encoder_cache: dict[str, torch.Tensor],
@@ -34,6 +42,7 @@ class ECConnectorModelRunnerMixin:
         connector = get_ec_transfer()
         connector.save_caches(encoder_cache=encoder_cache, mm_hash=mm_hash)
 
+    # 查询已完成的 EC 传输，返回已完成发送和接收的请求 ID 集合
     @staticmethod
     def get_finished_ec_transfers(
         scheduler_output: "SchedulerOutput",
@@ -42,6 +51,8 @@ class ECConnectorModelRunnerMixin:
             return get_ec_transfer().get_finished(scheduler_output.finished_req_ids)
         return None, None
 
+    # 条件性获取 EC 连接器输出的上下文管理器
+    # 当 EC 传输可用时返回完整的连接器生命周期管理器；否则返回空上下文
     @staticmethod
     def maybe_get_ec_connector_output(
         scheduler_output: "SchedulerOutput",
@@ -56,6 +67,10 @@ class ECConnectorModelRunnerMixin:
             else nullcontext()
         )
 
+    # EC 连接器生命周期的核心上下文管理器
+    # 流程：绑定调度器元数据 → 启动缓存加载（消费端）→ yield 执行模型前向 →
+    #       收集已完成传输 → 清理元数据
+    # 必须在活跃的 forward 上下文中使用
     # This context manager must be used within an active forward context.
     # It encapsulates the entire EC connector lifecycle within execute_model
     @staticmethod

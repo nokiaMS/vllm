@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 LLM.generate() 接口：多采样参数、优先级参数、最大模型长度限制和日志统计
+
 import weakref
 
 import pytest
@@ -25,6 +27,7 @@ TOKEN_IDS = [
 ]
 
 
+# 创建共享的 DistilGPT2 LLM 实例 fixture（模块级别复用）
 @pytest.fixture(scope="module")
 def llm():
     # pytest caches the fixture so we use weakref.proxy to
@@ -45,6 +48,7 @@ def llm():
 
 
 @pytest.mark.skip_global_cleanup
+# 测试多个/单个/空采样参数与提示的匹配和错误处理
 def test_multiple_sampling_params(llm: LLM):
     sampling_params = [
         SamplingParams(temperature=0.01, top_p=0.95),
@@ -71,6 +75,7 @@ def test_multiple_sampling_params(llm: LLM):
     assert len(PROMPTS) == len(outputs)
 
 
+# 测试优先级参数的长度校验和 None 处理
 def test_multiple_priority(llm: LLM):
     # Generate works when priority is None
     outputs = llm.generate(PROMPTS, sampling_params=None, priority=None)
@@ -91,6 +96,7 @@ def test_multiple_priority(llm: LLM):
         outputs = llm.generate(PROMPTS, sampling_params=None, priority=[])
 
 
+# 测试生成的总 token 数不超过 max_model_len 限制
 def test_max_model_len():
     max_model_len = 20
     llm = LLM(
@@ -111,6 +117,7 @@ def test_max_model_len():
         assert num_total_tokens <= max_model_len
 
 
+# 测试启用日志统计后每个输出都包含 metrics 信息
 def test_log_stats():
     llm = LLM(
         model=MODEL_NAME,

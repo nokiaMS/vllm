@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 QwQ 模型的工具调用与推理内容（流式和非流式）
+
 import openai  # use the official client for correctness check
 import pytest
 import pytest_asyncio
@@ -79,6 +81,7 @@ FUNC_NAME = "get_current_weather"
 FUNC_ARGS = """{"city": "Dallas", "state": "TX", "unit": "fahrenheit"}"""
 
 
+# 从流式 chunk 中提取推理文本和工具调用参数
 def extract_reasoning_and_calls(chunks: list):
     reasoning = ""
     tool_call_idx = -1
@@ -106,6 +109,7 @@ def extract_reasoning_and_calls(chunks: list):
 
 # test streaming
 @pytest.mark.asyncio
+# 测试流式模式下工具调用和推理内容的同时输出
 async def test_chat_streaming_of_tool_and_reasoning(client: openai.AsyncOpenAI):
     stream = await client.chat.completions.create(
         model=MODEL_NAME,
@@ -127,6 +131,7 @@ async def test_chat_streaming_of_tool_and_reasoning(client: openai.AsyncOpenAI):
 
 # test full generate
 @pytest.mark.asyncio
+# 测试非流式模式下工具调用和推理内容的完整返回
 async def test_chat_full_of_tool_and_reasoning(client: openai.AsyncOpenAI):
     tool_calls = await client.chat.completions.create(
         model=MODEL_NAME,

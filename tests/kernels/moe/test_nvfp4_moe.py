@@ -50,6 +50,7 @@ MNK_FACTORS = [
 @pytest.mark.parametrize("topk", [1, 6, 8])
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @torch.inference_mode()
+# [中文注释] 测试CUTLASS FP4（NVFP4）MoE内核在不同维度和专家数下的计算正确性
 def test_cutlass_fp4_moe_no_graph(
     m: int, n: int, k: int, e: int, topk: int, dtype: torch.dtype, workspace_init
 ):
@@ -177,6 +178,7 @@ SWIGLUSTEP_MNK_FACTORS = [
 @pytest.mark.parametrize("topk", [1, 8])
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @torch.inference_mode()
+# [中文注释] 测试CUTLASS FP4 MoE使用SwiGLU激活函数的计算正确性
 def test_cutlass_fp4_moe_swiglustep(
     m: int, n: int, k: int, e: int, topk: int, dtype: torch.dtype, workspace_init
 ):

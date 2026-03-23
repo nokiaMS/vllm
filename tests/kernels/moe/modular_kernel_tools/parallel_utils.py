@@ -19,6 +19,7 @@ from vllm.utils.network_utils import get_open_port
 P = ParamSpec("P")
 
 
+# [中文注释] 进程组信息数据类，记录多GPU并行中的world_size、rank、设备等信息
 @dataclasses.dataclass
 class ProcessGroupInfo:
     world_size: int
@@ -108,6 +109,7 @@ def _worker_parallel_launch(
         torch.distributed.destroy_process_group()
 
 
+# [中文注释] 启动多GPU并行测试：使用torch.multiprocessing.spawn在多个rank上执行worker函数
 def parallel_launch_with_config(
     world_size: int,
     worker: Callable[Concatenate[ProcessGroupInfo, VllmConfig, Any, P], None],

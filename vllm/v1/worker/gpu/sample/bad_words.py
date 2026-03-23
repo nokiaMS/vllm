@@ -12,6 +12,10 @@ MAX_BAD_WORDS_TOTAL_TOKENS = 1024  # Max total tokens for all bad words per requ
 MAX_NUM_BAD_WORDS = 128  # Max number of bad words per request
 
 
+# 禁用词（bad words）状态管理类
+# 负责存储每个请求的禁用词 token 序列，并在采样时将匹配的禁用词的最后一个 token 的 logit 置为 -inf
+# 数据结构设计：将每个请求的多个禁用词展平存储，并用偏移量数组记录每个禁用词的边界
+# 使用 StagedWriteTensor 实现 CPU 端暂存、批量写入 GPU 的高效传输模式
 class BadWordsState:
     def __init__(self, req_states: RequestState):
         self.req_states = req_states
@@ -33,6 +37,7 @@ class BadWordsState:
         # number of bad words per request
         self.num_bad_words = UvaBackedTensor(self.max_num_reqs, dtype=torch.int32)
 
+    # 为新请求注册禁用词列表，将禁用词展平并计算累计偏移量，暂存到 StagedWriteTensor 中
     def add_request(self, req_idx: int, sampling_params: SamplingParams) -> None:
         bad_words_token_ids = sampling_params.bad_words_token_ids
         if not bad_words_token_ids:
@@ -64,11 +69,13 @@ class BadWordsState:
         self.bad_word_offsets.stage_write(req_idx, 0, offsets)
         self.num_bad_words.np[req_idx] = num_bad_words
 
+    # 将暂存的禁用词数据批量刷写到 GPU 显存
     def apply_staged_writes(self) -> None:
         self.num_bad_words.copy_to_uva()
         self.bad_word_token_ids.apply_write()
         self.bad_word_offsets.apply_write()
 
+    # 对 logits 应用禁用词掩码：若当前已生成的 token 序列与某禁用词的前缀匹配，则将该禁用词最后一个 token 的 logit 置为 -inf
     def apply_bad_words(
         self,
         logits: torch.Tensor,
@@ -97,6 +104,10 @@ class BadWordsState:
         )
 
 
+# Triton 禁用词匹配内核
+# 算法：对每个 token 位置和每个禁用词，检查已生成序列的后缀是否与禁用词的前缀完全匹配
+# 若匹配，则将禁用词最后一个 token 对应的 logit 设为 -inf，阻止模型生成该 token
+# 支持投机解码场景：可同时检查来自输出历史和投机输入的 token
 @triton.jit
 def _bad_words_kernel(
     logits_ptr,
@@ -162,6 +173,7 @@ def _bad_words_kernel(
         tl.store(logits_ptr + token_idx * logits_stride + last_token, -float("inf"))
 
 
+# 禁用词内核的入口函数，以 (num_tokens, max_num_bad_words) 的二维网格启动 Triton 内核
 def apply_bad_words(
     logits: torch.Tensor,
     expanded_idx_mapping: torch.Tensor,

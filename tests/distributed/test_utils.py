@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试分布式工具函数（CUDA 设备计数、StatelessProcessGroup 通信等）
 
 import socket
 

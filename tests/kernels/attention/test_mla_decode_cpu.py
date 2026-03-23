@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试CPU上MLA（Multi-head Latent Attention）解码内核的计算正确性
 import pytest
 import torch
 import torch.nn.functional as F
@@ -10,6 +11,7 @@ from vllm.platforms import current_platform
 from vllm.utils.math_utils import cdiv
 
 
+# MLA解码的PyTorch参考实现（使用GQA模式的scaled_dot_product_attention）
 def ref_mla(
     out: Tensor,  # (bs, num_heads, v_head_dim)
     query: Tensor,  # (bs, num_heads, head_dim)
@@ -34,6 +36,7 @@ def ref_mla(
     return out
 
 
+# 测试CPU上MLA解码内核在多种数据类型和变长序列下与参考实现的一致性
 @pytest.mark.parametrize("bs", [4])
 @pytest.mark.parametrize("mean_seq_len", [256])
 @pytest.mark.parametrize("h_q", [16])

@@ -33,6 +33,8 @@ from vllm.model_executor.layers.quantization.utils.w8a8_utils import (
 from vllm.platforms import current_platform
 from vllm.v1.attention.backends.fa_utils import get_flash_attn_version
 
+# 测试 compressed-tensors（llmcompressor）量化模型的加载、结构验证和推理
+
 # AITER only supports per-channel-per-channel INT8 gemm
 # and per-tensor-per-tensor INT8 GEMM.
 # It does not support mix precision MM and mix quantization scheme.

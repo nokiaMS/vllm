@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Keye-VL 视觉语言模型的多图理解生成能力
 from dataclasses import asdict
 from typing import NamedTuple
 
@@ -15,6 +16,7 @@ MODEL_NAME = "Kwai-Keye/Keye-VL-8B-Preview"
 QUESTION = "What is the content of each image?"
 
 
+# 封装模型请求数据，包含引擎参数、提示、图像数据等
 class ModelRequestData(NamedTuple):
     engine_args: EngineArgs
     prompt: str
@@ -26,6 +28,7 @@ class ModelRequestData(NamedTuple):
 
 @pytest.mark.core_model
 @pytest.mark.parametrize("question", [QUESTION])
+# 测试 Keye-VL 模型对多张图片的描述生成能力
 def test_keye_vl(
     image_assets,
     question: str,

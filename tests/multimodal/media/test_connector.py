@@ -266,6 +266,7 @@ async def test_fetch_video_http_with_dynamic_loader(
         ),
     ],
 )
+# [中文注释] 测试PlaceholderRange在指定范围内获取嵌入索引
 def test_placeholder_range_get_embeds_indices_in_range(
     is_embed, start_idx, end_idx, expected
 ):
@@ -287,6 +288,7 @@ def test_placeholder_range_get_embeds_indices_in_range(
         (0, torch.tensor([False, False, False, False]), []),
     ],
 )
+# [中文注释] 测试PlaceholderRange提取嵌入范围
 def test_placeholder_range_extract_embeds_range(offset, is_embed, expected):
     length = len(is_embed) if is_embed is not None else 5
     pr = PlaceholderRange(offset=offset, length=length, is_embed=is_embed)

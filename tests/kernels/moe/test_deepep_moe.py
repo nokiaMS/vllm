@@ -49,6 +49,7 @@ requires_deep_ep = pytest.mark.skipif(
 MAX_TOKENS_PER_RANK = 64
 
 
+# [中文注释] 创建DeepEP MoE测试权重（w1、w2及其FP8量化缩放因子）
 def make_weights(
     e, n, k, dtype
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -82,6 +83,7 @@ def make_weights(
 
 
 @dataclasses.dataclass
+# [中文注释] DeepEP MoE测试配置，定义模型维度、专家数、量化类型等参数
 class TestConfig:
     dtype: torch.dtype
     topk: int
@@ -92,6 +94,7 @@ class TestConfig:
 
 
 @dataclasses.dataclass
+# [中文注释] DeepEP MoE测试张量容器，包含隐藏状态、权重和路由信息
 class TestTensors:
     rank_tokens: torch.Tensor  # all ranks make this many tokens
     rank_token_scales: torch.Tensor | None
@@ -124,6 +127,7 @@ class TestTensors:
         )
 
 
+# [中文注释] 创建DeepEP模块化MoE内核：组装通信和计算组件
 def make_modular_kernel(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -188,6 +192,7 @@ def make_modular_kernel(
     return mk
 
 
+# [中文注释] DeepEP MoE实现：在指定rank上执行dispatch-combine逻辑并返回结果
 def deep_ep_moe_impl(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -289,6 +294,7 @@ def deep_ep_moe_impl(
     return out_hidden_states
 
 
+# [中文注释] Torch MoE参考实现：使用Python循环逐专家计算，作为DeepEP的对比基准
 def torch_moe_impl(
     test_tensors: TestTensors,
     w1: torch.Tensor,
@@ -345,6 +351,7 @@ def torch_moe_impl(
     return out
 
 
+# [中文注释] DeepEP MoE端到端测试核心：在多GPU上运行并与参考实现比较结果
 def _deep_ep_moe(
     pgi: ProcessGroupInfo,
     low_latency_mode: bool,
@@ -444,6 +451,7 @@ DTYPES = [torch.bfloat16, torch.float8_e4m3fn]
 @pytest.mark.parametrize("per_act_token_quant", [False, True])
 @multi_gpu_test(num_gpus=2)
 @requires_deep_ep
+# [中文注释] 测试DeepEP高吞吐模式MoE在多GPU上的dispatch-combine正确性
 def test_deep_ep_moe(
     dtype: torch.dtype,
     m: int,
@@ -500,6 +508,7 @@ USE_FP8_DISPATCH = [True, False]
 @pytest.mark.parametrize("use_fp8_dispatch", USE_FP8_DISPATCH)
 @multi_gpu_test(num_gpus=2)
 @requires_deep_ep
+# [中文注释] 测试DeepEP低延迟模式MoE在多GPU上的dispatch-combine正确性
 def test_low_latency_deep_ep_moe(
     dtype: torch.dtype,
     m: int,

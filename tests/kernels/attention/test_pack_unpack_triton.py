@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Triton实现的序列pack/unpack操作在FP8数据类型下的正确性
 
 import torch
 from torch.testing import assert_close
@@ -7,6 +8,7 @@ from torch.testing import assert_close
 from vllm.v1.attention.ops.common import pack_seq_triton, unpack_seq_triton
 
 
+# 测试pack_seq_triton在FP8数据类型和3D张量下的基本打包功能
 def test_pack_seq_basic_fp8():
     """Test basic functionality of pack_seq_triton with fp8 and 3D tensors."""
     device = "cuda"
@@ -45,6 +47,7 @@ def test_pack_seq_basic_fp8():
             assert_close(actual_data, expected_data, rtol=1e-1, atol=1e-2)
 
 
+# 测试pack_seq_triton在FP8下使用自定义padding值的正确性
 def test_pack_seq_custom_padding_fp8():
     """Test pack_seq_triton with custom padding values for fp8."""
     device = "cuda"
@@ -76,6 +79,7 @@ def test_pack_seq_custom_padding_fp8():
             assert torch.allclose(padded_data, torch.zeros_like(padded_data), atol=1e-2)
 
 
+# 测试pack_seq_triton默认使用负无穷padding的正确性
 def test_pack_seq_default_negative_inf_padding_fp8():
     """Test that pack_seq_triton uses -inf padding by default for fp8."""
     device = "cuda"
@@ -95,6 +99,7 @@ def test_pack_seq_default_negative_inf_padding_fp8():
     )  # fp8 -inf is represented as large negative number
 
 
+# 测试pack_seq_triton在边界情况（单batch、极短序列、不等长序列）下的正确性
 def test_pack_seq_edge_cases_fp8():
     """Test pack_seq_triton with edge cases for fp8."""
     device = "cuda"
@@ -122,6 +127,7 @@ def test_pack_seq_edge_cases_fp8():
     assert result.shape == (3, 7, 8, 16)
 
 
+# 测试pack_seq_triton在不同Triton块大小配置下的正确性
 def test_pack_seq_different_block_sizes_fp8():
     """Test pack_seq_triton with different block sizes for fp8."""
     device = "cuda"
@@ -146,6 +152,7 @@ def test_pack_seq_different_block_sizes_fp8():
             assert_close(actual_data, expected_data, rtol=1e-1, atol=1e-2)
 
 
+# 测试pack_seq_triton输出形状的一致性（batch维、序列维、特征维）
 def test_pack_seq_shape_consistency():
     """Test that pack_seq_triton maintains shape consistency."""
     device = "cuda"
@@ -164,6 +171,7 @@ def test_pack_seq_shape_consistency():
     assert result.shape[2:] == x.shape[1:]  # Feature dimensions preserved
 
 
+# 测试FP8下pack再unpack的往返一致性（数据完整性验证）
 def test_pack_unpack_roundtrip_fp8():
     """Test that pack -> unpack gives us back the original data for fp8."""
     device = "cuda"
@@ -200,6 +208,7 @@ def test_pack_unpack_roundtrip_fp8():
         assert_close(x_f32, unpacked_with_loc.to(torch.float32), rtol=1e-3, atol=1e-2)
 
 
+# 测试unpack_seq_triton在边界情况下的正确性
 def test_unpack_seq_triton_edge_cases_fp8():
     """Test unpack function with edge cases for fp8."""
     device = "cuda"

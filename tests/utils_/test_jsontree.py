@@ -3,6 +3,7 @@
 from vllm.utils.jsontree import json_count_leaves
 
 
+# [中文注释] 测试JSON树叶节点计数：验证单值、空容器、平坦结构和嵌套结构的叶节点数量
 def test_json_count_leaves():
     """Test json_count_leaves function from jsontree utility."""
 

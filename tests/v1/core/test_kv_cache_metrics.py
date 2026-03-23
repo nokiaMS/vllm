@@ -12,6 +12,9 @@ from vllm.v1.core.kv_cache_metrics import (
 from vllm.v1.core.kv_cache_utils import KVCacheBlock
 
 
+# 测试 KV 缓存块指标状态的跟踪：生命周期、空闲时间、访问历史和复用间隔
+
+# 测试块指标状态的初始化、访问记录、环形缓冲区及时间计算
 class TestBlockMetricsState:
     def test_init(self):
         with patch("time.monotonic_ns", return_value=1000000000):
@@ -83,6 +86,7 @@ class TestBlockMetricsState:
         assert len(state.get_reuse_gaps_seconds()) == 3
 
 
+# 测试 KV 缓存指标收集器的采样率、分配、访问、驱逐和重置功能
 class TestKVCacheMetricsCollector:
     def test_sample_rate_validation(self):
         with pytest.raises(AssertionError):

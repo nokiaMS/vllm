@@ -19,6 +19,7 @@ from vllm.v1.structured_output.backend_types import StructuredOutputOptions
 TOKENIZER = "gpt2"
 
 
+# [中文注释] 测试Guidance后端从终止状态成功回滚（推测解码场景下的EOS回退）
 def test_backend_guidance_rollback_terminated():
     # Test that the backend guidance successfully rollbacks from a
     # terminated state. This can happen with speculative decoding,
@@ -66,6 +67,7 @@ def test_backend_guidance_rollback_terminated():
     assert grammar.is_terminated()
 
 
+# [中文注释] 测试推测解码场景下语法位掩码的正确生成和回滚
 def test_grammar_bitmask_with_specdec():
     tokenizer = AutoTokenizer.from_pretrained(TOKENIZER)
     prompt = tokenizer.encode('{"a": "b"}')
@@ -121,6 +123,7 @@ def test_grammar_bitmask_with_specdec():
 
 
 @pytest.mark.parametrize("async_grammar", [True, False])
+# [中文注释] 参数化测试：验证语法初始化在异步和同步模式下的正确行为
 def test_grammar_init_async_and_sync(async_grammar):
     """Test grammar initialization works correctly in both async and sync modes.
 

@@ -22,6 +22,7 @@ SERVER_ARGS = [
 NUM_CONCURRENT = 100
 
 
+# [中文注释] 端到端测试：使用lm_eval框架的arc_easy任务验证提示logprobs的准确性
 def test_prompt_logprobs_e2e():
     results = lm_eval.simple_evaluate(
         model="vllm", model_args=MODEL_ARGS, tasks=TASK, batch_size="auto"
@@ -34,6 +35,7 @@ def test_prompt_logprobs_e2e():
     ), f"Expected: {EXPECTED_VALUE} |  Measured: {measured_value}"
 
 
+# [中文注释] 端到端测试：通过远程OpenAI服务器接口验证提示logprobs的准确性
 def test_prompt_logprobs_e2e_server():
     with RemoteOpenAIServer(MODEL, SERVER_ARGS) as remote_server:
         url = f"{remote_server.url_for('v1')}/completions"

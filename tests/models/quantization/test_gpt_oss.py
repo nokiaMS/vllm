@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试GPT-OSS模型量化的端到端准确性，使用gsm8k_platinum基准评估
 """
 End-to-end accuracy test for GPT-OSS model quantization.
 

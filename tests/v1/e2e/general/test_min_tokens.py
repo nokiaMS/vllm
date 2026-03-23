@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件全面测试V1引擎的min_tokens参数，包括基本功能、停止字符串、EOS行为和边界情况
 """
 Comprehensive end-to-end tests for `min_tokens` in the V1 engine.
 
@@ -23,6 +24,7 @@ TEST_MODEL = "facebook/opt-125m"  # Small model for fast CI execution
 GREEDY = 0.0  # Deterministic generation for consistent testing
 
 
+# [中文注释] 最小token测试场景的数据类，包含测试名称、最小/最大token数、停止条件和预期长度
 class MinTokensTestCase:
     """Data class for min_tokens test scenarios"""
 
@@ -155,6 +157,7 @@ MIN_TOKENS_TEST_CASES = [
 ]
 
 
+# [中文注释] 创建V1 LLM测试实例的模块级fixture
 @pytest.fixture(scope="module")
 def llm_v1():
     """Create V1 LLM instance for testing"""
@@ -167,6 +170,7 @@ def llm_v1():
     return llm
 
 
+# [中文注释] 从LLM输出中提取生成的token数量
 def get_token_count(output: RequestOutput) -> int:
     """Extract token count from LLM output"""
     if not output.outputs:
@@ -174,6 +178,7 @@ def get_token_count(output: RequestOutput) -> int:
     return len(output.outputs[0].token_ids)
 
 
+# [中文注释] 断言min_tokens要求是否满足，支持精确长度和最小长度两种验证
 def assert_min_tokens_satisfied(
     output: RequestOutput, test_case: MinTokensTestCase
 ) -> None:
@@ -197,6 +202,7 @@ def assert_min_tokens_satisfied(
         )
 
 
+# [中文注释] 参数化测试min_tokens的所有关键场景：基本功能、停止字符串、EOS和边界情况
 @pytest.mark.parametrize(
     "test_case",
     MIN_TOKENS_TEST_CASES,
@@ -253,6 +259,7 @@ def test_min_tokens_comprehensive(llm_v1: LLM, test_case: MinTokensTestCase):
     assert_min_tokens_satisfied(output, test_case)
 
 
+# [中文注释] 测试不带停止条件时min_tokens的基本功能，作为基准测试
 def test_min_tokens_basic_functionality(llm_v1: LLM):
     """
     Test basic min_tokens functionality without stop conditions.
@@ -272,6 +279,7 @@ def test_min_tokens_basic_functionality(llm_v1: LLM):
     assert token_count <= 20, f"Expected at most 20 tokens, got {token_count}"
 
 
+# [中文注释] 测试已知bug#21987：停止字符串绕过min_tokens限制
 @pytest.mark.xfail(
     reason=("Known bug #21987: stop strings bypass min_tokens (fixed by PR #22014)"),
     strict=False,
@@ -323,6 +331,7 @@ def test_min_tokens_stop_strings_bug(llm_v1: LLM):
     )
 
 
+# [中文注释] 使用多个常见停止字符确保触发min_tokens被绕过的bug
 @pytest.mark.xfail(
     reason=("Known bug #21987: stop strings bypass min_tokens (fixed by PR #22014)"),
     strict=False,
@@ -378,6 +387,7 @@ def test_min_tokens_stop_strings_guaranteed_early_trigger(llm_v1: LLM):
         )
 
 
+# [中文注释] 验证EOS token在有/无min_tokens时的行为，确保min_tokens能阻止EOS提前终止
 @pytest.mark.xfail(
     reason=("Potential logits-processor bug: EOS tokens may bypass min_tokens"),
     strict=False,
@@ -466,6 +476,7 @@ def test_min_tokens_eos_behavior(llm_v1: LLM):
     )
 
 
+# [中文注释] 测试SamplingParams对min_tokens参数的验证逻辑，包括有效和无效参数
 def test_min_tokens_validation():
     """
     Test that SamplingParams correctly validates min_tokens parameters.

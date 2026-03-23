@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 池化测试的pytest配置，包含ROCm平台的SDP后端设置
 """Pytest configuration for vLLM language generation tests."""
 
 import warnings

@@ -12,6 +12,7 @@ from vllm.tracing import init_tracer, instrument, is_otel_available
 pytestmark = pytest.mark.skipif(not is_otel_available(), reason="OTel required")
 
 
+# [中文注释] 测试@instrument装饰器捕获同步/异步函数执行数据、嵌套span、属性和错误
 class TestCoreInstrumentation:
     """Focuses on the @instrument decorator's ability to capture execution data."""
 
@@ -60,6 +61,7 @@ class TestCoreInstrumentation:
         assert child_span["parent_span_id"] == parent_span["span_id"]
 
 
+# [中文注释] 测试跨进程的trace上下文传播：从环境变量中继承外部trace ID
 class TestInterProcessPropagation:
     """Test the propagation of trace context between processes."""
 

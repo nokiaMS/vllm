@@ -20,6 +20,7 @@ from vllm.platforms import current_platform
     not current_platform.is_cuda_alike(),
     reason="fastsafetensors requires NVIDIA/AMD GPUs",
 )
+# 测试 fastsafetensors 权重迭代器与标准 safetensors 迭代器的输出一致性
 def test_fastsafetensors_model_loader():
     with tempfile.TemporaryDirectory() as tmpdir:
         huggingface_hub.constants.HF_HUB_OFFLINE = False

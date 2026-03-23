@@ -22,6 +22,7 @@ from .gsm8k_eval import evaluate_gsm8k
 TOL = 0.08  # Absolute tolerance for accuracy comparison
 
 
+# [中文注释] 从服务器URL中解析主机和端口，调用evaluate_gsm8k运行评估
 def run_gsm8k_eval(eval_config: dict, server_url: str) -> dict:
     """Run GSM8K evaluation using our isolated script."""
     # Extract host and port from server URL
@@ -51,6 +52,7 @@ def run_gsm8k_eval(eval_config: dict, server_url: str) -> dict:
     return results
 
 
+# [中文注释] 测试GSM8K正确性：启动vLLM服务器，运行评估，验证准确率达到配置阈值
 def test_gsm8k_correctness(config_filename):
     """Test GSM8K correctness for a given model configuration."""
     eval_config = yaml.safe_load(config_filename.read_text(encoding="utf-8"))

@@ -7,6 +7,8 @@ from vllm.entrypoints.openai.engine.protocol import UsageInfo
 from vllm.entrypoints.pooling.base.protocol import CompletionRequestMixin
 
 
+# BGE-M3 稀疏嵌入的请求和响应数据类型定义
+
 class SparseEmbeddingCompletionRequestMixin(CompletionRequestMixin):
     return_tokens: bool | None = Field(
         default=None,

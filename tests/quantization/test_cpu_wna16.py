@@ -4,6 +4,8 @@ import pytest
 
 from vllm.platforms import current_platform
 
+# 测试 CPU 平台上 WNA16 量化模型（AWQ/GPTQ）的加载和推理
+
 if not current_platform.is_cpu():
     pytest.skip("skipping CPU-only tests", allow_module_level=True)
 

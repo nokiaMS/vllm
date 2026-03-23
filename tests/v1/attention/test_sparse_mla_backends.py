@@ -64,6 +64,7 @@ SPARSE_BACKEND_BATCH_SPECS["large_q_pure_prefill"] = BatchSpec(
 )
 
 
+# 模拟 SM100 的 float -> e8m0 -> bf16 缩放转换（截断到最近的2的幂次）
 def _float_to_e8m0_truncate(f: float) -> float:
     """Simulate SM100's float -> e8m0 -> bf16 scale conversion.
     e8m0 format only stores the exponent (power of 2).
@@ -78,6 +79,7 @@ def _float_to_e8m0_truncate(f: float) -> float:
     return 2.0**exp
 
 
+# 将单个 fp8_ds_mla 缓存条目反量化回潜在向量和 RoPE 值
 def _dequantize_fp8_ds_mla_entry(
     cache_slice: torch.Tensor,
     kv_lora_rank: int,
@@ -116,6 +118,7 @@ def _dequantize_fp8_ds_mla_entry(
     return latent, rope_vals.clone()
 
 
+# 对 kv_c/k_pe 进行 fp8_ds_mla 量化再反量化的往返测试
 def _quantize_dequantize_fp8_ds_mla(
     kv_c: torch.Tensor,
     k_pe: torch.Tensor,
@@ -518,6 +521,7 @@ def test_sparse_backend_decode_correctness(
         torch.testing.assert_close(backend_output, sdpa_reference, rtol=0.01, atol=0.01)
 
 
+# triton_convert_req_index_to_global_index 的 Python 参考实现，用于对比验证
 def _triton_convert_reference_impl(
     req_ids: torch.Tensor,
     block_table: torch.Tensor,

@@ -23,6 +23,7 @@ MODELS = ["hmellor/tiny-random-LlamaForCausalLM"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tensor_parallel_size", [2, 1])
 @pytest.mark.parametrize("send_one_request", [False, True])
+# [中文注释] 测试AsyncLLM实例删除后GPU内存是否正确释放
 async def test_async_llm_delete(
     model: str, tensor_parallel_size: int, send_one_request: bool
 ) -> None:
@@ -67,6 +68,7 @@ async def test_async_llm_delete(
 @pytest.mark.parametrize("tensor_parallel_size", [2, 1])
 @pytest.mark.parametrize("enable_multiprocessing", [True])
 @pytest.mark.parametrize("send_one_request", [False, True])
+# [中文注释] 测试LLM实例删除后GPU内存是否正确释放
 def test_llm_delete(
     monkeypatch,
     model: str,

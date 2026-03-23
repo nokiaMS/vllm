@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FlashInfer后端的解码和预填充注意力，包括FP8 KV缓存和fast_plan_decode优化
 
 
 import pytest
@@ -26,6 +27,7 @@ SOFT_CAPS = [None, 30.0]
 SLIDING_WINDOWS = [None, 64]
 
 
+# 基于PyTorch的分页注意力参考实现，支持滑动窗口和softcap
 def ref_paged_attn(
     query: torch.Tensor,
     key_cache: torch.Tensor,
@@ -84,6 +86,7 @@ def ref_paged_attn(
     return torch.cat(outputs, dim=0)
 
 
+# 构建分页KV缓存的元数据张量（indptr、indices、last_page_lens、block_tables）
 def _make_paged_kv_metadata(
     kv_lens: list[int],
     block_size: int,
@@ -120,6 +123,7 @@ def _make_paged_kv_metadata(
     )
 
 
+# 创建支持CUDA Graph的FlashInfer解码wrapper
 def _make_cg_decode_wrapper(
     num_seqs: int,
     kv_indices_buffer: torch.Tensor,
@@ -146,6 +150,7 @@ def _make_cg_decode_wrapper(
     )
 
 
+# 验证fast_decode_plan从flashinfer.decode可正常导入
 def test_fast_decode_plan_importable() -> None:
     """fast_decode_plan must be importable from flashinfer.decode.
 
@@ -157,6 +162,7 @@ def test_fast_decode_plan_importable() -> None:
     assert callable(fast_decode_plan)
 
 
+# 验证fast_plan_decode首次调用走完整plan路径并设置vllm_first_call标志
 @pytest.mark.parametrize("dtype", DTYPES)
 @torch.inference_mode
 def test_fast_plan_decode_warmup_uses_full_plan(dtype: torch.dtype) -> None:
@@ -204,6 +210,7 @@ def test_fast_plan_decode_warmup_uses_full_plan(dtype: torch.dtype) -> None:
     )
 
 
+# 验证fast_plan_decode的快速路径与标准plan路径产生数值一致的注意力输出
 @pytest.mark.parametrize("kv_lens", [[1328, 18, 463], [1, 54, 293, 70]])
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -287,6 +294,7 @@ def test_fast_plan_decode_matches_full_plan(
     torch.testing.assert_close(fast_output, ref_output, atol=1e-2, rtol=1e-2)
 
 
+# 测试FlashInfer解码阶段分页KV注意力的正确性（支持softcap和滑动窗口）
 @pytest.mark.parametrize("kv_lens", [[1328, 18, 463], [1, 54, 293, 70]])
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -382,6 +390,7 @@ def test_flashinfer_decode_with_paged_kv(
     )
 
 
+# 测试FlashInfer预填充阶段分页KV注意力的正确性
 @pytest.mark.parametrize("seq_lens", [[(1, 1328), (5, 18), (129, 463)]])
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -487,6 +496,7 @@ def test_flashinfer_prefill_with_paged_kv(
     )
 
 
+# 测试FlashInfer预填充阶段FP8量化KV缓存的正确性（已跳过，待修复精度问题）
 @pytest.mark.parametrize("seq_lens", [[(1, 132), (5, 18)]])
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -595,6 +605,7 @@ def test_flashinfer_prefill_with_paged_fp8_kv(
     )
 
 
+# 测试FlashInfer解码阶段FP8量化KV缓存的正确性（已跳过，待修复精度问题）
 @pytest.mark.parametrize("kv_lens", [[1328, 18, 463], [1, 54, 293, 70]])
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)

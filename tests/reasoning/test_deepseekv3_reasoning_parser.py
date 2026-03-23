@@ -13,6 +13,7 @@ from vllm.reasoning.identity_reasoning_parser import IdentityReasoningParser
 REASONING_MODEL_NAME = "deepseek-ai/DeepSeek-V3.1"
 
 
+# [中文注释] 加载DeepSeek-V3.1分词器夹具
 @pytest.fixture(scope="module")
 def tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -25,6 +26,7 @@ def tokenizer():
         (False, IdentityReasoningParser),
     ],
 )
+# [中文注释] 测试DeepSeek-V3根据thinking参数选择正确的内部解析器类型
 def test_parser_selection(tokenizer, thinking, expected_parser_type):
     parser = DeepSeekV3ReasoningParser(
         tokenizer, chat_template_kwargs={"thinking": thinking}
@@ -33,6 +35,7 @@ def test_parser_selection(tokenizer, thinking, expected_parser_type):
     assert isinstance(parser._parser, expected_parser_type)
 
 
+# [中文注释] 测试IdentityReasoningParser：不提取推理内容，直接将所有输出作为content返回
 def test_identity_reasoning_parser_basic(tokenizer):
     parser = IdentityReasoningParser(tokenizer)
 

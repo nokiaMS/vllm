@@ -35,6 +35,7 @@ FLOAT8_E4M3_MAX = 448.0
 FLOAT4_E2M1_MAX = 6.0
 
 
+# [中文注释] 将swizzled缩放因子布局转换为线性布局，用于NVFP4反量化
 def convert_swizzled_to_linear(a_sf_swizzled: torch.Tensor, m, k, block_size):
     m_tiles = (m + 128 - 1) // 128
     f = block_size * 4
@@ -45,6 +46,7 @@ def convert_swizzled_to_linear(a_sf_swizzled: torch.Tensor, m, k, block_size):
     return out[0:m, 0:k]
 
 
+# [中文注释] 将NVFP4量化数据反量化为指定数据类型
 def dequantize_nvfp4_to_dtype(
     tensor_fp4, tensor_sf, global_scale, dtype, device, block_size=16
 ):
@@ -64,6 +66,7 @@ def dequantize_nvfp4_to_dtype(
     return out.to(dtype=dtype)
 
 
+# [中文注释] 将FP4字节拆分为高低4位并转换为指定浮点类型
 def break_fp4_bytes(a, dtype):
     assert a.dtype == torch.uint8
     m, n = a.shape
@@ -88,6 +91,7 @@ def break_fp4_bytes(a, dtype):
     return values.reshape(m, n * 2).to(dtype=dtype)
 
 
+# [中文注释] 生成均衡路由：确保每个专家分配到大致相同数量的token
 def generate_balanced_routing(
     hidden_states: torch.Tensor, num_experts: int, top_k: int
 ):
@@ -123,6 +127,7 @@ def generate_balanced_routing(
     return routing_weights, topk_idx
 
 
+# [中文注释] 准备CuteDSL MoE测试输入：创建NVFP4量化权重、激活和路由信息
 def prepare_inputs(
     hidden_states: torch.Tensor,
     router_logits: torch.Tensor,
@@ -165,6 +170,7 @@ MNK_FACTORS = [
 
 
 # Reference implementation of torch_moe
+# [中文注释] 使用原生torch实现的MoE参考计算（非量化）
 def torch_moe(a, w1, w2, score, topk, expert_map):
     B, D = a.shape
     a = a.view(B, -1, D).repeat(1, topk, 1).reshape(-1, D)
@@ -186,6 +192,7 @@ def torch_moe(a, w1, w2, score, topk, expert_map):
     ).sum(dim=1)
 
 
+# [中文注释] 使用原生torch实现的NVFP4 MoE参考计算，包含FP4反量化步骤
 def torch_moe_nvfp4(a, w1, w2, topk, topk_weight, topk_ids):
     B, D = a.shape
     a = a.view(B, -1, D).repeat(1, topk, 1).reshape(-1, D)
@@ -218,6 +225,7 @@ def torch_moe_nvfp4(a, w1, w2, topk, topk_weight, topk_ids):
     ).sum(dim=1)
 
 
+# [中文注释] 分组矩阵乘法参考实现，支持NVFP4量化权重
 def grouped_gemm_ref(
     hidden_states_expanded: torch.Tensor,
     hidden_states_3d: torch.Tensor,
@@ -306,6 +314,7 @@ def grouped_gemm_ref(
     return out_ref
 
 
+# [中文注释] FlashInfer CuteDSL分组矩阵乘法masked版本的封装函数
 def flashinfer_cutedsl_grouped_gemm_nt_masked(
     hidden_states: torch.Tensor,  # 3d
     input_global_scale: torch.Tensor,  # (l,)
@@ -368,6 +377,7 @@ def flashinfer_cutedsl_grouped_gemm_nt_masked(
 @pytest.mark.parametrize("bs, hidden_dim, inter_dim", [(2, 128, 256), (16, 128, 512)])
 @pytest.mark.parametrize("topk", [1, 2, 4])
 @torch.inference_mode()
+# [中文注释] 测试FlashInfer CuteDSL MoE masked内核的NVFP4量化计算正确性
 def test_flashinfer_cutedsl_moe_masked(
     bs: int, hidden_dim: int, inter_dim: int, topk: int
 ):
@@ -521,6 +531,7 @@ def test_flashinfer_cutedsl_moe_masked(
     "bs, hidden_dim, inter_dim, topk", [(2, 128, 256, 2), (16, 128, 512, 5)]
 )
 @torch.inference_mode()
+# [中文注释] 测试CuteDSL分组矩阵乘法masked内核与参考实现的数值一致性
 def test_grouped_gemm_nt_masked(
     bs: int, hidden_dim: int, inter_dim: int, topk: int
 ) -> None:

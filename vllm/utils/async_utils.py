@@ -21,6 +21,13 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
+# 异步微批量分词器，通过队列收集并发的 encode/decode 请求，
+# 在短暂等待窗口内聚合为批次后统一执行，以减少分词器调用开销。
+# 设计思路：
+# 1. 使用 asyncio.Queue 按操作类型和参数分组收集请求
+# 2. 在单线程 ThreadPoolExecutor 中执行阻塞的分词器调用，避免阻塞事件循环
+# 3. 参数相同的 encode 请求可合并为单次批量调用；参数不同的则逐个执行
+# 4. decode 请求统一使用 batch_decode 批量处理
 class AsyncMicrobatchTokenizer:
     """Asynchronous tokenizer with micro-batching.
 
@@ -221,11 +228,14 @@ class AsyncMicrobatchTokenizer:
             loop.call_soon_threadsafe(cancel_tasks)
 
 
+# 线程安全地取消一个异步任务，即使从非事件循环线程调用也能正确工作
 def cancel_task_threadsafe(task: Task):
     if task and not task.done():
         run_in_loop(task.get_loop(), task.cancel)
 
 
+# 将阻塞的同步函数包装为异步函数，通过线程池执行器在后台线程中运行，
+# 防止阻塞 asyncio 事件循环。调用者需确保被包装函数是线程安全的。
 def make_async(
     func: Callable[P, T],
     executor: Executor | None = None,
@@ -246,6 +256,8 @@ def make_async(
     return _async_wrapper
 
 
+# 在指定的事件循环中执行函数：若当前已在该循环内则直接调用，
+# 否则通过 call_soon_threadsafe 线程安全地调度执行
 def run_in_loop(loop: AbstractEventLoop, function: Callable, *args):
     if in_loop(loop):
         function(*args)
@@ -253,6 +265,7 @@ def run_in_loop(loop: AbstractEventLoop, function: Callable, *args):
         loop.call_soon_threadsafe(function, *args)
 
 
+# 判断当前代码是否运行在指定的事件循环中（用于区分同步/异步上下文）
 def in_loop(event_loop: AbstractEventLoop) -> bool:
     try:
         return asyncio.get_running_loop() == event_loop
@@ -267,6 +280,10 @@ if TYPE_CHECKING:
         return it.__anext__()
 
 
+# 将多个异步迭代器合并为一个，按完成顺序交错输出结果。
+# 设计思路：使用 asyncio.wait(FIRST_COMPLETED) 并发等待所有迭代器，
+# 任一迭代器产出数据时立即 yield (迭代器索引, 数据)，
+# 并优化了单迭代器的快速路径以避免不必要的开销。
 async def merge_async_iterators(
     *iterators: AsyncGenerator[T, None],
 ) -> AsyncGenerator[tuple[int, T], None]:
@@ -305,6 +322,7 @@ async def merge_async_iterators(
                 await it.aclose()
 
 
+# 将异步生成器的所有产出项收集到一个列表中（异步版本的 list()）
 async def collect_from_async_generator(iterator: AsyncGenerator[T, None]) -> list[T]:
     """Collect all items from an async generator into a list."""
     items = []

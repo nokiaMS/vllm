@@ -22,6 +22,7 @@ BLOCK_SIZES = [32, 128]
 set_random_seed(0)
 
 
+# [中文注释] 将排序后的token按专家分组，返回每个专家的token列表
 def _group_tokens_by_expert(
     sorted_ids: torch.Tensor,
     expert_ids: torch.Tensor,
@@ -46,6 +47,7 @@ def _group_tokens_by_expert(
     return expert_tokens
 
 
+# [中文注释] 验证专家级别排序：确保每个专家的token在对齐后正确分组
 def _verify_expert_level_sorting(
     actual_sorted_ids: torch.Tensor,
     golden_sorted_ids: torch.Tensor,
@@ -89,6 +91,7 @@ def _verify_expert_level_sorting(
         )
 
 
+# [中文注释] MoE对齐块大小的torch参考实现，确保专家分组与块大小对齐
 def torch_moe_align_block_size(
     topk_ids: torch.Tensor,
     block_size: int,
@@ -186,6 +189,7 @@ def torch_moe_align_block_size(
 @pytest.mark.parametrize("num_experts", NUM_EXPERTS)
 @pytest.mark.parametrize("block_size", BLOCK_SIZES)
 @pytest.mark.parametrize("pad_sorted_ids", [False, True])
+# [中文注释] 测试moe_align_block_size函数在不同token数、专家数和块大小下的正确性
 def test_moe_align_block_size(
     m: int, topk: int, num_experts: int, block_size: int, pad_sorted_ids: bool
 ):
@@ -246,6 +250,7 @@ def test_moe_align_block_size(
 @pytest.mark.parametrize("topk", [2, 4])
 @pytest.mark.parametrize("num_experts", [8, 64])
 @pytest.mark.parametrize("block_size", [64])
+# [中文注释] 测试带expert_map（专家并行场景）的moe_align_block_size功能
 def test_moe_align_block_size_with_expert_map(
     m: int, topk: int, num_experts: int, block_size: int
 ):
@@ -288,6 +293,7 @@ def test_moe_align_block_size_with_expert_map(
     )
 
 
+# [中文注释] 测试moe_align_block_size的确定性：多次运行应产生相同结果
 def test_moe_align_block_size_deterministic():
     m, topk, num_experts, block_size = 128, 2, 32, 64
 
@@ -320,6 +326,7 @@ def test_moe_align_block_size_deterministic():
 @pytest.mark.parametrize("num_experts", [8, 16, 32, 64])
 @pytest.mark.parametrize("block_size", [8, 16, 32, 64])
 @pytest.mark.parametrize("simulate_empty_batches", [False, True])
+# [中文注释] 测试批量moe_align_block_size在不同token数和块大小配置下的正确性
 def test_batched_moe_align_block_size(
     max_tokens_per_batch: int,
     num_experts: int,

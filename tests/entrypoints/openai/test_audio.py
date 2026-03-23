@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 OpenAI 兼容 API 的音频聊天功能：单轮/多轮对话、流式、多音频输入、base64 编码等]
 
 import json
 
@@ -85,6 +86,7 @@ def dummy_messages_from_audio_url(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("audio_url", [TEST_AUDIO_URLS[0]])
+# [测试单轮音频聊天会话：验证补全结果、token 使用量和多轮对话]
 async def test_single_chat_session_audio(
     client: openai.AsyncOpenAI, model_name: str, audio_url: str
 ):
@@ -127,6 +129,7 @@ async def test_single_chat_session_audio(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("audio_url", [TEST_AUDIO_URLS[0]])
+# [测试当 audio_url 格式不正确（直接传字符串而非字典）时返回 BadRequest 错误]
 async def test_error_on_invalid_audio_url_type(
     client: openai.AsyncOpenAI, model_name: str, audio_url: str
 ):
@@ -153,6 +156,7 @@ async def test_error_on_invalid_audio_url_type(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("audio_url", [TEST_AUDIO_URLS[0]])
+# [测试使用 base64 编码的音频 URL 进行聊天补全]
 async def test_single_chat_session_audio_base64encoded(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -199,6 +203,7 @@ async def test_single_chat_session_audio_base64encoded(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("audio_url", [TEST_AUDIO_URLS[0]])
+# [测试使用 input_audio 格式（base64 数据 + format 字段）进行聊天补全]
 async def test_single_chat_session_input_audio(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -257,6 +262,7 @@ async def test_single_chat_session_input_audio(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("audio_url", TEST_AUDIO_URLS)
+# [测试音频聊天的流式输出：验证流式结果与非流式结果一致]
 async def test_chat_streaming_audio(
     client: openai.AsyncOpenAI, model_name: str, audio_url: str
 ):
@@ -302,6 +308,7 @@ async def test_chat_streaming_audio(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("audio_url", TEST_AUDIO_URLS)
+# [测试使用 input_audio 格式的流式聊天输出]
 async def test_chat_streaming_input_audio(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -364,6 +371,7 @@ async def test_chat_streaming_input_audio(
 @pytest.mark.parametrize(
     "audio_urls", [TEST_AUDIO_URLS, TEST_AUDIO_URLS + [TEST_AUDIO_URLS[0]]]
 )
+# [测试多音频输入：超过限制时应返回错误，未超过时正常处理]
 async def test_multi_audio_input(
     client: openai.AsyncOpenAI, model_name: str, audio_urls: list[str]
 ):

@@ -24,6 +24,7 @@ from vllm.transformers_utils.repo_utils import (
         ),
     ],
 )
+# [中文注释] 测试仓库文件过滤功能，验证allow_patterns匹配正确的文件
 def test_list_filtered_repo_files(
     allow_patterns: list[str], expected_relative_files: list[str]
 ):

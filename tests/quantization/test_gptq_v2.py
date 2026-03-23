@@ -12,6 +12,8 @@ from transformers import AutoTokenizer
 from vllm import SamplingParams
 from vllm.model_executor.layers.quantization.gptq import GPTQLinearMethod
 
+# 测试 GPTQ v2 格式检查点的加载和推理正确性
+
 # A dummy small model quantized by GPTQModel, stored in GPTQ v2 format
 MODELS = ["XXXXyu/Qwen3-1.7B-w2g64-gptq_v2"]
 

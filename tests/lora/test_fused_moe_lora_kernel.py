@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 FusedMoE LoRA Triton 内核在不同并行度下的正确性
 import os
 import random
 

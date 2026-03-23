@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试GGUF格式量化模型的推理正确性，对比原始未量化模型的生成结果
 """
 Tests gguf models against unquantized models generations
 Note: To pass the test, quantization higher than Q4 should be used
@@ -24,6 +25,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 MAX_MODEL_LEN = 1024
 
 
+# GGUF测试配置，包含原始模型、GGUF仓库和文件名信息
 class GGUFTestConfig(NamedTuple):
     original_model: str
     gguf_repo: str
@@ -103,6 +105,7 @@ MODELS = [
 ]
 
 
+# 对比GGUF量化模型与原始模型的logprobs输出
 def check_model_outputs(
     vllm_runner: type[VllmRunner],
     prompts: list[str],

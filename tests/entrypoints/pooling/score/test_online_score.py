@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# [在线评分测试模块：验证 score 端点支持的多种输入格式（queries/documents/text_1/text_2/data_1/data_2/items），与 HF 模型对比正确性]
+
 from typing import Any
 
 import pytest
@@ -19,6 +22,7 @@ MODELS = [
 DTYPE = "half"
 
 
+# [辅助函数：使用 HuggingFace 模型计算参考分数，支持交叉编码器和双编码器两种模式]
 def run_transformers(hf_model, model, text_pairs):
     if model["is_cross_encoder"]:
         return hf_model.predict(text_pairs).tolist()
@@ -30,11 +34,13 @@ def run_transformers(hf_model, model, text_pairs):
         ]
 
 
+# [模型夹具：参数化交叉编码器和双编码器两种模型]
 @pytest.fixture(scope="class", params=MODELS)
 def model(request):
     yield request.param
 
 
+# [服务器夹具：启动评分模型的远程服务器]
 @pytest.fixture(scope="class")
 def server(model: dict[str, Any]):
     args = ["--enforce-eager", "--max-model-len", "100", "--dtype", DTYPE]
@@ -47,6 +53,7 @@ def server(model: dict[str, Any]):
         yield remote_server
 
 
+# [HuggingFace 运行器夹具：根据模型类型创建交叉编码器或句子变换器实例]
 @pytest.fixture(scope="class")
 def runner(model: dict[str, Any], hf_runner):
     kwargs = {
@@ -60,6 +67,7 @@ def runner(model: dict[str, Any], hf_runner):
         yield hf_model
 
 
+# [评分模型测试类：测试各种输入格式（str/str, str/list, list/list）、长度限制、invocations 和激活函数控制]
 class TestModel:
     def test_queries_str_documents_str(
         self, server: RemoteOpenAIServer, model: dict[str, Any], runner

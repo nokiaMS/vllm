@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 各测试类型的入口函数：将特定模态的输入构建和核心测试执行连接起来
 """Entrypoints for wrapping the core run_test implementation for specific test
 types / modalities.
 """

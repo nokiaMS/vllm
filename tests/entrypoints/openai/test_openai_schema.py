@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [使用 schemathesis 对 OpenAPI schema 进行模糊测试：验证所有端点不产生 500 错误]
 import json
 from http import HTTPStatus
 from typing import Final
@@ -43,6 +44,7 @@ def server():
         yield remote_server
 
 
+# [从服务器获取 OpenAPI schema 用于模糊测试]
 @pytest.fixture(scope="module")
 def get_schema(server):
     # avoid generating null (\x00) bytes in strings during test case generation
@@ -55,6 +57,7 @@ def get_schema(server):
 schema = schemathesis.from_pytest_fixture("get_schema")
 
 
+# [过滤 schemathesis 生成的无效测试用例（file 类型、非 function 工具调用等）]
 @schemathesis.hook
 def before_generate_case(context: schemathesis.hooks.HookContext, strategy):
     op = context.operation
@@ -133,6 +136,7 @@ def before_generate_case(context: schemathesis.hooks.HookContext, strategy):
     return strategy.filter(no_invalid_types)
 
 
+# [自定义服务器错误检查：忽略 render/chat 端点的 501 Not Implemented]
 def customized_not_a_server_error(
     ctx: CheckContext, response: GenericResponse, case: Case
 ) -> bool | None:
@@ -151,6 +155,7 @@ def customized_not_a_server_error(
 @schema.parametrize()
 @schema.override(headers={"Content-Type": "application/json"})
 @settings(deadline=LONG_TIMEOUT_SECONDS * 1000, max_examples=50)
+# [对所有无状态 OpenAPI 端点进行模糊测试]
 def test_openapi_stateless(case: Case):
     key = (
         case.operation.method.upper(),

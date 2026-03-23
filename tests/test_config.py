@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 vLLM 配置模块：验证各种配置对象的创建、更新、默认值和模型属性检测]
 
 import logging
 import os
@@ -30,6 +31,7 @@ from vllm.config.vllm import (
 from vllm.platforms import current_platform
 
 
+# [测试编译配置的 repr 方法在后端修改后仍能正常输出]
 def test_compile_config_repr_succeeds():
     # setup: VllmBackend mutates the config object
     config = VllmConfig()
@@ -42,6 +44,7 @@ def test_compile_config_repr_succeeds():
     assert "inductor_passes" in val
 
 
+# [测试异步调度与流水线并行可以同时启用]
 def test_async_scheduling_with_pipeline_parallelism_is_allowed():
     cfg = VllmConfig(
         scheduler_config=SchedulerConfig(
@@ -65,6 +68,7 @@ class _TestConfigFields:
     c: str = "default"
 
 
+# [测试 get_field 工具函数能正确获取 dataclass 字段的元信息]
 def test_get_field():
     b = get_field(_TestConfigFields, "b")
     assert isinstance(b, Field)
@@ -82,6 +86,7 @@ class _TestNestedConfig:
     a: _TestConfigFields = field(default_factory=lambda: _TestConfigFields(a=0))
 
 
+# [测试 update_config 函数的简单更新、嵌套更新和非法参数的处理]
 def test_update_config():
     # Simple update
     config1 = _TestConfigFields(a=0)
@@ -115,6 +120,7 @@ def test_update_config():
         ("openai/whisper-small", "generate", "none"),
     ],
 )
+# [参数化测试 auto runner 模式下不同模型的 runner_type 和 convert_type 是否正确推断]
 def test_auto_runner(model_id, expected_runner_type, expected_convert_type):
     config = ModelConfig(model_id, runner="auto")
 
@@ -133,6 +139,7 @@ def test_auto_runner(model_id, expected_runner_type, expected_convert_type):
         ("openai/whisper-small", "pooling", "embed"),
     ],
 )
+# [参数化测试 pooling runner 模式下不同模型的 runner_type 和 convert_type 是否正确推断]
 def test_pooling_runner(model_id, expected_runner_type, expected_convert_type):
     config = ModelConfig(model_id, runner="pooling")
 
@@ -146,6 +153,7 @@ def test_pooling_runner(model_id, expected_runner_type, expected_convert_type):
         ("Qwen/Qwen2.5-1.5B-Instruct", "draft", "none"),
     ],
 )
+# [参数化测试 draft runner 模式下模型配置的推断是否正确]
 def test_draft_runner(model_id, expected_runner_type, expected_convert_type):
     config = ModelConfig(model_id, runner="draft")
 
@@ -161,6 +169,7 @@ MODEL_IDS_EXPECTED = [
 
 
 @pytest.mark.parametrize("model_id_expected", MODEL_IDS_EXPECTED)
+# [测试禁用滑动窗口后模型的 max_model_len 是否符合预期]
 def test_disable_sliding_window(model_id_expected):
     model_id, expected = model_id_expected
     model_config = ModelConfig(model_id, disable_sliding_window=True)
@@ -170,6 +179,7 @@ def test_disable_sliding_window(model_id_expected):
 @pytest.mark.skipif(
     current_platform.is_rocm(), reason="Xformers backend is not supported on ROCm."
 )
+# [测试从模型配置中自动获取 pooling 配置（激活函数、池化类型等）]
 def test_get_pooling_config():
     model_id = "sentence-transformers/all-MiniLM-L12-v2"
     model_config = ModelConfig(model_id)
@@ -183,6 +193,7 @@ def test_get_pooling_config():
 @pytest.mark.skipif(
     current_platform.is_rocm(), reason="Xformers backend is not supported on ROCm."
 )
+# [测试用户显式传入的 PoolerConfig 能正确覆盖自动推断的配置]
 def test_get_pooling_config_from_args():
     model_id = "sentence-transformers/all-MiniLM-L12-v2"
     pooler_config = PoolerConfig(seq_pooling_type="CLS", use_activation=False)
@@ -198,6 +209,7 @@ def test_get_pooling_config_from_args():
         ("intfloat/e5-small", "CLS", "MEAN"),  # BertModel
     ],
 )
+# [测试不同模型的默认序列池化类型是否正确]
 def test_default_seq_pooling_type(model_id, default_pooling_type, pooling_type):
     model_config = ModelConfig(model_id)
     assert model_config._model_info.default_seq_pooling_type == default_pooling_type
@@ -211,6 +223,7 @@ def test_default_seq_pooling_type(model_id, default_pooling_type, pooling_type):
         ("Qwen/Qwen2.5-Math-PRM-7B", "STEP", "STEP"),  # step reward
     ],
 )
+# [测试不同模型的默认 token 池化类型是否正确]
 def test_default_tok_pooling_type(model_id, default_pooling_type, pooling_type):
     model_config = ModelConfig(model_id)
     assert model_config._model_info.default_tok_pooling_type == default_pooling_type
@@ -230,6 +243,7 @@ def test_default_tok_pooling_type(model_id, default_pooling_type, pooling_type):
         ("RedHatAI/Mixtral-8x7B-Instruct-v0.1", True),
     ],
 )
+# [参数化测试 MoE（混合专家）模型检测逻辑是否正确]
 def test_moe_model_detection(model_id, expected_is_moe_model):
     model_config = ModelConfig(model_id)
     # Just check that is_moe field exists and is a boolean
@@ -248,6 +262,7 @@ def test_moe_model_detection(model_id, expected_is_moe_model):
         ("RedHatAI/Mixtral-8x7B-Instruct-v0.1", False),
     ],
 )
+# [参数化测试模型量化检测逻辑是否正确]
 def test_is_quantized(model_id, quantized):
     model_config = ModelConfig(model_id)
     # Just check that quantized field exists and is a boolean
@@ -257,6 +272,7 @@ def test_is_quantized(model_id, quantized):
 @pytest.mark.skipif(
     current_platform.is_rocm(), reason="Xformers backend is not supported on ROCm."
 )
+# [测试获取 BERT 分词器的 sentence transformer 配置（最大序列长度和小写化）]
 def test_get_bert_tokenization_sentence_transformer_config():
     model_id = "BAAI/bge-base-en-v1.5"
     bge_model_config = ModelConfig(model_id)
@@ -267,6 +283,7 @@ def test_get_bert_tokenization_sentence_transformer_config():
     assert bert_bge_model_config["do_lower_case"]
 
 
+# [测试 RoPE 位置编码参数的自定义覆盖功能]
 def test_rope_customization():
     TEST_ROPE_PARAMETERS = {
         "rope_theta": 16_000_000.0,
@@ -314,6 +331,7 @@ def test_rope_customization():
     assert longchat_model_config.max_model_len == 4096
 
 
+# [测试嵌套的 HuggingFace 配置覆盖（text_config, vision_config 等）是否生效]
 def test_nested_hf_overrides():
     """Test that nested hf_overrides work correctly."""
     # Test with a model that has text_config
@@ -356,6 +374,7 @@ def test_nested_hf_overrides():
         ("meta-llama/Llama-3.2-1B-Instruct", False),
     ],
 )
+# [参数化测试模型的编码器-解码器类型检测是否正确]
 def test_is_encoder_decoder(model_id, is_encoder_decoder):
     config = ModelConfig(model_id)
 
@@ -369,12 +388,14 @@ def test_is_encoder_decoder(model_id, is_encoder_decoder):
         ("Qwen/Qwen2-VL-2B-Instruct", True),
     ],
 )
+# [参数化测试模型是否使用 mrope（多头旋转位置编码）]
 def test_uses_mrope(model_id, uses_mrope):
     config = ModelConfig(model_id)
 
     assert config.uses_mrope == uses_mrope
 
 
+# [测试生成配置的加载、默认值和覆盖逻辑]
 def test_generation_config_loading():
     model_id = "Qwen/Qwen2.5-1.5B-Instruct"
 
@@ -428,6 +449,7 @@ def test_generation_config_loading():
         {"": "cuda"},
     ],
 )
+# [测试 LoadConfig 的 pt_load_map_location 参数支持字符串和字典格式]
 def test_load_config_pt_load_map_location(pt_load_map_location):
     load_config = LoadConfig(pt_load_map_location=pt_load_map_location)
     config = VllmConfig(load_config=load_config)
@@ -445,6 +467,7 @@ def test_load_config_pt_load_map_location(pt_load_map_location):
         ("deepseek-ai/DeepSeek-R1-Distill-Qwen-7B", 131073, 131072, True),
     ],
 )
+# [测试 get_and_verify_max_len 在不同模型和 max_model_len 设置下的行为]
 def test_get_and_verify_max_len(
     model_id, max_model_len, expected_max_len, should_raise
 ):
@@ -459,6 +482,7 @@ def test_get_and_verify_max_len(
         assert actual_max_len == expected_max_len
 
 
+# [辅助 mock 配置类，用于测试 S3 URL 模型路径处理]
 class MockConfig:
     """Simple mock object for testing maybe_pull_model_tokenizer_for_runai"""
 
@@ -476,6 +500,7 @@ class MockConfig:
     ],
 )
 @patch("vllm.transformers_utils.runai_utils.ObjectStorageModel.pull_files")
+# [测试 S3 URL 被确定性地映射到本地目录路径]
 def test_s3_url_model_tokenizer_paths(mock_pull_files, s3_url):
     """Test that S3 URLs create deterministic local directories for model and
     tokenizer."""
@@ -540,6 +565,7 @@ def test_s3_url_model_tokenizer_paths(mock_pull_files, s3_url):
 
 
 @patch("vllm.transformers_utils.runai_utils.ObjectStorageModel.pull_files")
+# [测试不同 S3 URL 会创建不同的本地目录]
 def test_s3_url_different_models_create_different_directories(mock_pull_files):
     """Test that different S3 URLs create different local directories."""
     # Mock pull_files to avoid actually downloading files during tests
@@ -678,6 +704,7 @@ def test_s3_url_different_models_create_different_directories(mock_pull_files):
         ),
     ],
 )
+# [参数化测试不同模型类型对分块预填充的支持情况]
 def test_is_chunked_prefill_supported(
     model_id: str,
     expected_attn_type: str,
@@ -797,6 +824,7 @@ def test_is_chunked_prefill_supported(
         ),
     ],
 )
+# [参数化测试不同模型类型对前缀缓存的支持情况]
 def test_is_prefix_caching_supported(
     model_id: str,
     expected_attn_type: str,
@@ -822,6 +850,7 @@ def test_is_prefix_caching_supported(
         ("inductor", ["none", "-fused_layernorm"], False),
     ],
 )
+# [测试自定义算子启用/禁用逻辑在不同后端和配置下是否正确]
 def test_is_custom_op_enabled(backend: str, custom_ops: list[str], expected: bool):
     """Test that is_custom_op_enabled works correctly."""
     config = VllmConfig(
@@ -830,6 +859,7 @@ def test_is_custom_op_enabled(backend: str, custom_ops: list[str], expected: boo
     assert config.compilation_config.is_custom_op_enabled("fused_layernorm") is expected
 
 
+# [测试优化级别默认值在未显式设置时为 None]
 def test_vllm_config_defaults_are_none():
     """Verify that optimization-level defaults are None when not set by user."""
     # Test all optimization levels to ensure defaults work correctly
@@ -895,6 +925,7 @@ def test_vllm_config_defaults_are_none():
         ("RedHatAI/DeepSeek-V2.5-1210-FP8", CompilationConfig(), OptimizationLevel.O3),
     ],
 )
+# [参数化测试不同模型和优化级别下编译配置默认值是否正确应用]
 def test_vllm_config_defaults(model_id, compilation_config, optimization_level):
     """Test that optimization-level defaults are correctly applied."""
 
@@ -939,6 +970,7 @@ def test_vllm_config_defaults(model_id, compilation_config, optimization_level):
         )
 
 
+# [测试可调用默认值（lambda）能根据 VllmConfig 属性动态设置优化标志]
 def test_vllm_config_callable_defaults():
     """Test that callable defaults work in the config system.
 
@@ -978,6 +1010,7 @@ def test_vllm_config_callable_defaults():
     not current_platform.support_static_graph_mode(),
     reason="Explicit overrides may be force-overwritten without static graph support.",
 )
+# [测试用户显式覆盖的配置属性优先于可调用默认值]
 def test_vllm_config_explicit_overrides():
     """Test that explicit property overrides work correctly with callable defaults.
 
@@ -1077,6 +1110,7 @@ def test_vllm_config_explicit_overrides():
     assert config.compilation_config.cudagraph_mode == CUDAGraphMode.FULL_AND_PIECEWISE
 
 
+# [测试 SchedulerConfig 的初始化：缺少必需参数应报错，InitVar 不应成为属性]
 def test_scheduler_config_init():
     with pytest.raises(ValidationError):
         # Positional InitVars missing
@@ -1112,6 +1146,7 @@ def test_scheduler_config_init():
         ("mistralai/Mixtral-8x7B-Instruct-v0.1", 2, True, True),
     ],
 )
+# [测试数据并行协调器在不同模型类型和 DP 配置下的需求判断]
 def test_needs_dp_coordination(
     model_id,
     data_parallel_size,
@@ -1131,6 +1166,7 @@ def test_needs_dp_coordination(
     assert vllm_config.needs_dp_coordinator == expected_needs_coordinator
 
 
+# [测试 EAGLE 投机解码草稿模型的配置是否正确设置架构和模型类型]
 def test_eagle_draft_model_config():
     """Test that EagleDraft model config is correctly set."""
     target_model_config = ModelConfig(

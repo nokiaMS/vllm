@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Qwen3-Omni 模型的音频处理和采样率处理逻辑
 """Tests for Qwen3 Omni audio processing and sample rate handling."""
 
 from typing import Any

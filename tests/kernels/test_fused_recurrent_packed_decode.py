@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试门控Delta规则循环网络的打包解码（packed decode）实现，
+# 验证融合路径与展开参考路径在不同dtype和步长输入下的数值一致性
 import pytest
 import torch
 
@@ -13,6 +15,7 @@ from vllm.model_executor.layers.fla.ops import (
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="Need CUDA device")
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16, torch.float32])
 @pytest.mark.parametrize("strided_mixed_qkv", [False, True])
+# 测试packed decode融合内核与展开的fused_recurrent_gated_delta_rule参考实现的输出和状态一致性
 def test_fused_recurrent_packed_decode_matches_reference(
     dtype: torch.dtype, strided_mixed_qkv: bool
 ):

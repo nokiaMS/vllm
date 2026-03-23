@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 Harmony 流式 delta 提取逻辑（文本、工具调用、推理等频道）
+
 """
 Unit tests for harmony streaming delta extraction.
 """
@@ -30,6 +33,7 @@ class MockStreamableParser:
     messages: list[MockMessage] = field(default_factory=list)
 
 
+# 测试 _extract_harmony_streaming_delta 函数的各种频道和接收者场景
 class TestExtractHarmonyStreamingDelta:
     """Tests for extract_harmony_streaming_delta function."""
 

@@ -17,6 +17,7 @@ from vllm.utils.network_utils import (
 )
 
 
+# [中文注释] 测试获取可用端口：验证在VLLM_PORT环境变量设置时仍能获取多个不同的可用端口
 def test_get_open_port(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as m:
         m.setenv("VLLM_PORT", "5678")
@@ -29,6 +30,7 @@ def test_get_open_port(monkeypatch: pytest.MonkeyPatch):
                     s3.bind(("localhost", get_open_port()))
 
 
+# [中文注释] 测试批量获取可用端口列表：验证端口唯一性和可绑定性
 def test_get_open_ports_list_with_vllm_port(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as m:
         m.setenv("VLLM_PORT", "5678")
@@ -48,6 +50,7 @@ def test_get_open_ports_list_with_vllm_port(monkeypatch: pytest.MonkeyPatch):
                 s.close()
 
 
+# [中文注释] 测试ZMQ路径解析：验证ipc、tcp（含IPv6）、inproc等协议路径的正确拆分
 @pytest.mark.parametrize(
     "path,expected",
     [
@@ -61,6 +64,7 @@ def test_split_zmq_path(path, expected):
     assert split_zmq_path(path) == expected
 
 
+# [中文注释] 测试无效ZMQ路径的错误处理：缺少协议、缺少端口等情况
 @pytest.mark.parametrize(
     "invalid_path",
     [
@@ -75,6 +79,7 @@ def test_split_zmq_path_invalid(invalid_path):
         split_zmq_path(invalid_path)
 
 
+# [中文注释] 测试创建IPv6的ZMQ套接字：验证IPV6选项被正确设置
 def test_make_zmq_socket_ipv6():
     # Check if IPv6 is supported by trying to create an IPv6 socket
     try:
@@ -100,16 +105,19 @@ def test_make_zmq_socket_ipv6():
     ctx.term()
 
 
+# [中文注释] 测试构造ZMQ路径字符串：包括IPv4和IPv6地址格式
 def test_make_zmq_path():
     assert make_zmq_path("tcp", "127.0.0.1", "5555") == "tcp://127.0.0.1:5555"
     assert make_zmq_path("tcp", "::1", "5555") == "tcp://[::1]:5555"
 
 
+# [中文注释] 测试生成TCP URI字符串
 def test_get_tcp_uri():
     assert get_tcp_uri("127.0.0.1", 5555) == "tcp://127.0.0.1:5555"
     assert get_tcp_uri("::1", 5555) == "tcp://[::1]:5555"
 
 
+# [中文注释] 测试拆分主机和端口：包括IPv4/IPv6的有效和无效格式
 def test_split_host_port():
     # valid ipv4
     assert split_host_port("127.0.0.1:5555") == ("127.0.0.1", 5555)
@@ -141,6 +149,7 @@ def test_split_host_port():
         assert split_host_port("[::1]:5555a")
 
 
+# [中文注释] 测试组合主机和端口为字符串：IPv6地址自动添加方括号
 def test_join_host_port():
     assert join_host_port("127.0.0.1", 5555) == "127.0.0.1:5555"
     assert join_host_port("::1", 5555) == "[::1]:5555"

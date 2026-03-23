@@ -12,10 +12,12 @@ from vllm.transformers_utils.processor import (
 )
 
 
+# [中文注释] 用于测试的虚拟ProcessorKwargs类
 class _FakeProcessorKwargs(ProcessingKwargs, total=False):  # type: ignore
     pass
 
 
+# [中文注释] 验证ProcessorKwargs键集包含所有预期的文本、图像、音频参数
 def _assert_has_all_expected(keys: set[str]) -> None:
     # text
     for k in ("text_pair", "text_target", "text_pair_target"):

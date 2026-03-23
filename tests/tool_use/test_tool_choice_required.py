@@ -64,6 +64,7 @@ EXAMPLE_TOOLS = [
 ]
 
 
+# [中文注释] 辅助函数：从工具列表生成JSON Schema并用正则验证输出是否匹配
 def _compile_and_check(
     tools: list[ChatCompletionToolsParam], sample_output, should_match: bool
 ):
@@ -191,6 +192,7 @@ VALID_TOOLS = [t[0] for t in VALID_TOOL_OUTPUTS]
         ),
     ],
 )
+# [中文注释] 测试tool_choice=required时的结构化输出JSON Schema验证（有效/无效工具调用格式）
 def test_structured_outputs_json(sample_output, should_match):
     _compile_and_check(
         tools=TypeAdapter(list[ChatCompletionToolsParam]).validate_python(
@@ -201,11 +203,13 @@ def test_structured_outputs_json(sample_output, should_match):
     )
 
 
+# [中文注释] 辅助函数：将工具参数设为None
 def update_parameters_none(tool: ChatCompletionToolsParam) -> ChatCompletionToolsParam:
     tool.function.parameters = None
     return tool
 
 
+# [中文注释] 辅助函数：将工具参数设为空字典
 def update_parameters_empty_dict(
     tool: ChatCompletionToolsParam,
 ) -> ChatCompletionToolsParam:
@@ -260,6 +264,7 @@ def update_parameters_empty_dict(
 @pytest.mark.parametrize(
     "update_parameters", [update_parameters_none, update_parameters_empty_dict]
 )
+# [中文注释] 测试工具函数无参数（None或空字典）时的结构化输出JSON Schema验证
 def test_structured_outputs_json_without_parameters(
     sample_output, should_match, update_parameters
 ):
@@ -280,6 +285,7 @@ def test_structured_outputs_json_without_parameters(
 @pytest.mark.parametrize("output", VALID_TOOLS)
 @pytest.mark.parametrize("empty_params", [False, True])
 @pytest.mark.parametrize("delta_len", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+# [中文注释] 测试tool_choice=required的流式输出解析：不同delta长度下逐块拼接工具调用并验证结果正确性
 def test_streaming_output_valid(output, empty_params, delta_len):
     self = MagicMock()
 
@@ -331,6 +337,7 @@ def test_streaming_output_valid(output, empty_params, delta_len):
     assert json.dumps(json.loads(combined_messages)) == output_json
 
 
+# [中文注释] 测试流式输出末尾有多余数据（如"\nDONE"）时的解析容错能力
 def test_streaming_output_valid_with_trailing_extra_data():
     self = MagicMock()
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试标量类型的最小值和最大值：验证自定义标量类型的 min/max 与预期一致]
 
 import pytest
 import torch
@@ -7,6 +8,7 @@ import torch
 from vllm.scalar_type import scalar_types
 
 
+# [参数化测试各种标量类型（int4, uint4, float8 等）的取值范围是否正确]
 @pytest.mark.parametrize(
     "type_tuple",
     (

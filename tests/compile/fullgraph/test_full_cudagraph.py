@@ -15,6 +15,7 @@ from vllm.utils.torch_utils import is_torch_equal_or_newer
 from vllm.v1.attention.backends.registry import AttentionBackendEnum
 
 
+# 临时设置环境变量的上下文管理器，退出时恢复原值
 @contextlib.contextmanager
 def temporary_environ(env_vars):
     """
@@ -51,6 +52,7 @@ for backend_config in other_backend_configs:
     model_backends_full_cudagraph.append(("Qwen/Qwen2-1.5B-Instruct", backend_config))
 
 
+# 创建 full CUDA graph 和 piecewise CUDA graph 的 LLM 实例对用于比较
 @pytest.fixture(scope="class")
 def llm_pair(request):
     model, backend_config, use_inductor_graph_partition = request.param
@@ -122,6 +124,7 @@ def llm_pair(request):
     ],
     indirect=True,
 )
+# 测试 full CUDA graph 与 piecewise CUDA graph 在不同批量大小下的输出一致性
 class TestFullCUDAGraph:
     """
     Use a class such that an llm pair is constructed once for all
@@ -173,6 +176,7 @@ class TestFullCUDAGraph:
 
 
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="Skip if not cuda")
+# 验证不兼容的 attention 后端（如 FLEX_ATTENTION）与 full CUDA graph 组合会报错
 def test_full_cudagraph_with_invalid_backend():
     # Flex_Attention is not supported with full cuda graph
     with pytest.raises(RuntimeError):

@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试权重传输 API：通过 Mock 引擎验证初始化、接收权重和完整传输流程
+
 """Tests for weight transfer APIs via LLM class.
 
 These tests use a mock weight transfer engine to verify that the API
@@ -35,6 +38,7 @@ MODEL_NAME = "hmellor/tiny-random-LlamaForCausalLM"
 
 
 @dataclass
+# 模拟权重传输初始化信息
 class MockInitInfo(WeightTransferInitInfo):
     """Mock initialization info."""
 
@@ -42,6 +46,7 @@ class MockInitInfo(WeightTransferInitInfo):
 
 
 @dataclass
+# 模拟权重传输更新信息
 class MockUpdateInfo(WeightTransferUpdateInfo):
     """Mock update info."""
 
@@ -50,6 +55,7 @@ class MockUpdateInfo(WeightTransferUpdateInfo):
     shapes: list[list[int]] | None = None
 
 
+# 模拟权重传输引擎，追踪方法调用以进行验证
 class MockWeightTransferEngine(WeightTransferEngine[MockInitInfo, MockUpdateInfo]):
     """Mock weight transfer engine that tracks method calls."""
 
@@ -95,6 +101,7 @@ class MockWeightTransferEngine(WeightTransferEngine[MockInitInfo, MockUpdateInfo
         pass
 
 
+# 模拟引擎工厂函数
 def mock_create_engine(config, parallel_config):
     """Mock factory function that returns our mock engine."""
     return MockWeightTransferEngine(config, parallel_config)

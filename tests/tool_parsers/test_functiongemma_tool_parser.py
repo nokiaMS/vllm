@@ -9,6 +9,7 @@ from vllm.entrypoints.openai.chat_completion.protocol import ChatCompletionReque
 from vllm.tool_parsers.functiongemma_tool_parser import FunctionGemmaToolParser
 
 
+# [中文注释] 创建模拟分词器夹具用于FunctionGemma工具解析器测试
 @pytest.fixture
 def mock_tokenizer():
     tokenizer = MagicMock()
@@ -30,6 +31,7 @@ def mock_request():
     return request
 
 
+# [中文注释] 测试FunctionGemma工具调用提取：无调用、单个调用和多个调用
 class TestExtractToolCalls:
     def test_no_tool_calls(self, parser, mock_request):
         model_output = "Hello, how can I help you today?"
@@ -93,6 +95,7 @@ class TestExtractToolCalls:
         assert result.tool_calls[1].function.name == "get_time"
 
 
+# [中文注释] 测试FunctionGemma参数解析：基本类型、嵌套字典和无参数
 class TestParseArguments:
     def test_empty_arguments(self, parser):
         result = parser._parse_arguments("")
@@ -120,6 +123,7 @@ class TestParseArguments:
         assert result == {"message": "Hello World"}
 
 
+# [中文注释] 测试FunctionGemma请求调整：guided_json和guided_choice
 class TestAdjustRequest:
     def test_skip_special_tokens_disabled(self, parser, mock_request):
         mock_request.tools = [{"type": "function", "function": {"name": "test"}}]
@@ -138,6 +142,7 @@ class TestAdjustRequest:
         assert result.skip_special_tokens is True
 
 
+# [中文注释] 测试FunctionGemma流式delta文本缓冲
 class TestBufferDeltaText:
     def test_regular_text_not_buffered(self, parser):
         result = parser._buffer_delta_text("hello")

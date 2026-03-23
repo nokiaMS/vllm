@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试GritLM统一生成-嵌入模型的功能，包括离线嵌入、API嵌入、
+# 离线生成和API生成，验证检索相似度得分
+
 import numpy as np
 import pytest
 from scipy.spatial.distance import cosine

@@ -14,6 +14,7 @@ from vllm.v1.engine.async_llm import AsyncLLM
 from vllm.v1.engine.output_processor import RequestOutputCollector
 
 
+# [中文注释] 测试夹具：创建模拟的AsyncLLM实例，用于测试流式输入生成功能
 @pytest.fixture
 def mock_async_llm():
     """Create a mock AsyncLLM with mocked dependencies."""
@@ -94,6 +95,7 @@ async def test_generate_normal_flow(mock_async_llm):
     assert outputs[1].finished is True
 
 
+# [中文注释] 辅助函数：创建模拟的请求输出对象
 def make_output(request_id: str, finished: bool) -> RequestOutput:
     """Helper to create a RequestOutput."""
     return RequestOutput(

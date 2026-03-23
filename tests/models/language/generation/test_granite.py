@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试IBM Granite系列模型（PowerLM和PowerMoE）的生成正确性
+
 import pytest
 
 from ...utils import check_logprobs_close

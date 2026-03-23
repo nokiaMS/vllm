@@ -9,6 +9,7 @@ from vllm.entrypoints.openai.chat_completion.protocol import ChatCompletionReque
 from vllm.reasoning.basic_parsers import BaseThinkingReasoningParser
 
 
+# [中文注释] BaseThinkingReasoningParser的具体测试实现：使用<test:think>作为思考标记
 # Create a concrete test implementation of BaseThinkingReasoningParser
 class TestThinkingReasoningParser(BaseThinkingReasoningParser):
     """Test implementation of BaseThinkingReasoningParser."""
@@ -22,6 +23,7 @@ class TestThinkingReasoningParser(BaseThinkingReasoningParser):
         return "</test:think>"
 
 
+# [中文注释] 备选测试实现：使用不同的思考标记<alt:start>/<alt:end>，验证多实现独立性
 class TestThinkingReasoningParserAlt(BaseThinkingReasoningParser):
     """Alternative test implementation with different tokens."""
 
@@ -50,6 +52,7 @@ def test_tokenizer():
     return tokenizer
 
 
+# [中文注释] 测试BaseThinkingReasoningParser初始化：成功初始化、缺少分词器、缺少token、空token等
 class TestBaseThinkingReasoningParserInit:
     """
     Test initialization and basic properties of
@@ -105,6 +108,7 @@ class TestBaseThinkingReasoningParserInit:
             EmptyTokenParser(test_tokenizer)
 
 
+# [中文注释] 测试推理解析器核心方法：is_reasoning_end、流式判断、token计数、内容ID提取
 class TestBaseThinkingReasoningParserMethods:
     """Test the methods of BaseThinkingReasoningParser."""
 
@@ -210,6 +214,7 @@ class TestBaseThinkingReasoningParserMethods:
         assert content_ids == []
 
 
+# [中文注释] 测试推理内容提取：包含双标记、仅结束标记、无结束标记、空输出等场景
 class TestBaseThinkingReasoningParserExtraction:
     """Test reasoning content extraction methods."""
 
@@ -269,6 +274,7 @@ class TestBaseThinkingReasoningParserExtraction:
         assert content is None
 
 
+# [中文注释] 测试流式推理提取：增量delta处理、带/不带结束标记的流式场景
 class TestBaseThinkingReasoningParserStreaming:
     """Test streaming functionality of BaseThinkingReasoningParser."""
 
@@ -368,6 +374,7 @@ class TestBaseThinkingReasoningParserStreaming:
         assert content == "Final"
 
 
+# [中文注释] 测试多个解析器实现的独立性：不同token配置的解析器应互不干扰
 class TestBaseThinkingReasoningParserMultipleImplementations:
     """
     Test that multiple implementations of
@@ -401,6 +408,7 @@ class TestBaseThinkingReasoningParserMultipleImplementations:
         assert parser1.end_token_id != parser2.end_token_id
 
 
+# [中文注释] 测试边界情况：多个结束标记、嵌套标记、畸形标记字符串等
 class TestBaseThinkingReasoningParserEdgeCases:
     """Test edge cases and error conditions."""
 

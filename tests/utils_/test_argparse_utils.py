@@ -16,6 +16,7 @@ from vllm.utils.argparse_utils import FlexibleArgumentParser
 from ..utils import flat_product
 
 
+# [中文注释] 创建基础FlexibleArgumentParser测试夹具：包含常见参数类型（选择、字符串、整数、布尔、JSON）
 # Tests for FlexibleArgumentParser
 @pytest.fixture
 def parser():
@@ -32,6 +33,7 @@ def parser():
     return parser
 
 
+# [中文注释] 创建带配置文件支持的解析器夹具：用于测试配置文件加载和命令行参数覆盖
 @pytest.fixture
 def parser_with_config():
     parser = FlexibleArgumentParser()
@@ -46,11 +48,13 @@ def parser_with_config():
     return parser
 
 
+# [中文注释] 测试下划线到破折号的参数名自动转换
 def test_underscore_to_dash(parser):
     args = parser.parse_args(["--image_input_type", "pixel_values"])
     assert args.image_input_type == "pixel_values"
 
 
+# [中文注释] 测试混合使用下划线和破折号的参数名
 def test_mixed_usage(parser):
     args = parser.parse_args(
         ["--image_input_type", "image_features", "--model-name", "facebook/opt-125m"]
@@ -59,6 +63,7 @@ def test_mixed_usage(parser):
     assert args.model_name == "facebook/opt-125m"
 
 
+# [中文注释] 测试使用等号赋值的参数解析
 def test_with_equals_sign(parser):
     args = parser.parse_args(
         ["--image_input_type=pixel_values", "--model-name=facebook/opt-125m"]
@@ -67,6 +72,7 @@ def test_with_equals_sign(parser):
     assert args.model_name == "facebook/opt-125m"
 
 
+# [中文注释] 测试整数类型参数值的解析
 def test_with_int_value(parser):
     args = parser.parse_args(["--batch_size", "32"])
     assert args.batch_size == 32
@@ -74,6 +80,7 @@ def test_with_int_value(parser):
     assert args.batch_size == 32
 
 
+# [中文注释] 测试布尔标志参数的解析（下划线和破折号两种形式）
 def test_with_bool_flag(parser):
     args = parser.parse_args(["--enable_feature"])
     assert args.enable_feature is True
@@ -81,17 +88,20 @@ def test_with_bool_flag(parser):
     assert args.enable_feature is True
 
 
+# [中文注释] 测试无效选项值时是否正确退出
 def test_invalid_choice(parser):
     with pytest.raises(SystemExit):
         parser.parse_args(["--image_input_type", "invalid_choice"])
 
 
+# [中文注释] 测试缺少必需参数时是否正确退出
 def test_missing_required_argument(parser):
     parser.add_argument("--required-arg", required=True)
     with pytest.raises(SystemExit):
         parser.parse_args([])
 
 
+# [中文注释] 测试命令行参数覆盖配置文件中的参数值
 def test_cli_override_to_config(parser_with_config, cli_config_file):
     args = parser_with_config.parse_args(
         ["serve", "mymodel", "--config", cli_config_file, "--tensor-parallel-size", "3"]
@@ -118,6 +128,7 @@ def test_cli_override_to_config(parser_with_config, cli_config_file):
     assert args.port == 666
 
 
+# [中文注释] 测试从配置文件中正确加载参数
 def test_config_args(parser_with_config, cli_config_file):
     args = parser_with_config.parse_args(
         ["serve", "mymodel", "--config", cli_config_file]
@@ -126,6 +137,7 @@ def test_config_args(parser_with_config, cli_config_file):
     assert args.trust_remote_code
 
 
+# [中文注释] 测试配置文件异常情况：文件不存在、格式错误等
 def test_config_file(parser_with_config):
     with pytest.raises(FileNotFoundError):
         parser_with_config.parse_args(
@@ -151,11 +163,13 @@ def test_config_file(parser_with_config):
         )
 
 
+# [中文注释] 测试缺少模型标签时是否抛出ValueError
 def test_no_model_tag(parser_with_config, cli_config_file):
     with pytest.raises(ValueError):
         parser_with_config.parse_args(["serve", "--config", cli_config_file])
 
 
+# [中文注释] 测试字典风格的嵌套参数解析：支持点分隔的键名、数组、数据类型自动检测
 def test_dict_args(parser):
     args = [
         "--model-name=something.something",
@@ -226,6 +240,7 @@ def test_dict_args(parser):
     }
 
 
+# [中文注释] 测试重复的字典参数：验证后值覆盖前值并输出警告日志
 def test_duplicate_dict_args(caplog_vllm, parser):
     args = [
         "--model-name=something.something",
@@ -251,6 +266,7 @@ def test_duplicate_dict_args(caplog_vllm, parser):
     assert "--optimization-level" in caplog_vllm.text
 
 
+# [中文注释] 测试模型指定的多种方式：CLI优先、配置文件指定、未指定时报错、--model向后兼容
 def test_model_specification(
     parser_with_config, cli_config_file, cli_config_file_with_model
 ):
@@ -333,6 +349,7 @@ def test_model_specification(
     assert args.port == 12312
 
 
+# [中文注释] 测试token ID列表到token字符串的转换功能
 def test_convert_ids_list_to_tokens():
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
     token_ids = tokenizer.encode("Hello, world!")
@@ -342,6 +359,7 @@ def test_convert_ids_list_to_tokens():
     assert tokens == ["Hello", ",", " world", "!"]
 
 
+# [中文注释] 测试从YAML配置文件加载参数并转换为命令行参数列表
 def test_load_config_file(tmp_path):
     # Define the configuration data
     config_data = {
@@ -379,6 +397,7 @@ def test_load_config_file(tmp_path):
     os.remove(str(config_file_path))
 
 
+# [中文注释] 测试嵌套字典的YAML配置文件加载：嵌套字典应被转换为JSON字符串
 def test_load_config_file_nested(tmp_path):
     """Test that nested dicts in YAML config are converted to JSON strings."""
     config_data = {
@@ -401,6 +420,7 @@ def test_load_config_file_nested(tmp_path):
     assert cc_value == {"pass_config": {"fuse_allreduce_rms": True}}
 
 
+# [中文注释] 测试嵌套配置的端到端解析流程
 def test_nested_config_end_to_end(tmp_path):
     """Test end-to-end parsing of nested configs in YAML files."""
     config_data = {
@@ -423,6 +443,7 @@ def test_nested_config_end_to_end(tmp_path):
     }
 
 
+# [中文注释] 测试编译模式参数支持整数和字符串两种值形式
 def test_compilation_mode_string_values(parser):
     """Test that -cc.mode accepts both integer and string mode values."""
     args = parser.parse_args(["-cc.mode", "0"])
@@ -450,6 +471,7 @@ def test_compilation_mode_string_values(parser):
     assert args.compilation_config == {"mode": "vllm_compile"}
 
 
+# [中文注释] 测试CompilationConfig的mode字段验证器：字符串到枚举的正确转换和无效值的拒绝
 def test_compilation_config_mode_validator():
     """Test that CompilationConfig.mode field validator converts strings to integers."""
     from vllm.config.compilation import CompilationConfig, CompilationMode
@@ -482,6 +504,7 @@ def test_compilation_config_mode_validator():
         CompilationConfig(mode="INVALID_MODE")
 
 
+# [中文注释] 测试flat_product函数：验证笛卡尔积结果和元组自动展平功能
 def test_flat_product():
     # Check regular itertools.product behavior
     result1 = list(flat_product([1, 2, 3], ["a", "b"]))

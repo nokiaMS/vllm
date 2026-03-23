@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试分词器产生非单调无效UTF-8输出时DecodeStream的边界情况
 
 from transformers import AutoTokenizer
 

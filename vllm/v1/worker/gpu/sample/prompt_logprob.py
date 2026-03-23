@@ -12,6 +12,10 @@ from vllm.v1.worker.gpu.input_batch import InputBatch
 from vllm.v1.worker.gpu.sample.logprob import compute_topk_logprobs
 
 
+# Prompt Logprobs 工作器
+# 负责计算 prompt token 的 log 概率，用于评估模型对输入 prompt 各位置的预测置信度
+# 支持分块计算：当 prompt 很长时，分多次 prefill 逐步计算并缓存中间结果
+# 最终在 prompt 处理完成后合并所有分块的 logprobs 并返回
 class PromptLogprobsWorker:
     def __init__(self, max_num_reqs: int):
         self.max_num_reqs = max_num_reqs
@@ -20,6 +24,7 @@ class PromptLogprobsWorker:
         # req_idx -> list of in-progress LogprobsTensors
         self.in_progress_prompt_logprobs: dict[str, list[LogprobsTensors]] = {}
 
+    # 注册新请求，若需要 prompt logprobs 则初始化中间结果列表
     def add_request(self, req_id: str, req_idx: int, sampling_params: SamplingParams):
         # For now, only support prompt logprobs for the prompt tokens (not top-k).
         uses_prompt_logprobs = sampling_params.prompt_logprobs is not None
@@ -27,9 +32,13 @@ class PromptLogprobsWorker:
         if uses_prompt_logprobs:
             self.in_progress_prompt_logprobs[req_id] = []
 
+    # 移除请求，清理对应的中间 logprobs 缓存
     def remove_request(self, req_id: str) -> None:
         self.in_progress_prompt_logprobs.pop(req_id, None)
 
+    # 计算 prompt logprobs 的主方法
+    # 流程：获取 prompt 各位置的目标 token ID -> 分块计算 logits 和 logprobs -> 按请求切分 -> 处理分块合并
+    # 对于被分块的 prompt，将中间结果缓存起来；当所有分块完成后合并返回
     def compute_prompt_logprobs(
         self,
         logits_fn: Callable[[torch.Tensor], torch.Tensor],
@@ -126,6 +135,8 @@ class PromptLogprobsWorker:
         return prompt_logprobs_dict
 
 
+# Triton 内核：获取 prompt logprobs 计算所需的目标 token ID
+# 每个位置的目标 token 是下一个位置的实际 token（即 logprob 衡量模型对下一个 token 的预测能力）
 @triton.jit
 def _prompt_logprobs_token_ids_kernel(
     prompt_logprobs_token_ids_ptr,
@@ -159,6 +170,7 @@ def _prompt_logprobs_token_ids_kernel(
         )
 
 
+# 获取 prompt logprobs 目标 token ID 的入口函数
 def get_prompt_logprobs_token_ids(
     num_tokens: int,
     query_start_loc: torch.Tensor,
@@ -180,6 +192,8 @@ def get_prompt_logprobs_token_ids(
     return token_ids
 
 
+# 分块计算 prompt logprobs，避免一次性具象化完整 prompt 的 logits 张量导致显存溢出
+# 每次处理 CHUNK_SIZE=1024 个 token，逐块调用 logits_fn 和 compute_topk_logprobs
 def compute_prompt_logprobs_with_chunking(
     prompt_token_ids: torch.Tensor,
     prompt_hidden_states: torch.Tensor,

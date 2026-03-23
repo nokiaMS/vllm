@@ -17,6 +17,9 @@ from vllm.v1.worker.ubatch_utils import (
 logger = init_logger(__name__)
 
 
+# 获取数据并行通信所使用的设备和进程组
+# 默认使用 GPU 设备和对应的 NCCL 组；当配置禁用 NCCL 同步时，
+# 降级为 CPU AllReduce 以避免引入 GPU 同步点影响异步调度性能
 def _get_device_and_group(parallel_config: ParallelConfig):
     # Use the actual device assigned to the DP group, not just the device type
     device = get_dp_group().device
@@ -35,6 +38,12 @@ def _get_device_and_group(parallel_config: ParallelConfig):
     return device, group
 
 
+# 通过 AllReduce 在所有 DP rank 之间交换四类信息：
+#   [0] 每个 rank 的原始 token 数
+#   [1] 每个 rank 填充后的 token 数
+#   [2] 每个 rank 是否希望使用微批（ubatch）
+#   [3] 每个 rank 的 CUDA Graph 模式
+# 使用形状为 [4, dp_size] 的张量，每个 rank 填写自己列后做全局归约
 def _run_ar(
     should_ubatch: bool,
     orig_num_tokens_per_ubatch: int,
@@ -54,6 +63,8 @@ def _run_ar(
     return tensor
 
 
+# 后处理微批决策：只有当所有 DP rank 都同意使用微批，并且不会产生空的尾部微批时，
+# 才最终启用微批模式；否则回退到单批处理
 def _post_process_ubatch(tensor: torch.Tensor, num_ubatches: int) -> bool:
     orig_num_tokens_tensor = tensor[0, :]
     padded_num_tokens_tensor = tensor[1, :]
@@ -74,6 +85,8 @@ def _post_process_ubatch(tensor: torch.Tensor, num_ubatches: int) -> bool:
     return should_ubatch
 
 
+# 后处理数据并行填充：当需要填充时，将所有 rank 的 token 数统一为最大值，
+# 确保每个 rank 处理相同数量的 token（CUDA Graph 和微批模式的要求）
 def _post_process_dp_padding(tensor: torch.Tensor, should_dp_pad: bool) -> torch.Tensor:
     num_tokens_across_dp = tensor[1, :]
     if should_dp_pad:
@@ -89,6 +102,8 @@ def _post_process_dp_padding(tensor: torch.Tensor, should_dp_pad: bool) -> torch
         return num_tokens_across_dp.cpu()
 
 
+# 取所有 DP rank 中 CUDA Graph 模式的最小值，实现保守一致性同步：
+# 若任一 rank 为 NONE(0)，则全部 rank 统一使用 NONE，确保填充行为一致
 def _post_process_cudagraph_mode(tensor: torch.Tensor) -> int:
     """
     Synchronize cudagraph_mode across DP ranks by taking the minimum.
@@ -98,6 +113,10 @@ def _post_process_cudagraph_mode(tensor: torch.Tensor) -> int:
     return int(tensor[3, :].min().item())
 
 
+# 在所有 DP rank 之间同步三个关键决策：
+#   1. 是否启用微批处理（全票通过制）
+#   2. 每个 rank 的最终 token 数（可能需要填充对齐）
+#   3. CUDA Graph 模式（取所有 rank 的最小值，确保一致性）
 def _synchronize_dp_ranks(
     num_tokens_unpadded: int,
     num_tokens_padded: int,
@@ -161,6 +180,12 @@ def _synchronize_dp_ranks(
     return should_ubatch, num_tokens_after_padding, synced_cudagraph_mode
 
 
+# coordinate_batch_across_dp：数据并行批处理协调的顶层入口
+# 在多 DP rank 场景下，协调各 rank 的批处理策略：
+#   - 判断是否需要将大批拆分为微批（ubatch）
+#   - 对齐各 rank 的 token 数量（填充到统一长度）
+#   - 同步 CUDA Graph 执行模式
+# 单 DP rank 时直接短路返回，不做任何通信
 def coordinate_batch_across_dp(
     num_tokens_unpadded: int,
     allow_microbatching: bool,

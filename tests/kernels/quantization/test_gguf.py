@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试GGUF格式量化权重的反量化和MoE融合专家计算正确性
 
 from pathlib import Path
 
@@ -17,6 +18,7 @@ GGUF_SAMPLE = snapshot_download("Isotr0py/test-gguf-sample")
 GGUF_SAMPLE_MOE = snapshot_download("SzymonOzog/test-gguf-moe-sample")
 
 
+# 从HuggingFace样本仓库加载指定量化类型的GGUF测试张量
 def get_gguf_sample_tensors(
     hidden_size: int, quant_type: GGMLQuantizationType
 ) -> list[ReaderTensor]:
@@ -26,6 +28,7 @@ def get_gguf_sample_tensors(
     return GGUFReader(sample_file).tensors
 
 
+# 从HuggingFace样本仓库加载MoE模型的GGUF测试张量
 def get_gguf_MoE_tensors(
     hidden_size: int, quant_type: GGMLQuantizationType
 ) -> list[ReaderTensor]:
@@ -64,6 +67,7 @@ QUANT_TYPES = [
 ]
 
 
+# 测试GGUF各量化类型的反量化与gguf库参考实现的一致性
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("quant_type", QUANT_TYPES)
@@ -86,6 +90,7 @@ def test_dequantize(
         torch.testing.assert_close(output, ref_output, atol=1e-2, rtol=4e-2)
 
 
+# 测试GGUF量化权重的向量矩阵乘法(MMVQ)正确性
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("quant_type", QUANT_TYPES)
@@ -109,6 +114,7 @@ def test_mmvq(hidden_size: int, dtype: torch.dtype, quant_type: GGMLQuantization
         torch.testing.assert_close(output, ref_output, atol=1, rtol=1e-1)
 
 
+# 测试GGUF量化权重的批量矩阵乘法(MMQ)正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -156,6 +162,7 @@ def test_mmq(
         )
 
 
+# 测试GGUF量化权重在MoE融合专家层中的计算正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", [512])
 @pytest.mark.parametrize("top_k", [4, 8])

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 MultiprocExecutor 的初始化、RPC 调用、故障回调、多节点模拟等功能
 
 """
 Integration tests for MultiprocExecutor at the executor level.

@@ -11,6 +11,7 @@ from tests.models.utils import softmax
 from vllm.platforms import current_platform
 
 
+# 测试夹具：固定所有随机数种子以确保测试结果的可复现性
 @pytest.fixture(autouse=True)
 def seed_everything():
     """Seed all random number generators for reproducibility."""
@@ -35,6 +36,7 @@ def seed_everything():
 # The float32 is required for this tiny model to pass the test.
 @pytest.mark.parametrize("dtype", ["float"])
 @torch.inference_mode
+# 测试 BERT 类模型的命名实体识别（NER）token 分类任务，验证 vLLM 与 HuggingFace 的输出一致性
 def test_bert_like_models(
     hf_runner,
     vllm_runner,
@@ -76,6 +78,7 @@ def test_bert_like_models(
 @pytest.mark.parametrize("dtype", ["float"])
 @pytest.mark.flaky(reruns=3)
 @torch.inference_mode
+# 测试 ModernBERT 模型的 token 分类任务，使用 flaky 重试机制应对随机初始化权重导致的数值精度波动
 def test_modernbert_models(
     hf_runner,
     vllm_runner,
@@ -125,6 +128,7 @@ def test_modernbert_models(
 @pytest.mark.parametrize("model", ["bd2lcco/Qwen3-0.6B-finetuned"])
 @pytest.mark.parametrize("dtype", ["float"])
 @torch.inference_mode
+# 测试自动转换功能：验证 Qwen3 模型自动转换为 token 分类模式后的输出正确性
 def test_auto_conversion(
     hf_runner,
     vllm_runner,

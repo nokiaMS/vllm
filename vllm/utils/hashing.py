@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover
     _xxhash = None
 
 
+# 使用 pickle 序列化后进行 SHA-256 哈希，支持任意可序列化的 Python 对象
 def sha256(input: Any) -> bytes:
     """Hash any picklable Python object using SHA-256.
 
@@ -40,6 +41,8 @@ def sha256(input: Any) -> bytes:
     return hashlib.sha256(input_bytes).digest()
 
 
+# 使用 CBOR（跨语言二进制序列化）后进行 SHA-256 哈希
+# 适用于需要与非 Python 环境保持序列化一致性的场景
 def sha256_cbor(input: Any) -> bytes:
     """Hash objects using CBOR serialization and SHA-256.
 
@@ -58,6 +61,7 @@ def sha256_cbor(input: Any) -> bytes:
     return hashlib.sha256(input_bytes).digest()
 
 
+# xxHash 128 位摘要的内部实现，xxhash 为可选依赖
 def _xxhash_digest(input_bytes: bytes) -> bytes:
     if _xxhash is None:
         raise ModuleNotFoundError(
@@ -67,18 +71,22 @@ def _xxhash_digest(input_bytes: bytes) -> bytes:
     return _xxhash.xxh3_128_digest(input_bytes)
 
 
+# 使用 pickle 序列化后进行 xxHash 哈希，比 SHA-256 更快，适用于前缀缓存
 def xxhash(input: Any) -> bytes:
     """Hash picklable objects using xxHash."""
     input_bytes = pickle.dumps(input, protocol=pickle.HIGHEST_PROTOCOL)
     return _xxhash_digest(input_bytes)
 
 
+# 使用 CBOR 序列化后进行 xxHash 哈希
 def xxhash_cbor(input: Any) -> bytes:
     """Hash objects serialized with CBOR using xxHash."""
     input_bytes = cbor2.dumps(input, canonical=True)
     return _xxhash_digest(input_bytes)
 
 
+# 根据名称字符串获取对应的哈希函数
+# 支持 sha256、sha256_cbor、xxhash、xxhash_cbor 四种算法
 def get_hash_fn_by_name(hash_fn_name: str) -> Callable[[Any], bytes]:
     """Get a hash function by name, or raise an error if the function is not found.
 
@@ -100,6 +108,7 @@ def get_hash_fn_by_name(hash_fn_name: str) -> Callable[[Any], bytes]:
     raise ValueError(f"Unsupported hash function: {hash_fn_name}")
 
 
+# 安全哈希函数：优先使用 MD5，在 FIPS 受限环境中自动回退到 SHA-256
 def safe_hash(data: bytes, usedforsecurity: bool = True) -> HASH:
     """Hash for configs, defaulting to md5 but falling back to sha256
     in FIPS constrained environments.

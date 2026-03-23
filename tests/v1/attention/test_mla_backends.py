@@ -80,6 +80,7 @@ for backend in BACKENDS_TO_TEST:
 torch.manual_seed(42)
 
 
+# 将模型数据类型字符串转换为 torch.dtype
 def _convert_dtype_to_torch(dtype):
     """Convert ModelDType to torch.dtype."""
     if isinstance(dtype, str):
@@ -123,6 +124,7 @@ BATCH_SPECS = {
 }
 
 
+# 创建并预填充 MLA 格式的 KV 缓存，支持 FP8 量化缓存
 def create_and_prepopulate_kv_cache(
     kv_c_contexts: list[torch.Tensor],
     k_pe_contexts: list[torch.Tensor],
@@ -266,6 +268,7 @@ def create_and_prepopulate_kv_cache(
     return kv_cache
 
 
+# 模拟注意力层，提供 MLA 测试所需的缩放参数
 class MockAttentionLayer:
     """A mock attention layer for testing."""
 
@@ -282,6 +285,7 @@ class MockAttentionLayer:
         raise NotImplementedError
 
 
+# 模拟稀疏 MLA 注意力层，仅支持 forward_mqa 路径用于测试
 class MockSparseMLAAttentionLayer:
     """A mock sparse MLA attention layer for testing.
 
@@ -400,6 +404,7 @@ class MockSparseMLAAttentionLayer:
         return output
 
 
+# 模拟 MLA 注意力层，复制 MLAAttention 的 forward_impl 逻辑用于独立测试
 class MockMLAAttentionLayer(AttentionLayerBase):
     """A mock MLA attention layer for testing.
 
@@ -552,6 +557,7 @@ class MockMLAAttentionLayer(AttentionLayerBase):
         return output
 
 
+# 使用指定 MLA 后端运行注意力计算并返回输出
 def run_attention_backend(
     backend: AttentionBackendEnum,
     kv_cache_spec: MLAAttentionSpec,

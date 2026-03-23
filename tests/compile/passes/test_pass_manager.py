@@ -21,6 +21,7 @@ def simple_callable(graph: torch.fx.Graph):
 
 
 # Should fail to add directly to the pass manager
+# 测试直接添加不继承 InductorPass 的 callable 会抛出断言错误
 def test_bad_callable():
     config = VllmConfig()
 
@@ -32,6 +33,7 @@ def test_bad_callable():
 
 
 # Pass that inherits from InductorPass
+# 正确继承 InductorPass 的 pass 类
 class ProperPass(InductorPass):
     def __call__(self, graph: torch.fx.graph.Graph) -> None:
         pass
@@ -46,6 +48,7 @@ class ProperPass(InductorPass):
         CallableInductorPass(simple_callable, InductorPass.hash_source(__file__)),
     ],
 )
+# 测试 pass manager 的 UUID 随 pass 数量和配置变化而变化
 def test_pass_manager_uuid(callable):
     # Set the pass context as PassManager uuid uses it
     with pass_context(Range(start=1, end=8)):

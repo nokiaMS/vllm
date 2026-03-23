@@ -18,6 +18,10 @@ from vllm.v1.request import Request
 logger = init_logger(__name__)
 
 
+# [中文注释] KVCacheBlocks — Scheduler 与 KVCacheManager 之间的接口数据结构。
+#   blocks[i][j] 表示第 i 个 kv_cache_group 的第 j 个 block。
+#   外层按 group 而非按 token block 组织，因为未来不同 group 可能有不同数量的 block。
+#   提供 get_block_ids() 转换为 block ID 元组，以及 get_unhashed_block_ids() 获取未缓存的 block。
 @dataclass
 class KVCacheBlocks:
     """
@@ -103,6 +107,14 @@ class KVCacheBlocks:
         return KVCacheBlocks(tuple(() for _ in range(len(self.blocks))))
 
 
+# [中文注释] KV Cache 顶层管理器，封装 KVCacheCoordinator 并为 Scheduler 提供高层接口。
+#   核心职责：
+#     get_computed_blocks() — 查找前缀缓存命中（最长匹配）
+#     allocate_slots() — 为请求分配 token slot（包含三阶段：释放窗口外 block、处理前缀、分配新 block）
+#     free() — 释放请求的所有 block（按反向顺序，尾部 block 优先驱逐）
+#   Block 布局图示（见 allocate_slots 文档）：
+#     [已计算] [新命中] [外部命中] [新 token] [lookahead]
+#   内部委托给 coordinator（协调多 group）和 block_pool（管理物理 block）。
 class KVCacheManager:
     def __init__(
         self,
@@ -215,6 +227,13 @@ class KVCacheManager:
 
         return self.create_kv_cache_blocks(computed_blocks), num_new_computed_tokens
 
+    # [中文注释] allocate_slots() — 为请求分配至少 num_new_tokens 个 token 的 slot。
+    #   三阶段流程：
+    #     1. 释放滑动窗口外的 block（reduce eviction pressure）
+    #     2. 处理前缀 token：触摸命中 block、分配外部计算 token 的 block
+    #     3. 分配新 block（包含 lookahead token）
+    #   若 block 不足返回 None（Scheduler 会跳过该请求）。
+    #   delay_cache_blocks 用于 P/D 分离场景（异步接收 KV 数据）。
     def allocate_slots(
         self,
         request: Request,

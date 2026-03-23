@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试行重排内核shuffle_rows的正确性，
+# 覆盖恒等映射、反转排列、扩展复制、随机排列、MoE场景、dtype保持、设备一致性和输出连续性
 """Tests for the shuffle_rows function
 
 Run `pytest tests/kernels/test_shuffle_rows.py`.
@@ -15,6 +17,7 @@ from vllm.platforms import current_platform
 @pytest.mark.parametrize("num_tokens", [1, 16, 64, 128, 256, 512, 1024])
 @pytest.mark.parametrize("hidden_size", [128, 256, 512, 1024, 2048, 4096])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16, torch.float32])
+# 测试恒等映射下shuffle_rows的基本正确性
 def test_shuffle_rows_basic(num_tokens: int, hidden_size: int, dtype: torch.dtype):
     """Test basic functionality of shuffle_rows with various tensor sizes and
     dtypes."""
@@ -42,6 +45,7 @@ def test_shuffle_rows_basic(num_tokens: int, hidden_size: int, dtype: torch.dtyp
 @pytest.mark.parametrize("num_tokens", [16, 64, 128])
 @pytest.mark.parametrize("hidden_size", [128, 512, 1024])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+# 测试反转排列映射下的行重排正确性
 def test_shuffle_rows_permutation(
     num_tokens: int, hidden_size: int, dtype: torch.dtype
 ):
@@ -70,6 +74,7 @@ def test_shuffle_rows_permutation(
 
 @pytest.mark.parametrize("num_tokens", [32, 64])
 @pytest.mark.parametrize("hidden_size", [256, 512])
+# 测试输出行数大于输入行数的扩展复制场景
 def test_shuffle_rows_expansion(num_tokens: int, hidden_size: int):
     """Test shuffle_rows with expansion (more output tokens than input
     tokens)."""
@@ -105,6 +110,7 @@ def test_shuffle_rows_expansion(num_tokens: int, hidden_size: int):
 
 @pytest.mark.parametrize("num_tokens", [16, 64])
 @pytest.mark.parametrize("hidden_size", [128, 512])
+# 测试随机排列映射下的行重排正确性
 def test_shuffle_rows_random_permutation(num_tokens: int, hidden_size: int):
     """Test shuffle_rows with random permutation."""
     if not current_platform.is_cuda():
@@ -137,6 +143,7 @@ def test_shuffle_rows_random_permutation(num_tokens: int, hidden_size: int):
         )
 
 
+# 测试边界情况：单token和单特征维度
 def test_shuffle_rows_edge_cases():
     """Test shuffle_rows with edge cases."""
     if not current_platform.is_cuda():
@@ -157,6 +164,7 @@ def test_shuffle_rows_edge_cases():
     torch.testing.assert_close(output, input_tensor, atol=0, rtol=0)
 
 
+# 测试MoE（混合专家）风格的token复制分发场景
 def test_shuffle_rows_moe_like_scenario():
     """Test shuffle_rows in a scenario similar to MoE usage."""
     if not current_platform.is_cuda():
@@ -198,6 +206,7 @@ def test_shuffle_rows_moe_like_scenario():
 
 
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16, torch.float32])
+# 测试shuffle_rows是否正确保持输出数据类型
 def test_shuffle_rows_dtype_consistency(dtype: torch.dtype):
     """Test that shuffle_rows preserves dtype correctly."""
     if not current_platform.is_cuda():
@@ -219,6 +228,7 @@ def test_shuffle_rows_dtype_consistency(dtype: torch.dtype):
     torch.testing.assert_close(output, input_tensor, atol=1e-6, rtol=1e-5)
 
 
+# 测试shuffle_rows是否保持CUDA设备一致性
 def test_shuffle_rows_device_consistency():
     """Test that shuffle_rows maintains device consistency."""
     if not current_platform.is_cuda():
@@ -240,6 +250,7 @@ def test_shuffle_rows_device_consistency():
     assert output.device.type == "cuda"
 
 
+# 测试shuffle_rows输出张量是否为连续内存布局
 def test_shuffle_rows_contiguous_output():
     """Test that shuffle_rows produces contiguous output."""
     if not current_platform.is_cuda():

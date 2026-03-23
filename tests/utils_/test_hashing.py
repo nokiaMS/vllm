@@ -8,6 +8,7 @@ import pytest
 from vllm.utils.hashing import sha256
 
 
+# [中文注释] 测试sha256哈希函数：验证不同输入的哈希结果一致性、非空性和唯一性
 @pytest.mark.parametrize("input", [(), ("abc",), (None,), (None, bool, [1, 2, 3])])
 def test_sha256(input: tuple):
     digest = sha256(input)

@@ -6,6 +6,7 @@ import torch
 from vllm.model_executor.layers.rotary_embedding import RotaryEmbedding
 
 
+# 测试用的虚拟旋转位置编码算子，验证 OOT（Out-Of-Tree）自定义算子注册机制
 # Register CustomRotaryEmbedding to CustomOP.
 @RotaryEmbedding.register_oot
 class DummyRotaryEmbedding(RotaryEmbedding):

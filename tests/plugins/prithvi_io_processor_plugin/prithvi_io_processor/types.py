@@ -7,6 +7,8 @@ import albumentations
 from pydantic import BaseModel
 
 
+# Prithvi 处理器的数据类型定义：数据模块配置、图像提示和输出格式
+
 class DataModuleConfig(TypedDict):
     bands: list[str]
     batch_size: int

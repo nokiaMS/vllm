@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试Mamba状态前缀缓存，验证推测解码下块分配、状态复制和缓存一致性
 import multiprocessing as mp
 import os
 import traceback
@@ -33,6 +34,7 @@ from vllm.v1.worker.lora_model_runner_mixin import GPUInputBatch
 from vllm.v1.worker.mamba_utils import get_mamba_groups
 
 
+# [中文注释] 定义单步操作的数据类，包含计算token起始、调度token数、KV缓存块ID和复制索引
 @dataclass
 class StepAction:
     num_computed_tokens_start: int
@@ -54,6 +56,7 @@ cur_step_action: StepAction | None = None
 step_actions: list[StepAction] = []
 
 
+# [中文注释] 创建伪采样函数，根据预定义的token ID序列返回确定性的采样结果
 def get_fake_sample_fn() -> SamplerOutput:
     def fake_sample_fn(
         self: GPUModelRunner,
@@ -91,6 +94,7 @@ def get_fake_sample_fn() -> SamplerOutput:
     return fake_sample_fn
 
 
+# [中文注释] 创建伪草稿token提案函数，从预定义序列中提取推测解码的草稿token
 def get_fake_propose_draft_token_ids_fn():
     def fake_propose_draft_token_ids_fn(
         self: GPUModelRunner,
@@ -143,6 +147,7 @@ def get_fake_propose_draft_token_ids_fn():
     return fake_propose_draft_token_ids_fn
 
 
+# [中文注释] 创建伪步骤动作函数，在每步推进步骤动作索引用于验证
 def get_fake_step_action_fn(original_step_action_fn: Callable):
     def fake_get_output(self: InprocClient):
         global cur_step_action_idx
@@ -158,6 +163,7 @@ def get_fake_step_action_fn(original_step_action_fn: Callable):
     return fake_get_output
 
 
+# [中文注释] 创建伪槽分配函数，验证KV缓存块分配是否与预期的块ID列表一致
 def get_fake_allocate_slots_fn(original_allocate_slots_fn: Callable):
     def fake_allocate_slots_fn(
         self: KVCacheManager,
@@ -196,6 +202,7 @@ def get_fake_allocate_slots_fn(original_allocate_slots_fn: Callable):
 mamba_kv_cache_dict = {}
 
 
+# [中文注释] 创建伪模型执行函数，记录Mamba KV缓存状态并验证调度token数和计算token数
 def get_fake_execute_model_fn(original_execute_model_fn: Callable):
     last_num_computed_tokens = 0
     num_prompt_tokens = None
@@ -279,6 +286,7 @@ def get_fake_execute_model_fn(original_execute_model_fn: Callable):
     return fake_execute_model_fn
 
 
+# [中文注释] 创建伪Mamba前处理/后处理/复制函数，验证状态复制的源和目标地址正确性
 def get_fake_process_mamba_fn(
     original_preprocess_mamba_fn: Callable,
     original_post_process_mamba_fn: Callable,
@@ -393,6 +401,7 @@ def get_fake_process_mamba_fn(
     return fake_preprocess_mamba_fn, fake_post_process_mamba_fn, fake_copy_fn
 
 
+# [中文注释] 在子进程中运行参考Mamba状态生成，产生基准缓存状态用于后续对比
 def run_ref_mamba_state_in_subprocess() -> None:
     ctx = mp.get_context("spawn")
     proc = ctx.Process(target=_run_ref_mamba_state_worker)
@@ -402,6 +411,7 @@ def run_ref_mamba_state_in_subprocess() -> None:
         raise RuntimeError(f"Ref mamba state process exited with code {proc.exitcode}.")
 
 
+# [中文注释] 参考Mamba状态工作进程：加载数据集、生成参考KV缓存状态并保存到文件
 def _run_ref_mamba_state_worker():
     try:
         os.environ["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
@@ -447,6 +457,7 @@ def _run_ref_mamba_state_worker():
         raise
 
 
+# [中文注释] 对比参考Mamba状态和新生成状态，允许小范围数值误差
 def check_mamba_state_equal(
     mamba_state_ref: dict, mamba_state_new: dict, keys_to_check: list[int]
 ):
@@ -474,6 +485,7 @@ def check_mamba_state_equal(
     return True
 
 
+# [中文注释] 测试配置数据类，定义提示token数、生成token数、接受token数和步骤动作
 @dataclass
 class TestConfig:
     num_prompt_tokens: int
@@ -482,6 +494,7 @@ class TestConfig:
     step_actions: list[StepAction]
 
 
+# [中文注释] 应用所有猴子补丁，替换采样、草稿提案、模型执行、槽分配和Mamba处理函数
 def apply_patch(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
 
@@ -514,6 +527,7 @@ def apply_patch(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(mamba_utils, "do_mamba_copy_block", fake_copy_fn)
 
 
+# [中文注释] 主测试函数：在多种接受token数和提示长度下验证Mamba前缀缓存的块分配和状态复制
 @create_new_process_for_each_test()
 def test_mamba_prefix_cache(monkeypatch: pytest.MonkeyPatch):
     run_ref_mamba_state_in_subprocess()

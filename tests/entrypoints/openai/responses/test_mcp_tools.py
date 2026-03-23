@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 Responses API 中 MCP 工具支持的单元测试和集成测试
+
 """Integration tests for MCP tool support in the Responses API."""
 
 from __future__ import annotations
@@ -36,6 +39,7 @@ _PYTHON_TOOL_INSTRUCTION = (
 )
 
 
+# 测试 MCPToolServer 工具描述过滤逻辑的单元测试
 class TestMCPToolServerUnit:
     """Test MCPToolServer.get_tool_description filtering logic.
 
@@ -110,6 +114,7 @@ class TestMCPToolServerUnit:
         )
 
 
+# 启用 MCP 工具环境变量后的集成测试
 class TestMCPEnabled:
     """Tests that require MCP tools to be enabled via environment variable."""
 

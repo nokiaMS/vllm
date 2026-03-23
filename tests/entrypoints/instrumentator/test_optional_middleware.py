@@ -5,6 +5,8 @@ Tests for middleware that's off by default and can be toggled through
 server arguments, mainly --api-key and --enable-request-id-headers.
 """
 
+# 测试可选中间件：API 密钥认证（--api-key）和请求 ID 头部（--enable-request-id-headers）
+
 from http import HTTPStatus
 
 import pytest

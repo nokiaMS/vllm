@@ -31,6 +31,7 @@ RERANK_MODELS = [
 ]
 
 
+# 测试通用交叉编码器模型（TinyBERT、Qwen3-Reranker）在 MTEB 重排序基准上的性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
     mteb_test_rerank_models(vllm_runner, model_info)

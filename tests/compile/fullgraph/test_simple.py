@@ -38,6 +38,7 @@ def _(x):
     return torch.library.get_ctx().new_dynamic_size()
 
 
+# 使用 silly attention 的简单模型，forward 效果为 x = 3*x + 19 且全局计数器加2
 @support_torch_compile
 class SillyModel(nn.Module):
     def __init__(
@@ -79,6 +80,7 @@ class SillyModel(nn.Module):
 
 
 @torch._dynamo.config.patch(capture_dynamic_output_shape_ops=True)
+# 运行简单模型的 piecewise 编译测试，验证编译计数和输出正确性
 def _run_simple_model(
     splitting_ops,
     use_inductor_graph_partition,
@@ -161,6 +163,7 @@ def _run_simple_model(
 @pytest.mark.parametrize("intermediate_unbacked", [True, False])
 @torch.inference_mode()
 @create_new_process_for_each_test("spawn")
+# 测试 Dynamo 级别的图分割 piecewise 编译（inductor/eager 后端）
 def test_simple_piecewise_compile(backend, intermediate_unbacked):
     _run_simple_model(
         splitting_ops=["silly::attention"],
@@ -179,6 +182,7 @@ def test_simple_piecewise_compile(backend, intermediate_unbacked):
 
 
 @torch.inference_mode()
+# 测试 Inductor 级别的图分区（需 PyTorch 2.9+）
 def test_simple_inductor_graph_partition(monkeypatch):
     if not is_torch_equal_or_newer("2.9.0.dev"):
         pytest.skip("inductor graph partition is only available in PyTorch 2.9+")

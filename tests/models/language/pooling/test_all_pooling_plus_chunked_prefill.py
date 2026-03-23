@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试池化模型结合分块预填充（chunked prefill）和前缀缓存的功能
+
 import pytest
 import torch
 from transformers import AutoModel

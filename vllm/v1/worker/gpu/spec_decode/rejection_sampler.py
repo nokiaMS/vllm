@@ -10,6 +10,9 @@ from vllm.v1.worker.gpu.sample.output import SamplerOutput
 from vllm.v1.worker.gpu.sample.sampler import Sampler
 
 
+# 严格拒绝采样的 Triton 内核：逐步比较目标模型采样结果与草稿模型采样结果，
+# 遇到第一个不匹配的 token 即停止接受，将目标采样结果写入输出缓冲区。
+# 每个请求由一个 Triton program 处理，避免了 CPU-GPU 同步。
 @triton.jit
 def _strict_rejection_sample_kernel(
     sampled_ptr,  # [num_reqs, num_speculative_steps + 1]
@@ -43,6 +46,8 @@ def _strict_rejection_sample_kernel(
     tl.store(num_sampled_ptr + req_idx, num_sampled)
 
 
+# 严格拒绝采样的入口函数：分配输出张量并启动 Triton 内核，
+# 返回每个请求被接受的 token 序列及其数量
 def strict_rejection_sample(
     # [num_draft_tokens + num_reqs]
     target_sampled: torch.Tensor,
@@ -67,6 +72,9 @@ def strict_rejection_sample(
     return sampled, num_sampled
 
 
+# 概率拒绝采样的 Triton 内核：对每个草稿 token，以 min(1, target_prob / draft_prob) 的概率接受，
+# 使用基于位置的随机数生成器保证与目标采样的 Gumbel 噪声一致性。
+# 记录每个请求中第一个被拒绝的步骤索引，用于后续残差分布重采样。
 @triton.jit
 def _probabilistic_rejection_sample_kernel(
     # [num_reqs, num_speculative_steps + 1]
@@ -119,6 +127,9 @@ def _probabilistic_rejection_sample_kernel(
     tl.store(rejected_steps_ptr + req_idx, rejected_step)
 
 
+# 计算残差 logits 的 Triton 内核：对于被拒绝的 token 位置，计算 max(target_prob - draft_prob, 0) 并取对数，
+# 作为重采样的分布；对于奖励 token（所有草稿 token 都被接受的情况），直接使用目标模型的 logits。
+# 同时记录残差 logits 对应的位置信息，用于 Gumbel 采样。
 @triton.jit
 def _compute_residual_logits_kernel(
     # [num_reqs, V]
@@ -194,6 +205,12 @@ def _compute_residual_logits_kernel(
         tl.store(residual_pos_ptr + req_idx, pos_val)
 
 
+# 概率拒绝采样的完整流程：
+# 1. 计算目标和草稿模型的 softmax 概率分布
+# 2. 运行概率拒绝采样内核，按概率比决定接受或拒绝每个草稿 token
+# 3. 对被拒绝/奖励位置计算残差 logits 分布
+# 4. 使用 Gumbel 采样从残差分布中重采样替代 token
+# 与严格拒绝采样不同，概率方法在目标概率接近草稿概率时仍有较高接受率
 def probabilistic_rejection_sample(
     # [num_draft_tokens + num_reqs, V]
     target_logits: torch.Tensor,
@@ -282,6 +299,10 @@ def probabilistic_rejection_sample(
     return sampled, rejected_steps + 1
 
 
+# 拒绝采样器：封装了严格拒绝采样和概率拒绝采样两种策略。
+# 严格模式直接比较目标与草稿采样结果（贪婪匹配），适用于确定性采样场景；
+# 概率模式根据概率比接受草稿 token，接受率更高但需要额外的概率计算开销。
+# 该类作为推测解码验证阶段的核心组件，决定哪些草稿 token 被最终接受。
 class RejectionSampler:
     def __init__(
         self,

@@ -14,6 +14,7 @@ end_token = "</think>"
 REASONING_MODEL_NAME = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 
 
+# [中文注释] 加载DeepSeek-R1-Distill-Qwen分词器夹具
 @pytest.fixture(scope="module")
 def deepseek_r1_qwen_tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -250,6 +251,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试DeepSeek-R1推理解析：覆盖流式/非流式、多行、空内容、带think标记等多种场景
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,

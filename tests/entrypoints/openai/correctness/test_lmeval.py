@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [通过 LMEval 评估 vLLM 服务器的 GSM8K 准确性（并发 500 连接）]
 """
 This file test accuracy of the vLLM server via LMEval.
 It uses local-completions, which interacts with vLLM
@@ -35,6 +36,7 @@ if current_platform.is_tpu():
     MAX_WAIT_SECONDS = 600
 
 
+# [运行端到端 LMEval 准确性测试]
 def run_test(more_args):
     """Run the end to end accuracy test."""
 
@@ -66,6 +68,7 @@ def run_test(more_args):
         ), f"Expected: {EXPECTED_VALUE} |  Measured: {measured_value}"
 
 
+# [使用 V1 引擎运行 LMEval 准确性测试]
 def test_lm_eval_accuracy_v1_engine():
     """Run with the V1 Engine."""
 

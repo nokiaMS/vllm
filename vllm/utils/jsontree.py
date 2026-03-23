@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
+# JSONTree 类型别名：表示嵌套的 JSON 树结构（dict/list/tuple 的递归组合）
+# 叶子节点类型为泛型 _T，不要求是 JSON 可序列化的
 JSONTree: TypeAlias = (
     dict[str, "JSONTree[_T]"] | list["JSONTree[_T]"] | tuple["JSONTree[_T]", ...] | _T
 )
@@ -33,6 +35,8 @@ Same as `JSONTree` but with additional `Union` members to satisfy overloads.
 """
 
 
+# 递归遍历嵌套 JSON 树结构中的所有叶子节点
+# 遇到 dict/list/tuple 时递归展开，其他类型视为叶子节点
 def json_iter_leaves(value: JSONTree[_T]) -> Iterable[_T]:
     """Iterate through each leaf in a nested JSON structure."""
     if isinstance(value, dict):
@@ -45,6 +49,8 @@ def json_iter_leaves(value: JSONTree[_T]) -> Iterable[_T]:
         yield value
 
 
+# 对嵌套 JSON 树结构中的每个叶子节点应用函数，保持树的结构不变
+# 提供多个重载签名以支持精确的类型推断（dict/list/tuple/通用 JSONTree）
 @overload
 def json_map_leaves(
     func: Callable[["torch.Tensor"], "torch.Tensor"],
@@ -95,6 +101,8 @@ def json_map_leaves(
         return func(value)
 
 
+# 对嵌套 JSON 树的所有叶子节点从左到右进行累积归约
+# 类似 functools.reduce，支持带初始值和不带初始值两种形式
 @overload
 def json_reduce_leaves(
     func: Callable[[_T, _T], _T],
@@ -153,6 +161,7 @@ def json_reduce_leaves(
     return reduce(func, json_iter_leaves(value), initial)  # type: ignore
 
 
+# 计算嵌套 JSON 树结构中叶子节点的总数
 def json_count_leaves(value: JSONTree[_T]) -> int:
     """Count the number of leaves in a nested JSON structure."""
     return sum(1 for _ in json_iter_leaves(value))

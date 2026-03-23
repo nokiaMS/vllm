@@ -13,12 +13,18 @@ from vllm.v1.worker.gpu.cudagraph_utils import (
 )
 
 
+# 创建数据并行各 rank 的 token 数张量。单 rank 时返回 None 以跳过 DP 逻辑。
 def make_num_tokens_across_dp(dp_size: int, num_tokens: int) -> torch.Tensor | None:
     if dp_size == 1:
         return None
     return torch.full((dp_size,), num_tokens, dtype=torch.int32, device="cpu")
 
 
+# 在数据并行（DP）多 rank 之间同步 CUDA graph 调度决策和 token 填充。
+# 设计思路：
+# - 通过 all_reduce 收集各 rank 的 token 数、CUDA graph 模式和 uniform_token_count。
+# - 取最保守的模式（若任一 rank 需要 eager 则全部 eager）和最大 token 数（确保所有 rank 形状一致）。
+# - 所有 rank 统一 dispatch 相同的 CUDA graph 描述符，保证集合通信时形状对齐。
 def sync_cudagraph_and_dp_padding(
     cudagraph_manager: CudaGraphManager,
     desired_batch_desc: BatchExecutionDescriptor,

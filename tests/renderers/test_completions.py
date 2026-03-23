@@ -21,10 +21,12 @@ MODEL_NAME = "openai-community/gpt2"
 
 
 @dataclass
+# [中文注释] 模拟HF配置数据类
 class MockHFConfig:
     model_type: str = "any"
 
 
+# [中文注释] 模拟ModelConfig数据类，用于构建HfRenderer测试
 @dataclass
 class MockModelConfig:
     runner_type = "generate"
@@ -53,6 +55,7 @@ class MockVllmConfig:
 
 
 @dataclass
+# [中文注释] 用于测试的虚拟分词器，支持截断和编码参数捕获
 class DummyTokenizer:
     truncation_side: str = "left"
     max_chars_per_token: int = 1
@@ -75,6 +78,7 @@ class DummyTokenizer:
         return list(range(in_length))
 
 
+# [中文注释] 使用Mock配置构建HfRenderer实例用于测试
 def _build_renderer(
     model_config: MockModelConfig,
     *,
@@ -98,6 +102,7 @@ def _build_renderer(
     return renderer
 
 
+# [中文注释] 预处理提示输入，将字节串或SingletonPrompt转换为标准格式
 def _preprocess_prompt(
     model_config: ModelConfig,
     prompt_or_prompts: SingletonPrompt | bytes | Sequence[SingletonPrompt | bytes],
@@ -112,6 +117,7 @@ def _preprocess_prompt(
     ]
 
 
+# [中文注释] 测试提示验证：空输入和无效类型的错误处理
 class TestValidatePrompt:
     def test_empty_input(self):
         renderer = _build_renderer(MockModelConfig())
@@ -128,6 +134,7 @@ class TestValidatePrompt:
             )
 
 
+# [中文注释] 测试HfRenderer对token/文本输入的渲染、截断（左截断/右截断/零截断）、长度超限处理
 class TestRenderPrompt:
     def test_token_input(self):
         renderer = _build_renderer(MockModelConfig())
@@ -359,6 +366,7 @@ class TestRenderPrompt:
         assert results[0]["prompt"] == "[1, 2, 3, 4]"
 
 
+# [中文注释] 测试HfRenderer对prompt embedding的渲染：单/多embedding、截断、不同dtype、batch维度压缩
 class TestRenderEmbedPrompt:
     def _create_test_embed_bytes(self, tensor: torch.Tensor) -> bytes:
         """Helper to create base64-encoded tensor bytes"""

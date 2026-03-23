@@ -13,6 +13,12 @@ from vllm.v1.worker.cp_utils import get_total_cp_world_size
 logger = init_logger(__name__)
 
 
+# BlockTable：管理 KV 缓存的物理块映射表
+# 核心职责：维护请求到物理内存块的映射关系，计算 token 在 KV 缓存中的 slot 位置
+# 设计要点：
+#   1. 支持"混合块"模式——当内存分配块大小与注意力内核块大小不同时，自动拆分映射
+#   2. 使用 CPU-GPU 双缓冲（CpuGpuBuffer），先在 CPU 端更新再批量同步到 GPU
+#   3. 支持上下文并行（Context Parallelism），通过交错方式将 KV 缓存分片到多个 GPU
 class BlockTable:
     def __init__(
         self,
@@ -97,6 +103,7 @@ class BlockTable:
             self.dcp_rank = 0
         self.cp_kv_cache_interleave_size = cp_kv_cache_interleave_size
 
+    # 向指定请求（行）追加新的物理块 ID，用于请求生成新 token 时扩展 KV 缓存
     def append_row(
         self,
         block_ids: list[int],
@@ -115,21 +122,28 @@ class BlockTable:
         self.num_blocks_per_row[row_idx] += num_blocks
         self.block_table.np[row_idx, start : start + num_blocks] = block_ids
 
+    # 替换整行的块 ID（先清零再追加），用于新请求加入或请求重置
     def add_row(self, block_ids: list[int], row_idx: int) -> None:
         self.num_blocks_per_row[row_idx] = 0
         self.append_row(block_ids, row_idx)
 
+    # 将源行的块表数据复制到目标行，用于请求在调度槽位之间迁移
     def move_row(self, src: int, tgt: int) -> None:
         num_blocks = self.num_blocks_per_row[src]
         block_table_np = self.block_table.np
         block_table_np[tgt, :num_blocks] = block_table_np[src, :num_blocks]
         self.num_blocks_per_row[tgt] = num_blocks
 
+    # 交换两行的块表数据，利用 numpy 高级索引一次完成双向交换
     def swap_row(self, src: int, tgt: int) -> None:
         src_tgt, tgt_src = [src, tgt], [tgt, src]
         self.num_blocks_per_row[src_tgt] = self.num_blocks_per_row[tgt_src]
         self.block_table.np[src_tgt] = self.block_table.np[tgt_src]
 
+    # 计算每个 token 在 KV 缓存中的 slot 位置
+    # 算法：slot = block_number * block_size + block_offset
+    # 上下文并行时使用"虚拟块"概念，将 token 按交错方式分配到不同 rank，
+    # 非本地 token 的 slot 标记为 -1
     def compute_slot_mapping(
         self, req_indices: np.ndarray, positions: np.ndarray
     ) -> None:
@@ -190,9 +204,11 @@ class BlockTable:
                 out=self.slot_mapping.np[: req_indices.shape[0]],
             )
 
+    # 将块表数据从 CPU 同步到 GPU，仅传输前 num_reqs 行以减少拷贝开销
     def commit_block_table(self, num_reqs: int) -> None:
         self.block_table.copy_to_gpu(num_reqs)
 
+    # 将 slot 映射从 CPU 同步到 GPU，仅传输前 num_tokens 个元素
     def commit_slot_mapping(self, num_tokens: int) -> None:
         self.slot_mapping.copy_to_gpu(num_tokens)
 
@@ -200,6 +216,9 @@ class BlockTable:
         self.block_table.gpu.fill_(0)
         self.block_table.cpu.fill_(0)
 
+    # 将 KV 管理器的大块 ID 映射为注意力内核所需的小块 ID
+    # 例如：管理器块大小为 32 token，内核块大小为 16 token 时，
+    # 每个管理器块 ID 会被展开为 2 个连续的内核块 ID
     @staticmethod
     def map_to_kernel_blocks(
         kv_manager_block_ids: np.ndarray,
@@ -242,6 +261,7 @@ class BlockTable:
         """Returns the numpy array of the block table."""
         return self.block_table.np
 
+    # 创建 CPU-GPU 双缓冲，用于在 CPU 端高效更新后批量传输到 GPU
     def _make_buffer(
         self, *size: int | torch.SymInt, dtype: torch.dtype
     ) -> CpuGpuBuffer:
@@ -250,6 +270,9 @@ class BlockTable:
         )
 
 
+# MultiGroupBlockTable：管理多组 KV 缓存的块表
+# 设计背景：某些模型（如 MQA/GQA）可能使用多组不同配置的 KV 缓存，
+# 本类将多个 BlockTable 聚合在一起，提供统一的批量操作接口
 class MultiGroupBlockTable:
     """The BlockTables for each KV cache group."""
 
@@ -303,6 +326,7 @@ class MultiGroupBlockTable:
             )
         ]
 
+    # 以下方法将操作委托给每个 KV 缓存组的 BlockTable，保持多组块表的一致性
     def append_row(self, block_ids: tuple[list[int], ...], row_idx: int) -> None:
         for i, block_table in enumerate(self.block_tables):
             block_table.append_row(block_ids[i], row_idx)

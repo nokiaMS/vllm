@@ -120,6 +120,7 @@ def worker_process(
     torch.accelerator.device_count() < 2,
     reason="Need at least 2 GPUs for tensor parallelism",
 )
+# [中文注释] 测试分布式环境初始化在内存快照之前完成（确保包含分布式缓冲区）
 def test_init_distributed_is_called_before_memory_snapshot():
     """Test that distributed env is setup before memory snapshot.
 

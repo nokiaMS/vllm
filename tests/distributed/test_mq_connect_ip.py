@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 MessageQueue 绑定本地 IP 的逻辑，验证跨节点数据并行的 IP 绑定修复
 """
 Test that MessageQueue uses the local node's IP for binding,
 not a remote master_addr. This validates the fix for cross-node

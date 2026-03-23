@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Helion工具函数：GPU名称规范化（去除后缀、小写化、下划线分隔）以及空输入拒绝
 """Unit tests for Helion utility functions."""
 
 import pytest
@@ -20,12 +21,14 @@ from vllm.kernels.helion.utils import canonicalize_gpu_name
         ("Tesla V100-SXM2-32GB", "tesla_v100"),
     ],
 )
+# 测试各种GPU名称（NVIDIA H200/A100/H100、AMD MI300X等）的规范化结果
 def test_canonicalize_gpu_name(driver_reported_name, expected):
     """Test GPU name canonicalization."""
     assert canonicalize_gpu_name(driver_reported_name) == expected
 
 
 @pytest.mark.parametrize("invalid_name", ["", "   ", "\t", "\n"])
+# 测试空字符串和纯空白输入被正确拒绝
 def test_canonicalize_gpu_name_rejects_empty(invalid_name):
     """Test that empty or whitespace-only names are rejected."""
     with pytest.raises(ValueError, match="cannot be empty"):

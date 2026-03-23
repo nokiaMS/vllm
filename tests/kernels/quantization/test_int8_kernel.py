@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试INT8量化内核在MoE融合专家层中的计算正确性
 
 # Adapted from https://github.com/sgl-project/sglang/blob/main/test/srt/test_int8_kernel.py
 import itertools
@@ -19,6 +20,7 @@ if current_platform.get_device_capability() < (7, 0):
     pytest.skip("INT8 Triton requires CUDA 7.0 or higher", allow_module_level=True)
 
 
+# 原生PyTorch实现的逐token INT8矩阵乘法参考函数
 def native_w8a8_per_token_matmul(A, B, As, Bs, output_dtype=torch.float16):
     """Matrix multiplication function that supports per-token input
     quantization and per-column weight quantization"""
@@ -42,6 +44,7 @@ def native_w8a8_per_token_matmul(A, B, As, Bs, output_dtype=torch.float16):
     return C.reshape(origin_C_shape).to(output_dtype)
 
 
+# 原生PyTorch实现的逐列INT8量化MoE参考函数
 def torch_w8a8_per_column_moe(a, w1, w2, w1_s, w2_s, topk, topk_weight, topk_ids):
     """This function performs fused moe with per-column int8 quantization
     using native torch."""
@@ -82,6 +85,7 @@ def torch_w8a8_per_column_moe(a, w1, w2, w1_s, w2_s, topk, topk_weight, topk_ids
     ).sum(dim=1)
 
 
+# 设置CUDA为默认设备的模块级测试夹具
 @pytest.fixture(autouse=True, scope="module")
 def setup_cuda():
     """Sets the default CUDA device for all tests in this module."""
@@ -97,6 +101,7 @@ TOP_KS = [2, 6]
 SEEDS = [0]
 
 
+# 测试INT8融合MoE层与原生参考实现的数值一致性
 @pytest.mark.parametrize(
     "M, N, K, E, topk, dtype, seed",
     itertools.product(M, N, K, E, TOP_KS, DTYPES, SEEDS),

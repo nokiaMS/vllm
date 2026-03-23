@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试ROCm平台上的skinny GEMM量化内核性能和正确性
 import math
 
 import pytest
@@ -109,6 +110,7 @@ NKM_FACTORS_WVSPLITK_FP8 = [
 SEEDS = [0]
 
 
+# 对FP8权重进行256字节对齐填充
 def pad_fp8(weight):
     num_pad = 256 // weight.element_size()
     import torch.nn.functional as F
@@ -116,6 +118,7 @@ def pad_fp8(weight):
     return F.pad(weight, (0, num_pad), "constant", 0)[..., :-num_pad]
 
 
+# 测试ROCm wvSplitKrc内核在gfx950上的矩阵乘法正确性（含偏置和归一化）
 @pytest.mark.parametrize("xnorm", [False, True])
 @pytest.mark.parametrize("n", N_FACTORS_WVSPLITKRC)
 @pytest.mark.parametrize("k", K_FACTORS_WVSPLITKRC)
@@ -170,6 +173,7 @@ def test_rocm_wvsplitkrc_kernel(xnorm, n, k, m, dtype, seed, padded_a, bias_mode
         torch.testing.assert_close(out, ref_out, atol=1e-3, rtol=1e-2)
 
 
+# 测试ROCm LLMM1 skinny GEMM内核在不同block大小下的正确性
 @pytest.mark.parametrize("n,k,m", NKM_FACTORS_LLMM1)
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("rows_per_block", [2, 4, 8, 16])
@@ -190,6 +194,7 @@ def test_rocm_llmm1_kernel(n, k, m, dtype, rows_per_block, seed):
     torch.testing.assert_close(out, ref_out, atol=1e-8, rtol=1e-2)
 
 
+# 测试ROCm wvSplitK内核在含偏置和填充场景下的矩阵乘法正确性
 @pytest.mark.parametrize("xnorm", [False, True])
 @pytest.mark.parametrize("n,k,m", NKM_FACTORS_WVSPLITK)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -230,6 +235,7 @@ def test_rocm_wvsplitk_kernel(
         assert torch.allclose(out, ref_out, atol=1e-3, rtol=1e-2)
 
 
+# 测试ROCm wvSplitK FP8内核的量化矩阵乘法正确性
 @pytest.mark.parametrize("xnorm", [False, True])
 @pytest.mark.parametrize("n,k,m", NKM_FACTORS_WVSPLITK_FP8)
 @pytest.mark.parametrize("dtype", DTYPES)

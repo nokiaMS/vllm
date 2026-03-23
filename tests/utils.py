@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试工具模块：提供远程 vLLM 服务器管理、多进程测试装饰器、GPU 内存监控、FP8 测试层等通用工具]
 
 import asyncio
 import contextlib
@@ -124,6 +125,7 @@ ROCM_EXTRA_ARGS = (
 )
 
 
+# [远程 vLLM 服务器基类：管理服务器子进程的启动、健康检查、优雅关闭和 GPU 内存释放等待]
 class RemoteVLLMServer:
     """Base class for launching vLLM server subprocesses for testing.
 
@@ -463,6 +465,7 @@ class RemoteVLLMServer:
         )
 
 
+# [远程 OpenAI 兼容服务器：通过 vllm serve 命令启动，用于测试 OpenAI 兼容接口]
 class RemoteOpenAIServer(RemoteVLLMServer):
     """Launches ``vllm serve`` for testing OpenAI-compatible endpoints."""
 
@@ -492,6 +495,7 @@ class RemoteOpenAIServer(RemoteVLLMServer):
         )
 
 
+# [远程渲染服务器：通过 vllm launch render 命令启动，用于无 GPU 的服务测试]
 class RemoteLaunchRenderServer(RemoteVLLMServer):
     """Launches ``vllm launch render`` for GPU-less serving tests."""
 
@@ -532,6 +536,7 @@ class RemoteLaunchRenderServer(RemoteVLLMServer):
         pass  # No GPU used
 
 
+# [自定义远程 OpenAI 服务器：支持用户指定子进程函数来启动服务]
 class RemoteOpenAIServerCustom(RemoteOpenAIServer):
     """Launch test server with custom child process"""
 
@@ -828,6 +833,7 @@ def _test_image_text(
     return results
 
 
+# [使用两组不同参数启动 API 服务器，比较其 API 调用结果是否一致]
 def compare_two_settings(
     model: str,
     arg1: list[str],
@@ -859,6 +865,7 @@ def compare_two_settings(
     )
 
 
+# [使用多组不同参数启动 API 服务器，将所有结果与第一组进行对比]
 def compare_all_settings(
     model: str,
     all_args: list[list[str]],
@@ -1010,6 +1017,7 @@ def ensure_current_vllm_config():
             yield
 
 
+# [初始化测试用分布式环境：设置 VllmConfig 并初始化模型并行]
 def init_test_distributed_environment(
     tp_size: int,
     pp_size: int,
@@ -1049,6 +1057,7 @@ def init_test_distributed_environment(
             ensure_model_parallel_initialized(tp_size, pp_size)
 
 
+# [使用 Ray 启动多进程并行测试]
 def multi_process_parallel(
     monkeypatch: pytest.MonkeyPatch,
     tp_size: int,
@@ -1119,6 +1128,7 @@ def get_physical_device_indices(devices):
 
 
 @_nvml()
+# [等待 GPU 内存降低到指定阈值以下，超时则抛出异常]
 def wait_for_gpu_memory_to_clear(
     *,
     devices: list[int],
@@ -1180,6 +1190,7 @@ def wait_for_gpu_memory_to_clear(
 _P = ParamSpec("_P")
 
 
+# [装饰器：为每个测试 fork 一个新进程，隔离 CUDA 上下文]
 def fork_new_process_for_each_test(func: Callable[_P, None]) -> Callable[_P, None]:
     """Decorator to fork a new process for each test function.
     See https://github.com/vllm-project/vllm/issues/7053 for more details.
@@ -1292,6 +1303,7 @@ def fork_new_process_for_each_test(func: Callable[_P, None]) -> Callable[_P, Non
     return wrapper
 
 
+# [装饰器：为每个测试 spawn 一个新子进程，适用于 ROCm/XPU 平台]
 def spawn_new_process_for_each_test(f: Callable[_P, None]) -> Callable[_P, None]:
     """Decorator to spawn a new process for each test function."""
 
@@ -1343,6 +1355,7 @@ def spawn_new_process_for_each_test(f: Callable[_P, None]) -> Callable[_P, None]
     return wrapper
 
 
+# [工厂函数：根据平台选择 fork 或 spawn 方式创建每测试独立进程的装饰器]
 def create_new_process_for_each_test(
     method: Literal["spawn", "fork"] | None = None,
 ) -> Callable[[Callable[_P, None]], Callable[_P, None]]:
@@ -1368,6 +1381,7 @@ def create_new_process_for_each_test(
     return spawn_new_process_for_each_test
 
 
+# [生成 pytest mark：当 GPU 内存不足时跳过测试]
 def large_gpu_mark(min_gb: int) -> pytest.MarkDecorator:
     """
     Get a pytest mark, which skips the test if the GPU doesn't meet
@@ -1401,6 +1415,7 @@ requires_fp8 = pytest.mark.skipif(
 )
 
 
+# [装饰器：GPU 内存不足时跳过测试]
 def large_gpu_test(*, min_gb: int):
     """
     Decorate a test to be skipped if no GPU is available or it does not have
@@ -1427,6 +1442,7 @@ def multi_gpu_marks(*, num_gpus: int):
     return [test_selector, test_skipif]
 
 
+# [装饰器：仅在多 GPU 环境下运行测试，并在独立进程中执行]
 def multi_gpu_test(*, num_gpus: int):
     """
     Decorate a test to be run only when multiple GPUs are available.
@@ -1650,6 +1666,7 @@ def disable_aiter_plain_rmsnorm(monkeypatch) -> None:
     monkeypatch.setattr(_ln_mod, "dispatch_rocm_rmsnorm_func", _native_plain)
 
 
+# [生成测试提示：创建包含变量赋值的提示文本，用于测试滑动窗口外的长距离记忆]
 def prep_prompts(batch_size: int, ln_range: tuple[int, int] = (800, 1100)):
     """
     Generate prompts which a bunch of assignments,
@@ -1683,6 +1700,7 @@ def prep_prompts(batch_size: int, ln_range: tuple[int, int] = (800, 1100)):
     return prompts, answer, indices
 
 
+# [验证生成输出中变量值的正确率是否达到指定的接受阈值]
 def check_answers(
     indices: list[int], answer: list[int], outputs: list[str], accept_rate: float = 0.7
 ):
@@ -1697,6 +1715,7 @@ def check_answers(
     assert frac_ok >= accept_rate
 
 
+# [扁平化笛卡尔积：将嵌套元组展平为单层元组，方便参数化测试]
 def flat_product(*iterables: Iterable[Any]):
     """
     Flatten lists of tuples of the cartesian product.
@@ -1717,6 +1736,7 @@ def flat_product(*iterables: Iterable[Any]):
         yield tuple(itertools.chain(*normalized))
 
 
+# [FP8 线性层测试辅助类：创建随机权重和缩放因子，用于测试 FP8 量化计算]
 class TestFP8Layer(torch.nn.Module):
     """
     Test helper for FP8 linear operations. Creates random weights and scales
@@ -1776,6 +1796,7 @@ class TestFP8Layer(torch.nn.Module):
 # TODO: Drop TestBlockFP8Layer in favour of a unified TestFP8Layer
 # after refactoring W8A8BlockFp8LinearOp.
 # https://github.com/vllm-project/vllm/issues/31818
+# [块级 FP8 线性层测试辅助类：用于测试分块量化的 W8A8BlockFp8LinearOp]
 class TestBlockFP8Layer:
     """
     Test helper for blockwise FP8 linear operations. Creates random weights

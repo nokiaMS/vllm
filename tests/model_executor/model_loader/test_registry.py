@@ -10,6 +10,8 @@ from vllm.model_executor.model_loader import get_model_loader, register_model_lo
 from vllm.model_executor.model_loader.base_loader import BaseModelLoader
 
 
+# 测试自定义模型加载器的注册和获取机制
+
 @register_model_loader("custom_load_format")
 class CustomModelLoader(BaseModelLoader):
     def __init__(self, load_config: LoadConfig) -> None:
@@ -22,11 +24,13 @@ class CustomModelLoader(BaseModelLoader):
         pass
 
 
+# 测试注册自定义加载格式后能正确获取对应的加载器实例
 def test_register_model_loader():
     load_config = LoadConfig(load_format="custom_load_format")
     assert isinstance(get_model_loader(load_config), CustomModelLoader)
 
 
+# 测试注册无效的加载器类时应抛出 ValueError
 def test_invalid_model_loader():
     with pytest.raises(ValueError):
 

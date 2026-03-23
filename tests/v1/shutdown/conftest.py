@@ -9,6 +9,7 @@ import pytest
 from vllm.platforms import current_platform
 
 
+# [中文注释] 测试夹具：为ROCm平台创建sitecustomize安装工厂，用于注入测试用的猴子补丁
 @pytest.fixture
 def rocm_sitecustomize_factory(monkeypatch, tmp_path: Path):
     """Return a function that installs a given sitecustomize payload."""

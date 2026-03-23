@@ -47,6 +47,7 @@ prompts = [
 ]
 
 
+# 序列并行测试模型：all_reduce + RMSNorm（无量化）
 class TestAllReduceRMSNormModel(torch.nn.Module):
     def __init__(self, hidden_size=16, eps=1e-6):
         super().__init__()
@@ -95,6 +96,7 @@ class TestAllReduceRMSNormModel(torch.nn.Module):
             return []
 
 
+# 序列并行测试模型：all_reduce + RMSNorm + FP8 静态量化
 class TestAllReduceRMSNormStaticQuantFP8Model(torch.nn.Module):
     quant_key = kFp8StaticTensorSym
 
@@ -179,6 +181,7 @@ class TestAllReduceRMSNormStaticQuantFP8Model(torch.nn.Module):
 @pytest.mark.parametrize("fuse_norm_quant", [True, False])
 @pytest.mark.parametrize("dynamic", [False, True])
 @pytest.mark.skipif(envs.VLLM_TARGET_DEVICE not in ["cuda"], reason="Only test on CUDA")
+# 测试 SequenceParallelismPass 将 all_reduce 替换为 reduce_scatter+all_gather
 def test_sequence_parallelism_pass(
     test_model_cls: type[torch.nn.Module],
     custom_ops: str,
@@ -213,6 +216,7 @@ def test_sequence_parallelism_pass(
     run_torch_spawn(sequence_parallelism_pass_on_test_model, num_processes)
 
 
+# 在分布式环境中运行序列并行 pass 并验证 all_reduce 被替换
 def sequence_parallelism_pass_on_test_model(
     local_rank: int,
     world_size: int,

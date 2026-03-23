@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 H2OVL 模型的多模态预处理参数，验证不同图像尺寸和分辨率下的 token 数量
 """Tests for H2OVL's multimodal preprocessing kwargs."""
 
 from collections.abc import Mapping

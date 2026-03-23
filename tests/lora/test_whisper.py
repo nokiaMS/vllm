@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Whisper 语音模型的 LoRA 推理正确性
 """
 Integration tests for Whisper models with LoRA adapters.
 

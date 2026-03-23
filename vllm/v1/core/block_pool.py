@@ -30,6 +30,13 @@ from vllm.v1.request import Request
 logger = init_logger(__name__)
 
 
+# [中文注释] 前缀缓存的 hash→block 映射表。
+#   将 BlockHashWithGroupId 映射到 KVCacheBlock（单个）或 dict[block_id, KVCacheBlock]（多个）。
+#   使用 union 类型（单 block 直接存储，多 block 用 dict）以减少 GC 开销。
+#   核心操作：
+#     get_one_block(key) — 查找任意一个匹配 hash 的 block
+#     insert(key, block) — 插入 block（自动从单值升级为 dict）
+#     pop(key, block_id) — 移除指定 block_id 的 block
 class BlockHashToBlockMap:
     """
     Cache of blocks that are used for prefix caching. It caches blocks
@@ -126,6 +133,16 @@ class BlockHashToBlockMap:
         raise AssertionError(f"Invalid KV cache block type {type(blocks)}")
 
 
+# [中文注释] KV Cache Block 池管理器。
+#   管理所有 GPU 上的 KVCacheBlock，提供分配、释放和前缀缓存功能。
+#   核心数据结构：
+#     blocks: list[KVCacheBlock] — 所有 block 的数组（按 block_id 索引）
+#     free_block_queue: FreeKVCacheBlockQueue — 空闲 block 的双向链表（LRU 驱逐顺序）
+#     cached_block_hash_to_block: BlockHashToBlockMap — hash→block 的前缀缓存映射
+#     null_block — block_id=0 的占位 block，用于 sliding window 等需要跳过的位置
+#   分配流程：get_new_blocks() 从队列头部弹出 block，若 block 有缓存 hash 则先驱逐
+#   释放流程：free_blocks() 将 block 按驱逐优先级（反向）追加到队列尾部
+#   缓存流程：cache_full_blocks() 为满 block 计算 hash 并存入映射表
 class BlockPool:
     """BlockPool that manages KVCacheBlocks.
     It provides methods to allocate, free and cache the kv cache blocks. The
@@ -389,6 +406,8 @@ class BlockPool:
             )
         return True
 
+    # [中文注释] touch() — 当另一个请求命中相同前缀时，增加 block 的引用计数。
+    #   若 block 的 ref_cnt 为 0（即在空闲队列中作为驱逐候选），则将其从队列中移除。
     def touch(self, blocks: Sequence[KVCacheBlock]) -> None:
         """Touch a block increases its reference count by 1, and may remove
         the block from the free queue. This is used when a block is hit by
@@ -406,6 +425,8 @@ class BlockPool:
             if self.metrics_collector:
                 self.metrics_collector.on_block_accessed(block)
 
+    # [中文注释] free_blocks() — 释放一组 block。block 按驱逐优先级排序传入（头部先被驱逐）。
+    #   先递减 ref_cnt，然后将 ref_cnt 降为 0 且非 null 的 block 追加到空闲队列。
     def free_blocks(self, ordered_blocks: Iterable[KVCacheBlock]) -> None:
         """Free a list of blocks. The blocks should be ordered by their
         eviction priority, where the first block will be evicted first.
@@ -422,6 +443,8 @@ class BlockPool:
             [block for block in blocks_list if block.ref_cnt == 0 and not block.is_null]
         )
 
+    # [中文注释] evict_blocks() — 按 block ID 强制驱逐前缀缓存中的 block。
+    #   用于 KV connector 通知 scheduler 某些 block 已被外部修改，需要使缓存失效。
     def evict_blocks(self, block_ids: set[int]) -> None:
         """evict blocks from the prefix cache by their block IDs.
 
@@ -441,6 +464,9 @@ class BlockPool:
             block = self.blocks[block_id]
             self._maybe_evict_cached_block(block)
 
+    # [中文注释] reset_prefix_cache() — 重置前缀缓存（清空 hash 映射和所有 block 的 hash）。
+    #   用于 RLHF 权重更新后使缓存失效，或基准测试中重置缓存状态。
+    #   仅在所有 block 都已释放时才能成功（除 null_block 外）。
     def reset_prefix_cache(self) -> bool:
         """Reset prefix cache. This function may be used in RLHF
         flows to invalid prefix caching after the weights are updated,

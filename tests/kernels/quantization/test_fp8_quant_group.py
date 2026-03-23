@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FP8分组量化（QuantFP8）实现的正确性
 """Tests for QuantFP8 Group Quantization implementation."""
 
 import pytest
@@ -10,6 +11,7 @@ from vllm.model_executor.layers.quantization.utils.quant_utils import GroupShape
 from vllm.utils.torch_utils import set_random_seed
 
 
+# 测试QuantFP8分组量化在CUDA和native实现间的一致性
 @pytest.mark.parametrize(
     "batch_size,hidden_dim,group_size",
     [
@@ -84,6 +86,7 @@ def test_quantfp8_group_functionality(
         assert diff_ratio < 0.002, f"Too many differences: {diff_ratio:.4%}"
 
 
+# 测试QuantFP8分组量化对多维输入（3D/4D）和列优先缩放因子的支持
 @pytest.mark.parametrize("seed", [42])
 @pytest.mark.parametrize("use_ue8m0", [True, False])
 @torch.inference_mode()
@@ -140,6 +143,7 @@ def test_quantfp8_group_multidimensional(
     assert scales_4d_col.shape == (batch1, batch2, hidden_dim // group_size, batch3)
 
 
+# 测试QuantFP8分组量化的边界情况（单分组、全零输入、极大值）
 @pytest.mark.parametrize("seed", [42])
 @torch.inference_mode()
 def test_quantfp8_group_edge_cases(default_vllm_config, seed: int) -> None:

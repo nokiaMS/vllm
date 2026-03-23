@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试Responses API有状态功能：存储/检索、后台执行、取消、previous_response_id多轮对话
 import asyncio
 
 import openai
@@ -7,6 +8,7 @@ import pytest
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试响应存储和检索功能，以及store=False时不可检索
 async def test_store(client: openai.AsyncOpenAI):
     # By default, store is True.
     response = await client.responses.create(input="Hello!")
@@ -29,6 +31,7 @@ async def test_store(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试后台异步执行响应
 async def test_background(client: openai.AsyncOpenAI):
     # NOTE: This query should be easy enough for the model to answer
     # within the 10 seconds.
@@ -50,6 +53,7 @@ async def test_background(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试后台执行与store=False冲突时返回错误
 async def test_background_error(client: openai.AsyncOpenAI):
     with pytest.raises(
         openai.BadRequestError, match="background can only be used when `store` is true"
@@ -62,6 +66,7 @@ async def test_background_error(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试取消正在后台执行的响应
 async def test_background_cancel(client: openai.AsyncOpenAI):
     response = await client.responses.create(
         input="Write a long story about a cat.",
@@ -95,6 +100,7 @@ async def test_background_cancel(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试取消已完成的同步响应返回错误
 async def test_cancel_completed(client: openai.AsyncOpenAI):
     response = await client.responses.create(input="Hello")
     assert response.status == "completed"
@@ -106,6 +112,7 @@ async def test_cancel_completed(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试通过previous_response_id链接多轮对话上下文
 async def test_previous_response_id(client: openai.AsyncOpenAI):
     response1 = await client.responses.create(
         instructions="You are tested on your ability to retrieve the correct "
@@ -128,6 +135,7 @@ async def test_previous_response_id(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试两个响应共享同一个previous_response_id时的独立上下文
 async def test_two_responses_with_same_prev_id(client: openai.AsyncOpenAI):
     response1 = await client.responses.create(
         instructions="You are tested on your ability to retrieve the correct "

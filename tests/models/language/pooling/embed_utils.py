@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 嵌入测试工具：提供嵌入正确性验证、OpenAI客户端嵌入请求等辅助函数
+
 from collections.abc import Sequence
 
 import openai
@@ -9,6 +12,7 @@ from tests.conftest import HfRunner
 from tests.models.utils import EmbedModelInfo, check_embeddings_close, matryoshka_fy
 
 
+# 运行嵌入正确性测试：对比HF与vLLM的嵌入输出
 def run_embedding_correctness_test(
     hf_model: "HfRunner",
     inputs: list[str],
@@ -28,6 +32,7 @@ def run_embedding_correctness_test(
     )
 
 
+# 嵌入模型正确性测试（调试用，CI优先使用MTEB测试）
 def correctness_test_embed_models(
     hf_runner,
     vllm_runner,
@@ -68,6 +73,7 @@ def correctness_test_embed_models(
         run_embedding_correctness_test(hf_model, example_prompts, vllm_outputs)
 
 
+# 通过OpenAI异步客户端获取嵌入向量
 async def run_client_embeddings(
     client: openai.AsyncOpenAI,
     model_name: str,

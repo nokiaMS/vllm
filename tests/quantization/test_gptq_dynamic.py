@@ -16,6 +16,8 @@ from vllm.model_executor.layers.quantization.utils.gptq_utils import (
 )
 from vllm.platforms import current_platform
 
+# 测试 GPTQ 动态量化配置：不同层使用不同的量化参数
+
 PROMPT = "On the surface of Mars, we found"
 
 # The first layer is quantized using bits=4, group_size=128

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试引擎睡眠/唤醒模式：睡眠状态切换、Prometheus 睡眠指标以及按标签部分唤醒
+
 import requests
 from prometheus_client.parser import text_string_to_metric_families
 
@@ -9,6 +11,7 @@ from tests.utils import RemoteOpenAIServer
 MODEL_NAME = "meta-llama/Llama-3.2-1B"
 
 
+# 测试睡眠模式的完整生命周期：睡眠、唤醒、按标签唤醒及指标验证
 def test_sleep_mode():
     # dtype, max-len etc set so that this can run in CI
     args = [
@@ -86,6 +89,7 @@ def test_sleep_mode():
         assert discard_all == 0
 
 
+# 辅助函数：从 Prometheus 指标端点解析引擎睡眠状态值
 def _get_sleep_metrics_from_api(response: requests.Response):
     """Return (awake, weights_offloaded, discard_all)"""
 

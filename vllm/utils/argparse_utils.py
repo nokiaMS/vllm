@@ -25,6 +25,9 @@ from vllm.logger import init_logger
 logger = init_logger(__name__)
 
 
+# 自定义帮助信息格式化器，继承自 ArgumentDefaultsHelpFormatter 和 RawDescriptionHelpFormatter。
+# 设计思路：对命令行参数按选项名称排序显示，并改进换行处理逻辑——
+# 单换行视为同一段落内的软换行（合并为空格），双换行视为段落分隔。
 class SortedHelpFormatter(ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter):
     """SortedHelpFormatter that sorts arguments by their option strings."""
 
@@ -46,6 +49,13 @@ class SortedHelpFormatter(ArgumentDefaultsHelpFormatter, RawDescriptionHelpForma
         super().add_arguments(actions)
 
 
+# 灵活的命令行参数解析器，是 vLLM CLI 的核心解析组件。
+# 设计思路：
+# 1. 参数名中的下划线和短横线可以互换使用（如 --tensor_parallel_size 等同于 --tensor-parallel-size）
+# 2. 支持 JSON 风格的嵌套参数（如 --json-arg.key1 value1）和列表追加语法（--arg.key+）
+# 3. 支持从 YAML 配置文件加载参数，并维护 CLI > 配置文件 > 默认值的优先级
+# 4. 支持 --help=<keyword> 进行参数搜索过滤
+# 5. 兼容 Python 3.12 以下版本的 deprecated 参数标记
 class FlexibleArgumentParser(ArgumentParser):
     """ArgumentParser that allows both underscore and dash in names."""
 
@@ -102,6 +112,9 @@ class FlexibleArgumentParser(ArgumentParser):
             self._action_groups.append(group)
             return group
 
+    # 自定义帮助信息的格式化输出，支持 --help=<keyword> 搜索功能。
+    # 当指定搜索关键词时，可按参数组名称或参数名进行模糊匹配过滤；
+    # 默认情况下仅显示配置组概览，而非所有参数的详细信息。
     def format_help(self):
         # Only use custom help formatting for bottom level parsers
         if self._subparsers is not None:
@@ -176,6 +189,12 @@ class FlexibleArgumentParser(ArgumentParser):
         # determine help from format above
         return formatter.format_help()
 
+    # 核心参数解析方法，执行以下关键步骤：
+    # 1. 处理 `vllm serve` 子命令中 --model 参数的位置转换（从选项变为位置参数）
+    # 2. 从 YAML 配置文件中拉取参数（--config）
+    # 3. 将参数名中的下划线统一转换为短横线
+    # 4. 处理 -O 优化级别的简写语法
+    # 5. 将点分隔的嵌套参数（如 --arg.key1.key2 value）合并为 JSON 字典格式
     def parse_args(  # type: ignore[override]
         self,
         args: list[str] | None = None,
@@ -359,6 +378,7 @@ class FlexibleArgumentParser(ArgumentParser):
 
         return super().parse_args(processed_args, namespace)
 
+    # 校验端口号的合法性：必须为整数且在 1024-65535 的有效范围内
     def check_port(self, value):
         try:
             value = int(value)
@@ -453,6 +473,9 @@ class FlexibleArgumentParser(ArgumentParser):
 
         return args
 
+    # 加载 YAML 配置文件并将其转换为 argparse 风格的参数列表。
+    # 支持扁平和嵌套两种 YAML 结构：扁平值直接转为 --key value，
+    # 嵌套字典转为 --key '{"子键": "值"}' 的 JSON 字符串格式。
     def load_config_file(self, file_path: str) -> list[str]:
         """Loads a yaml file and returns the key value pairs as a
         flattened list with argparse like pattern.

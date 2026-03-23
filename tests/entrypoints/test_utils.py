@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试入口点工具函数：消息清理（sanitize_message）和最大 token 数计算（get_max_tokens）
+
 import pytest
 
 from vllm.entrypoints.utils import get_max_tokens, sanitize_message
 
 
+# 测试 sanitize_message 去除内存地址信息
 def test_sanitize_message():
     assert (
         sanitize_message("<_io.BytesIO object at 0x7a95e299e750>")
@@ -13,6 +16,7 @@ def test_sanitize_message():
     )
 
 
+# 测试 get_max_tokens 函数的各种场景：默认值、用户覆盖、上限约束
 class TestGetMaxTokens:
     """Tests for get_max_tokens() to ensure generation_config's max_tokens
     acts as a default when from model author, and as a ceiling when

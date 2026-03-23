@@ -16,6 +16,7 @@ from vllm.config import CompilationConfig, CompilationMode, PassConfig, VllmConf
     ("num_tokens", "buffer_size"), [(256, 256), (256, 512), (1024, 1024), (1024, 1025)]
 )
 @pytest.mark.parametrize("hidden_size", [64, 4096])
+# 测试 NoOpEliminationPass 消除无效 reshape、slice 和 slice_scatter
 def test_noop_elimination(dtype, num_tokens, hidden_size, buffer_size):
     torch.set_default_device("cuda")
     torch.set_default_dtype(dtype)
@@ -82,6 +83,7 @@ def test_noop_elimination(dtype, num_tokens, hidden_size, buffer_size):
         assert backend.op_count(torch.ops.aten.slice_scatter.default) == 0
 
 
+# 回归测试：确保 end=-1 的非无效 slice 不会被错误消除
 def test_non_noop_slice_preserved():
     """Ensure that a slice with end=-1 (dropping last row) is NOT eliminated.
 

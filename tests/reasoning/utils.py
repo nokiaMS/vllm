@@ -7,6 +7,7 @@ from vllm.reasoning import ReasoningParser
 from vllm.utils.mistral import is_mistral_tokenizer
 
 
+# [中文注释] 流式推理重建器：累积流式delta消息，分别收集推理内容和其他内容
 class StreamingReasoningReconstructor:
     def __init__(self):
         self.reasoning = None
@@ -30,6 +31,7 @@ class StreamingReasoningReconstructor:
                 self.reasoning += delta.reasoning
 
 
+# [中文注释] 统一推理提取入口：根据streaming参数选择流式或非流式推理提取方式
 def run_reasoning_extraction(
     reasoning_parser: ReasoningParser,
     model_output: list[str],
@@ -53,6 +55,7 @@ def run_reasoning_extraction(
         return reasoning, content
 
 
+# [中文注释] Mistral模型专用推理提取：处理Mistral分词器的token ID到字符串转换
 def run_reasoning_extraction_mistral(
     reasoning_parser: ReasoningParser,
     model_output: list[int],
@@ -82,6 +85,7 @@ def run_reasoning_extraction_mistral(
         return reasoning, content
 
 
+# [中文注释] 非流式推理提取：将所有输出合并后一次性提取推理和内容
 def run_reasoning_extraction_nonstreaming(
     reasoning_parser: ReasoningParser,
     model_output: list[str],
@@ -93,6 +97,7 @@ def run_reasoning_extraction_nonstreaming(
     )
 
 
+# [中文注释] 流式推理提取：逐个处理token增量，模拟真实流式解码过程
 def run_reasoning_extraction_streaming(
     reasoning_parser: ReasoningParser,
     model_deltas: list[str],
@@ -125,6 +130,7 @@ def run_reasoning_extraction_streaming(
     return reconstructor
 
 
+# [中文注释] Mistral专用流式推理提取：逐个处理token ID增量
 def run_reasoning_extraction_streaming_mistral(
     reasoning_parser: ReasoningParser,
     model_deltas: list[int],

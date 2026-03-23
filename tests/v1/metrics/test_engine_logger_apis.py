@@ -12,6 +12,7 @@ from vllm.v1.metrics.ray_wrappers import RayPrometheusStatLogger
 
 
 @pytest.fixture
+# [中文注释] 测试夹具：提供启用统计日志的AsyncEngineArgs通用配置。
 def log_stats_enabled_engine_args():
     """
     Shared fixture providing common AsyncEngineArgs configuration
@@ -26,6 +27,7 @@ def log_stats_enabled_engine_args():
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试用例：验证RayPrometheusStatLogger能替换默认的PrometheusStatLogger。
 async def test_async_llm_replace_default_loggers(log_stats_enabled_engine_args):
     """
     RayPrometheusStatLogger should replace the default PrometheusStatLogger
@@ -39,6 +41,7 @@ async def test_async_llm_replace_default_loggers(log_stats_enabled_engine_args):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试用例：验证可以通过disable_log_stats=True仅使用自定义统计日志器。
 async def test_async_llm_add_to_default_loggers(log_stats_enabled_engine_args):
     """
     It's still possible to use custom stat loggers exclusively by passing

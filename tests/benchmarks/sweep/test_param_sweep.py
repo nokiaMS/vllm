@@ -9,6 +9,7 @@ import pytest
 from vllm.benchmarks.sweep.param_sweep import ParameterSweep, ParameterSweepItem
 
 
+# [中文注释] 测试ParameterSweepItem类的功能，包括布尔参数、嵌套字典、字符串/数值参数的CLI命令行生成和参数替换
 class TestParameterSweepItem:
     """Test ParameterSweepItem functionality."""
 
@@ -110,6 +111,7 @@ class TestParameterSweepItem:
             assert "--enable-prefix-caching" not in cmd
 
 
+# [中文注释] 测试ParameterSweep类的功能，包括从记录列表/字典创建、JSON文件读取、基准名称唯一性验证
 class TestParameterSweep:
     """Test ParameterSweep functionality."""
 
@@ -228,6 +230,7 @@ class TestParameterSweep:
         assert len(sweep) == 2
 
 
+# [中文注释] 测试ParameterSweepItem的键名规范化，验证下划线到连字符的转换以及嵌套键的后缀保留
 class TestParameterSweepItemKeyNormalization:
     """Test key normalization in ParameterSweepItem."""
 

@@ -6,6 +6,7 @@ import pytest
 from vllm import SamplingParams
 from vllm.platforms import current_platform
 
+# 测试使用 fastsafetensors 格式加载模型并进行推理生成
 test_model = "openai-community/gpt2"
 
 prompts = [
@@ -22,6 +23,7 @@ sampling_params = SamplingParams(temperature=0.8, top_p=0.95, seed=0)
     not current_platform.is_cuda_alike(),
     reason="fastsafetensors requires NVIDIA/AMD GPUs",
 )
+# 测试 fastsafetensors 加载器能否正确下载并加载模型文件进行推理
 def test_model_loader_download_files(vllm_runner):
     with vllm_runner(test_model, load_format="fastsafetensors") as llm:
         deserialized_outputs = llm.generate(prompts, sampling_params)

@@ -1,6 +1,7 @@
 # Adapted from: https://github.com/deepseek-ai/FlashMLA/blob/main/tests/test_flash_mla.py
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FlashMLA（Multi-head Latent Attention）内核在不同精度和配置下的正确性和性能
 import math
 import random
 
@@ -15,6 +16,7 @@ from vllm.v1.attention.ops.flashmla import (
 )
 
 
+# 计算两个张量的余弦差异并断言在允许阈值内
 def cal_diff(
     x: torch.Tensor, y: torch.Tensor, name: str, use_fp8: bool = False
 ) -> None:
@@ -33,6 +35,7 @@ FLASH_MLA_UNSUPPORTED_REASON = (
 )
 
 
+# 测试FlashMLA内核在多种batch、序列长度、头数和数据类型下与参考SDPA实现的正确性和吞吐量
 @pytest.mark.skipif(
     not is_flashmla_dense_supported()[0], reason=FLASH_MLA_UNSUPPORTED_REASON
 )

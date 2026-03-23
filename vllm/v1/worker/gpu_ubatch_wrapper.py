@@ -30,6 +30,7 @@ from vllm.v1.worker.ubatching import UBatchContext, make_ubatch_contexts
 logger = init_logger(__name__)
 
 
+# 微批次元数据，封装单个微批次执行所需的上下文、输入张量和 token 数量。
 @dataclass
 class UbatchMetadata:
     context: UBatchContext
@@ -40,6 +41,7 @@ class UbatchMetadata:
     num_tokens: int
 
 
+# CUDA Graph 元数据，将捕获的 CUDA Graph 与对应的微批次元数据和输出张量关联。
 @dataclass
 class CUDAGraphMetaData:
     cudagraph: torch.cuda.CUDAGraph
@@ -47,6 +49,10 @@ class CUDAGraphMetaData:
     outputs: Any | None = None
 
 
+# SM（流式多处理器）分配控制上下文管理器。
+# 在 DBO（双缓冲重叠）模式下，将 GPU 的 SM 分为通信和计算两组，
+# 使得 MoE 专家并行的 all-to-all 通信与 DeepGEMM 计算可以同时执行，
+# 退出时恢复所有 SM 用于计算。
 class SMControlContextManager:
     def __init__(
         self,
@@ -92,6 +98,12 @@ class SMControlContextManager:
         self.set_compute_sms(self.total_sms)
 
 
+# 微批次执行包装器，实现数据并行场景下的双缓冲重叠（DBO）执行策略。
+# 核心设计：将一个批次拆分为多个微批次，使用独立线程在不同 CUDA 流上并行执行，
+# 实现通信与计算的重叠。支持三种运行模式：
+# 1. 直接执行（无 CUDA Graph）
+# 2. 分段 CUDA Graph（piecewise）
+# 3. 完整 CUDA Graph 捕获与回放（full），按 token 数量缓存 graph。
 class UBatchWrapper:
     def __init__(
         self,
@@ -179,6 +191,10 @@ class UBatchWrapper:
         # in case we need to access the original runnable.
         return self.runnable
 
+    # 捕获微批次执行的 CUDA Graph。
+    # 流程：先启动各微批次线程初始化 CUDA 上下文，再在主线程中开始 graph 捕获，
+    # 唤醒线程执行模型前向传播，最后存储捕获的 graph 及其输出张量。
+    # 后续相同 token 数量的批次可直接回放 graph，跳过 CPU 端的 kernel launch 开销。
     def _capture_ubatches(self, ubatch_metadata, model) -> torch.Tensor:
         """
         Capture a cudagraph for a microbatched run.
@@ -272,6 +288,9 @@ class UBatchWrapper:
             self.cudagraphs[num_tokens] = cudagraph_metadata
         return cudagraph_metadata.outputs
 
+    # 不使用 CUDA Graph 的微批次并行执行。
+    # 各微批次线程在独立的 CUDA 流上运行模型，通过 barrier 同步启动，
+    # 最后将各微批次的输出张量拼接为完整结果。
     def _run_ubatches(self, ubatch_metadata, model) -> torch.Tensor:
         @torch.inference_mode()
         def _ubatch_thread(results, model, ubatch_metadata):
@@ -310,6 +329,7 @@ class UBatchWrapper:
         result = torch.cat(sorted_results, dim=0)
         return result
 
+    # 构造微批次元数据列表，为每个微批次创建独立的前向上下文和切片后的输入张量。
     def _make_ubatch_metadata(
         self,
         ubatch_slices,
@@ -377,6 +397,8 @@ class UBatchWrapper:
 
         return ubatch_metadata
 
+    # 按 token 切片范围切分模型输入（input_ids、positions、embeddings 等），
+    # 支持 M-RoPE 的多维 position 切片。
     def _slice_model_inputs(
         self,
         tokens_slice: slice,
@@ -404,6 +426,9 @@ class UBatchWrapper:
             sliced_intermediate_tensors,
         )
 
+    # 主调用入口，根据当前的 CUDA Graph 模式和微批次切分策略选择执行路径：
+    # 无微批次时直接调用模型或 CUDA Graph 包装器；
+    # 有微批次时，根据是否已捕获 graph 来决定捕获、回放或直接执行。
     def __call__(self, *args, **kwargs):
         forward_context = get_forward_context()
         batch_descriptor = forward_context.batch_descriptor

@@ -13,6 +13,7 @@ from vllm.v1.request import Request
 from vllm.v1.structured_output import StructuredOutputManager
 
 
+# [中文注释] 测试类：验证推理感知结构化输出功能（位掩码填充和推进控制）
 class TestReasoningStructuredOutput:
     """Test reasoning-aware structured output functionality."""
 

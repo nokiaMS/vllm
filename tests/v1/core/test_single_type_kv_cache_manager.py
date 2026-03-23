@@ -18,9 +18,12 @@ from vllm.v1.core.single_type_kv_cache_manager import (
 )
 from vllm.v1.kv_cache_interface import ChunkedLocalAttentionSpec, SlidingWindowSpec
 
+# 测试滑动窗口和分块局部注意力的 KV 缓存管理器
+
 pytestmark = pytest.mark.cpu_test
 
 
+# 创建滑动窗口 KV 缓存管理器实例
 def get_sliding_window_manager(sliding_window_spec, block_pool, enable_caching=True):
     return SlidingWindowManager(
         sliding_window_spec,

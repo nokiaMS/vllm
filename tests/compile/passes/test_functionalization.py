@@ -38,6 +38,7 @@ TEST_FP8 = current_platform.supports_fp8()
 FP8_DTYPE = current_platform.fp8_dtype()
 
 
+# 测试 SiLU*Mul 操作的函数化修复，验证融合前后输出一致
 class TestSiluMul(torch.nn.Module):
     quant_key = kFp8StaticTensorSym
 
@@ -71,6 +72,7 @@ class TestSiluMul(torch.nn.Module):
         return []
 
 
+# 测试 FusedAdd+RMSNorm 操作的函数化修复
 class TestFusedAddRMSNorm(torch.nn.Module):
     quant_key = kFp8StaticTensorSym
 
@@ -129,6 +131,7 @@ class TestFusedAddRMSNorm(torch.nn.Module):
         return []
 
 
+# 测试旋转位置编码（RoPE）操作的函数化修复
 class TestRotaryEmbedding(torch.nn.Module):
     def __init__(self, head_dim=64, max_position=2048, base=10000):
         super().__init__()
@@ -157,6 +160,7 @@ class TestRotaryEmbedding(torch.nn.Module):
         return []
 
 
+# 测试带 slice_scatter 模式的旋转位置编码函数化修复
 class TestRotaryEmbeddingSliceScatter(torch.nn.Module):
     def __init__(self, head_dim=64, num_heads=4, max_position=2048, base=10000):
         super().__init__()
@@ -200,6 +204,7 @@ class TestRotaryEmbeddingSliceScatter(torch.nn.Module):
         return [torch.ops.aten.slice_scatter.default]
 
 
+# 测试同时修改参数和返回值的自定义操作的函数化修复
 class TestFunctionWithMutatedArgsAndReturn(torch.nn.Module):
     OP_REGISTERED = False
 
@@ -270,6 +275,7 @@ MODELS_AND_DO_FUSION = {
     not current_platform.is_cuda_alike(),
     reason="Only test on cuda and rocm platform",
 )
+# 测试 FixFunctionalizationPass 能正确去函数化并保持输出一致
 def test_fix_functionalization(
     model_class: torch.nn.Module, do_fusion: bool, dtype: torch.dtype
 ):

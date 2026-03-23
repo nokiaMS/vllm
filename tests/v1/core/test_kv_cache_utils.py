@@ -50,6 +50,8 @@ from vllm.v1.kv_cache_interface import (
 from vllm.v1.metrics.stats import CachingMetrics, PrefixCacheStats
 from vllm.v1.request import Request
 
+# 测试 KV 缓存工具函数：块哈希、空闲队列、缓存配置生成、前缀缓存指标等
+
 pytestmark = pytest.mark.cpu_test
 
 
@@ -63,6 +65,7 @@ def _auto_init_hash_fn(request):
     init_none_hash(hash_fn)
 
 
+# 创建用于测试的模拟请求对象，支持多模态位置、哈希、缓存盐和提示嵌入
 def make_request(
     request_id: str,
     prompt_token_ids: list[int] | None,

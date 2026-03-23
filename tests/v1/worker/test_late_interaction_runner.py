@@ -23,6 +23,7 @@ def _make_pooling_params(
     )
 
 
+# [中文注释] 测试后处理评分逻辑和查询缓存的正确释放（单文档场景）
 def test_postprocess_scores_and_releases_query_cache():
     runner = LateInteractionRunner()
     query_key = "query-0"
@@ -64,6 +65,7 @@ def test_postprocess_scores_and_releases_query_cache():
         )
 
 
+# [中文注释] 测试批量文档场景下的MaxSim评分后处理
 def test_postprocess_scores_docs_in_batch():
     runner = LateInteractionRunner()
     query_key = "query-batch"
@@ -105,6 +107,7 @@ def test_postprocess_scores_docs_in_batch():
         )
 
 
+# [中文注释] 测试已完成请求正确释放未评分文档的查询缓存引用
 def test_finished_request_releases_unscored_doc_use():
     runner = LateInteractionRunner()
     query_key = "query-cancel"
@@ -136,6 +139,7 @@ def test_finished_request_releases_unscored_doc_use():
         )
 
 
+# [中文注释] 测试无效的query_uses参数值时抛出ValueError
 def test_invalid_query_uses_raises():
     runner = LateInteractionRunner()
     bad_meta = LateInteractionParams(

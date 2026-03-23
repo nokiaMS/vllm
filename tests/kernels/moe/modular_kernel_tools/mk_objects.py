@@ -42,6 +42,7 @@ from vllm.utils.import_utils import (
 )
 
 
+# [中文注释] 测试用MoE量化配置数据类，定义量化数据类型、逐通道/逐token量化选项和块形状
 @dataclass
 class TestMoEQuantConfig:
     quant_dtype: torch.dtype | str | None
@@ -50,6 +51,7 @@ class TestMoEQuantConfig:
     block_shape: list[int] | None
 
 
+# [中文注释] PrepareFinalize组件信息，记录激活格式、支持的数据类型、后端类型等属性
 @dataclass
 class PrepareFinalizeInfo:
     activation_format: mk.FusedMoEActivationFormat
@@ -59,6 +61,7 @@ class PrepareFinalizeInfo:
     supports_apply_weight_on_input: bool = True
 
 
+# [中文注释] Expert后端信息，记录激活格式、支持的数据类型、是否需要DeepGEMM/AIter等依赖
 @dataclass
 class ExpertInfo:
     activation_format: mk.FusedMoEActivationFormat
@@ -92,6 +95,7 @@ nvfp4_types = ["nvfp4"]
 fp8_types = [torch.float8_e4m3fn]
 
 
+# [中文注释] 注册PrepareFinalize类型到全局注册表，区分单GPU和多GPU类型
 def register_prepare_and_finalize(
     kind,
     activation_format: mk.FusedMoEActivationFormat,
@@ -121,6 +125,7 @@ def register_prepare_and_finalize(
         MK_SINGLE_GPU_PREPARE_FINALIZE_TYPES.append(kind)
 
 
+# [中文注释] 注册Expert后端类型到全局注册表，包括激活格式和量化支持信息
 def register_experts(
     kind,
     activation_format: mk.FusedMoEActivationFormat,
@@ -148,12 +153,14 @@ def register_experts(
     MK_FUSED_EXPERT_TYPES.append(kind)
 
 
+# [中文注释] 从注册表获取指定PrepareFinalize类型的信息
 def prepare_finalize_info(kind) -> PrepareFinalizeInfo:
     info = PREPARE_FINALIZE_INFO.get(kind)
     assert info is not None
     return info
 
 
+# [中文注释] 从注册表获取指定Expert后端类型的信息
 def expert_info(kind) -> ExpertInfo:
     info = EXPERT_INFO.get(kind)
     assert info is not None
@@ -417,6 +424,7 @@ def make_cutlass_strides(
     return ab_strides1, ab_strides2, c_strides1, c_strides2
 
 
+# [中文注释] 根据类型创建FusedExperts实例，自动适配批量格式或标准格式的参数
 def make_fused_experts(
     fused_experts_type: mk.FusedMoEExpertsModular,
     moe: FusedMoEConfig,

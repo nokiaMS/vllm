@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试GPT-2 Large模型的困惑度
+
 import pytest
 
 from tests.models.utils import GenerateModelInfo

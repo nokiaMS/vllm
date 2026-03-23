@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试CUTLASS缩放矩阵乘法内核在不同数据类型、形状和量化配置下的正确性
 """Tests for cutlass kernels
 
 Run `pytest tests/kernels/quantization/test_cutlass_scaled_mm.py`.
@@ -53,20 +54,24 @@ capability = current_platform.get_device_capability()
 capability = capability[0] * 10 + capability[1]
 
 
+# 生成指定形状的随机INT8张量
 def rand_int8(shape: tuple, device: str = "cuda"):
     return to_int8(torch.rand(shape, device=device) * 255 - 128)
 
 
+# 将分组形状中的-1替换为实际维度大小
 def group_scale_helper(shape, group_shape):
     return [shape[i] if s < 0 else s for i, s in enumerate(group_shape)]
 
 
+# 根据分组形状计算缩放因子张量的形状
 def scale_shape(shape, group_shape):
     assert len(shape) == len(group_shape)
     group_shape = group_scale_helper(shape, group_shape)
     return tuple(cdiv(shape[i], group_shape[i]) for i in range(len(group_shape)))
 
 
+# CUTLASS FP8 GEMM测试辅助函数，支持逐token和逐通道量化
 def cutlass_fp8_gemm_helper(
     m: int,
     n: int,
@@ -103,6 +108,7 @@ def cutlass_fp8_gemm_helper(
     opcheck(torch.ops._C.cutlass_scaled_mm, (out, a, b, scale_a, scale_b, bias))
 
 
+# CUTLASS INT8 GEMM测试辅助函数，支持逐token和逐通道量化
 def cutlass_int8_gemm_helper(
     m: int,
     n: int,
@@ -134,6 +140,7 @@ def cutlass_int8_gemm_helper(
     opcheck(torch.ops._C.cutlass_scaled_mm, (out, a, b, scale_a, scale_b, bias))
 
 
+# 测试CUTLASS FP8 GEMM在多种矩阵形状和量化模式下的正确性
 @pytest.mark.parametrize("m,n,k", MNK_FACTORS)
 @pytest.mark.parametrize(
     "a_scale_group_shape", [PER_TOKEN_GROUP_SHAPE, TENSORWISE_GROUP_SHAPE]
@@ -152,6 +159,7 @@ def test_cutlass_fp8_gemm(
     cutlass_fp8_gemm_helper(m, n, k, a_scale_group_shape, b_scale_group_shape, use_bias)
 
 
+# 测试CUTLASS FP8块级缩放GEMM（需要SM90 Hopper+）
 @pytest.mark.parametrize("m,n,k", MNK_FACTORS)
 @pytest.mark.parametrize(
     "a_scale_group_shape,b_scale_group_shape", [((1, 128), (128, 128))]
@@ -173,6 +181,7 @@ def test_cutlass_fp8_blockwise_scale_gemm(
     cutlass_fp8_gemm_helper(m, n, k, a_scale_group_shape, b_scale_group_shape, use_bias)
 
 
+# 测试CUTLASS INT8 GEMM在多种矩阵形状和量化模式下的正确性
 @pytest.mark.parametrize("m,n,k", MNK_FACTORS)
 @pytest.mark.parametrize(
     "a_scale_group_shape", [PER_TOKEN_GROUP_SHAPE, TENSORWISE_GROUP_SHAPE]
@@ -189,6 +198,7 @@ def test_cutlass_int8_gemm(
     )
 
 
+# 测试CUTLASS INT8 GEMM的输出数据类型（BF16/FP16）
 @pytest.mark.parametrize(
     "a_scale_group_shape", [PER_TOKEN_GROUP_SHAPE, TENSORWISE_GROUP_SHAPE]
 )
@@ -214,6 +224,7 @@ def test_cutlass_int8_gemm_output_dtype(
     )
 
 
+# 测试CUTLASS FP8 GEMM的输出数据类型（BF16/FP16）
 @pytest.mark.parametrize(
     "a_scale_group_shape", [PER_TOKEN_GROUP_SHAPE, TENSORWISE_GROUP_SHAPE]
 )
@@ -243,6 +254,7 @@ def test_cutlass_fp8_gemm_output_dtype(
     )
 
 
+# 测试CUTLASS FP8块级缩放GEMM的输出数据类型
 @pytest.mark.parametrize(
     "a_scale_group_shape,b_scale_group_shape", [((1, 128), (128, 128))]
 )
@@ -269,6 +281,7 @@ def test_cutlass_fp8_blockwise_scale_gemm_dtype(
     )
 
 
+# 测试CUTLASS FP8 GEMM在多GPU设备上的正确性
 @pytest.mark.parametrize(
     "a_scale_group_shape", [PER_TOKEN_GROUP_SHAPE, TENSORWISE_GROUP_SHAPE]
 )
@@ -296,6 +309,7 @@ def test_cutlass_fp8_gemm_devices(
     )
 
 
+# 测试CUTLASS INT8 GEMM在多GPU设备上的正确性
 @pytest.mark.parametrize(
     "a_scale_group_shape", [PER_TOKEN_GROUP_SHAPE, TENSORWISE_GROUP_SHAPE]
 )
@@ -319,6 +333,7 @@ def test_cutlass_int8_gemm_devices(
     )
 
 
+# 遍历M维度(token数)测试CUTLASS FP8 GEMM对任意M的兼容性
 # For the following two tests:
 # N and K correspond to the size of the weight matrix and likely to be multiples
 # of a large power of two. In any case, the kernel will have a naive fallback
@@ -345,6 +360,7 @@ def test_cutlass_fp8_gemm_m_sweep(
             )
 
 
+# 遍历M维度(token数)测试CUTLASS INT8 GEMM对任意M的兼容性
 @pytest.mark.parametrize(
     "a_scale_group_shape", [PER_TOKEN_GROUP_SHAPE, TENSORWISE_GROUP_SHAPE]
 )
@@ -362,6 +378,7 @@ def test_cutlass_int8_gemm_m_sweep(
             )
 
 
+# 测试INT8 AZP偏置折叠（当前因精度丢失已跳过）
 @pytest.mark.parametrize("m", [32, 64, 128])
 @pytest.mark.parametrize("n", [16, 32, 64])
 @pytest.mark.parametrize("k", [64, 128, 256])
@@ -411,6 +428,7 @@ def test_cutlass_int8_azp_bias_fold(m: int, n: int, k: int, out_dtype: torch.dty
     torch.testing.assert_close(out, baseline_q, rtol=1e-2, atol=1e0)
 
 
+# 测试CUTLASS INT8非对称零点(AZP)量化在逐token和逐张量模式下的正确性
 @pytest.mark.parametrize("m", [32, 64, 128])
 @pytest.mark.parametrize("n", [16, 32, 64])
 @pytest.mark.parametrize("k", [64, 128, 256])
@@ -486,6 +504,7 @@ def test_cutlass_int8_azp(
         )
 
 
+# 测试CUTLASS在使用A和B子集（非连续张量）时的正确性
 # Test working with a subset of A and B
 def test_cutlass_subset():
     big_m, big_n, big_k = 1024, 1024, 1024
@@ -505,6 +524,7 @@ def test_cutlass_subset():
     torch.testing.assert_close(out, baseline, rtol=1e-1, atol=1e0)
 
 
+# 用于验证CUDA Graph兼容性的CUTLASS层封装
 # Test to make sure cuda graphs work
 class CutlassLayer(torch.nn.Module):
     def __init__(self, b, scale_a, scale_b, out_dtype):
@@ -520,6 +540,7 @@ class CutlassLayer(torch.nn.Module):
         )
 
 
+# 测试CUTLASS缩放矩阵乘法在CUDA Graph模式下的正确性
 @pytest.mark.parametrize("per_act_token", [True, False])
 @pytest.mark.parametrize("per_out_ch", [True, False])
 def test_cutlass_cuda_graph(per_act_token: bool, per_out_ch: bool):
@@ -552,10 +573,12 @@ def test_cutlass_cuda_graph(per_act_token: bool, per_out_ch: bool):
     torch.testing.assert_close(out, baseline, rtol=1e-1, atol=1e0)
 
 
+# 验证CUTLASS FP8支持检测的opcheck一致性
 def test_cutlass_support_opcheck():
     opcheck(torch.ops._C.cutlass_scaled_mm_supports_fp8, (capability,))
 
 
+# 测试CUTLASS FP8分组GEMM（用于MoE专家并行计算）
 @pytest.mark.parametrize("num_experts", [8, 64])
 @pytest.mark.parametrize("per_act_token", [True, False])
 @pytest.mark.parametrize("per_out_ch", [True, False])

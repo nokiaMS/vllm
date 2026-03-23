@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 CPU 上的 /render 端点：补全渲染、聊天渲染、多提示、多轮对话和错误处理]
 
 """Tests for the /render endpoints that expose prompt preprocessing."""
 
@@ -29,6 +30,7 @@ async def client(server):
 
 
 @pytest.mark.asyncio
+# [测试基本补全渲染端点返回 prompt_token_ids 和 prompt 文本]
 async def test_completion_render_basic(client):
     """Test basic completion render endpoint."""
     # Make request to render endpoint
@@ -63,6 +65,7 @@ async def test_completion_render_basic(client):
 
 
 @pytest.mark.asyncio
+# [测试基本聊天渲染端点返回对话和应用聊天模板后的 token]
 async def test_chat_completion_render_basic(client):
     """Test basic chat completion render endpoint."""
     # Make request to render endpoint
@@ -118,6 +121,7 @@ async def test_chat_completion_render_basic(client):
 
 
 @pytest.mark.asyncio
+# [测试多提示补全渲染返回对应数量的结果]
 async def test_completion_render_multiple_prompts(client):
     """Test completion render with multiple prompts."""
     response = await client.post(
@@ -143,6 +147,7 @@ async def test_completion_render_multiple_prompts(client):
 
 
 @pytest.mark.asyncio
+# [测试多轮对话的聊天渲染保留所有消息]
 async def test_chat_completion_render_multi_turn(client):
     """Test chat completion render with multi-turn conversation."""
     response = await client.post(
@@ -174,6 +179,7 @@ async def test_chat_completion_render_multi_turn(client):
 
 
 @pytest.mark.asyncio
+# [测试无效模型名的补全渲染返回 404 错误]
 async def test_completion_render_error_invalid_model(client):
     """Test completion render with invalid model returns error."""
     response = await client.post(
@@ -190,6 +196,7 @@ async def test_completion_render_error_invalid_model(client):
 
 
 @pytest.mark.asyncio
+# [测试无效模型名的聊天渲染返回 404 错误]
 async def test_chat_completion_render_error_invalid_model(client):
     """Test chat completion render with invalid model returns error."""
     response = await client.post(
@@ -206,6 +213,7 @@ async def test_chat_completion_render_error_invalid_model(client):
 
 
 @pytest.mark.asyncio
+# [验证渲染端点不执行文本生成（响应时间小于 1 秒）]
 async def test_completion_render_no_generation(client):
     """Verify render endpoint does not generate text."""
     # This test verifies that calling render is fast (no generation)

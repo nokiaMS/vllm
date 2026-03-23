@@ -75,6 +75,7 @@ pytestmark = pytest.mark.cpu_test
     ],
 )
 @pytest.mark.parametrize("start_idx", [0, 4, 8])
+# [中文注释] 测试token匹配迭代器：在token序列中查找匹配的子序列位置
 def test_iter_token_matches(token_ids, match_ids, expected, start_idx):
     result = list(iter_token_matches(token_ids, match_ids, start_idx=start_idx))
 
@@ -132,6 +133,7 @@ def test_iter_token_matches(token_ids, match_ids, expected, start_idx):
         ),
     ],
 )
+# [中文注释] 测试token匹配替换：将匹配的子序列替换为新的token ID
 def test_replace_token_matches(token_ids, match_ids, new_ids, expected):
     result = replace_token_matches(token_ids, match_ids, new_ids)
 
@@ -229,6 +231,7 @@ def test_replace_token_matches(token_ids, match_ids, new_ids, expected):
     ],
 )
 @pytest.mark.parametrize("update_type", [PromptInsertion, PromptReplacement])
+# [中文注释] 测试在提示词中查找token匹配：支持插入和替换两种更新类型
 def test_find_token_matches(
     prompt,
     target_by_key,
@@ -373,6 +376,7 @@ def test_find_token_matches(
     ],
 )
 @pytest.mark.parametrize("update_type", [PromptInsertion, PromptReplacement])
+# [中文注释] 测试在文本提示中查找匹配的文本模式
 def test_find_text_matches(
     prompt,
     target_by_key,
@@ -530,6 +534,7 @@ def test_find_text_matches(
         ),
     ],
 )
+# [中文注释] 测试查找并更新文本中的匹配项
 def test_find_update_text(
     prompt,
     target_by_key,
@@ -732,6 +737,7 @@ def test_find_update_text(
         ),
     ],
 )
+# [中文注释] 测试查找并更新token序列中的匹配项
 def test_find_update_tokens(
     prompt,
     target_by_key,
@@ -879,6 +885,7 @@ def test_find_update_tokens(
     ],
 )
 @pytest.mark.parametrize("update_type", [PromptInsertion, PromptReplacement])
+# [中文注释] 测试在提示词中查找多模态占位符位置
 def test_find_mm_placeholders(
     repl_by_key,
     prompt,
@@ -912,6 +919,7 @@ def test_find_mm_placeholders(
         (2, 2, True),
     ],
 )
+# [中文注释] 测试每个提示词的多模态限制应用
 def test_limit_mm_per_prompt_apply(model_id, num_images, limit, is_valid):
     limit_mm_per_prompt = {"image": limit}
 
@@ -957,6 +965,7 @@ def test_limit_mm_per_prompt_apply(model_id, num_images, limit, is_valid):
         (10, 0),  # large user limit, no model support → capped to 0
     ],
 )
+# [中文注释] 测试预算上限防止虚拟输入验证失败
 def test_budget_caps_prevent_dummy_input_validation_failure(
     model_id, user_limit, supported_limit
 ):
@@ -1014,6 +1023,7 @@ class DummyProcessor:
         ({"b": 1, "c": 1}, {}, {"a": 0, "b": 1}),
     ],
 )
+# [中文注释] 测试HuggingFace处理器初始化参数的合并和覆盖
 def test_hf_processor_init_kwargs(
     model_id,
     config_kwargs,
@@ -1046,6 +1056,7 @@ def test_hf_processor_init_kwargs(
         ({"b": 1, "c": 1}, {}, {"a": 0, "c": 1}),
     ],
 )
+# [中文注释] 测试HuggingFace处理器调用参数的合并和覆盖
 def test_hf_processor_call_kwargs(
     model_id,
     config_kwargs,
@@ -1063,6 +1074,7 @@ def test_hf_processor_call_kwargs(
     assert result == expected_kwargs
 
 
+# [中文注释] 测试无匹配时_apply_matches快速退出
 def test_apply_matches_no_match_exits_quickly():
     """
     Test that _apply_matches exits quickly when no matches are found.

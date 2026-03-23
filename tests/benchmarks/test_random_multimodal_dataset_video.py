@@ -13,18 +13,21 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 from vllm.benchmarks.datasets import RandomMultiModalDataset, SampleRequest
 
 
+# [中文注释] 会话级fixture，加载gpt2分词器用于视频多模态数据集测试
 @pytest.fixture(scope="session")
 def hf_tokenizer() -> PreTrainedTokenizerBase:
     """Use a small, commonly available tokenizer."""
     return AutoTokenizer.from_pretrained("gpt2")
 
 
+# [中文注释] 创建固定种子的RandomMultiModalDataset实例用于视频测试
 @pytest.fixture
 def video_dataset() -> RandomMultiModalDataset:
     """Create a RandomMultiModalDataset instance for testing."""
     return RandomMultiModalDataset(random_seed=42)
 
 
+# [中文注释] 测试不同种子生成不同的合成视频内容
 @pytest.mark.benchmark
 def test_generate_synthetic_video_different_seeds():
     """Test that different seeds produce different videos."""
@@ -40,6 +43,7 @@ def test_generate_synthetic_video_different_seeds():
     assert video1["bytes"] != video2["bytes"]
 
 
+# [中文注释] 测试桶配置到模态类型的映射（num_frames=1为图片，>1为视频），包括无效配置的错误处理
 @pytest.mark.benchmark
 def test_map_config_to_modality(video_dataset: RandomMultiModalDataset):
     """Test modality mapping for different configurations."""
@@ -60,6 +64,7 @@ def test_map_config_to_modality(video_dataset: RandomMultiModalDataset):
         video_dataset.map_config_to_modality((256, 256, -1))
 
 
+# [中文注释] 测试视频多模态项生成，验证OpenAI API格式的data URL和视频帧参数
 @pytest.mark.benchmark
 def test_generate_mm_item_video(video_dataset: RandomMultiModalDataset):
     """Test generating multimodal items for video configurations."""
@@ -105,6 +110,7 @@ def test_generate_mm_item_video(video_dataset: RandomMultiModalDataset):
             os.unlink(temp_path)
 
 
+# [中文注释] 测试图片多模态项生成，验证base64编码的JPEG data URL格式
 @pytest.mark.benchmark
 def test_generate_mm_item_image(video_dataset: RandomMultiModalDataset):
     """Test generating multimodal items for image configurations."""
@@ -123,6 +129,7 @@ def test_generate_mm_item_image(video_dataset: RandomMultiModalDataset):
     assert url.startswith("data:image/jpeg;base64,")
 
 
+# [中文注释] 测试无效配置（num_frames=0）时的错误处理
 @pytest.mark.benchmark
 def test_generate_mm_item_invalid_config(video_dataset: RandomMultiModalDataset):
     """Test error handling for invalid configurations."""
@@ -130,6 +137,7 @@ def test_generate_mm_item_invalid_config(video_dataset: RandomMultiModalDataset)
         video_dataset.generate_mm_item((256, 256, 0))
 
 
+# [中文注释] 测试使用视频桶配置进行采样，验证图片和视频的混合生成
 @pytest.mark.benchmark
 def test_sample_with_video_buckets(
     video_dataset: RandomMultiModalDataset, hf_tokenizer: PreTrainedTokenizerBase
@@ -185,6 +193,7 @@ def test_sample_with_video_buckets(
     assert image_count > 0
 
 
+# [中文注释] 测试仅视频桶配置的纯视频采样
 @pytest.mark.benchmark
 def test_sample_video_only_buckets(
     video_dataset: RandomMultiModalDataset, hf_tokenizer: PreTrainedTokenizerBase
@@ -223,6 +232,7 @@ def test_sample_video_only_buckets(
         assert url.startswith("data:video/mp4;base64,")
 
 
+# [中文注释] 测试采样遵守每个提示的视频数量限制
 @pytest.mark.benchmark
 def test_sample_respects_video_limits(
     video_dataset: RandomMultiModalDataset, hf_tokenizer: PreTrainedTokenizerBase
@@ -253,6 +263,7 @@ def test_sample_respects_video_limits(
         assert len(mm_data) <= 1  # Should respect video limit
 
 
+# [中文注释] 测试包含零概率条目的混合桶配置，验证零概率桶被忽略
 @pytest.mark.benchmark
 def test_sample_mixed_buckets_with_zero_probability(
     video_dataset: RandomMultiModalDataset, hf_tokenizer: PreTrainedTokenizerBase
@@ -307,6 +318,7 @@ def test_sample_mixed_buckets_with_zero_probability(
                         os.unlink(temp_path)
 
 
+# [中文注释] 测试视频采样在相同种子下的确定性
 @pytest.mark.benchmark
 def test_sample_deterministic_with_videos(hf_tokenizer: PreTrainedTokenizerBase):
     """Test that sampling with videos is deterministic with same seed."""
@@ -349,6 +361,7 @@ def test_sample_deterministic_with_videos(hf_tokenizer: PreTrainedTokenizerBase)
         assert s1.multi_modal_data == s2.multi_modal_data
 
 
+# [中文注释] 测试不同种子产生不同的视频内容
 @pytest.mark.benchmark
 def test_sample_different_seeds_produce_different_videos(
     hf_tokenizer: PreTrainedTokenizerBase,

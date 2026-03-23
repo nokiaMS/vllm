@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试池化参数验证：验证不同任务类型（embed/classify/token_embed/token_classify）的参数合法性检查]
 from dataclasses import dataclass
 
 import pytest
@@ -27,6 +28,7 @@ class MockModelConfig:
     pooler_config: PoolerConfig
 
 
+# [测试 embed 任务的参数验证：use_activation 合法，classify/step_pooling 参数非法]
 def test_embed():
     task = "embed"
     model_config = MockModelConfig(pooler_config=PoolerConfig(seq_pooling_type="CLS"))
@@ -48,6 +50,7 @@ def test_embed():
 
 
 @pytest.mark.parametrize("model_info", EMBEDDING_MODELS)
+# [测试 embed 任务的 dimensions 参数在不同嵌入模型（含 Matryoshka）下的验证逻辑]
 def test_embed_dimensions(model_info: EmbedModelInfo):
     task = "embed"
     model_config = ModelConfig(
@@ -75,6 +78,7 @@ def test_embed_dimensions(model_info: EmbedModelInfo):
 
 
 @pytest.mark.parametrize("task", ["score", "classify"])
+# [测试 score/classify 任务的参数验证：use_activation 合法，embed/step_pooling 参数非法]
 def test_classify(task):
     model_config = MockModelConfig(pooler_config=PoolerConfig(seq_pooling_type="CLS"))
 
@@ -95,6 +99,7 @@ def test_classify(task):
 
 
 @pytest.mark.parametrize("pooling_type", ["ALL", "STEP"])
+# [测试 token_embed 任务在 ALL/STEP 池化类型下的参数验证]
 def test_token_embed(pooling_type: str):
     task = "token_embed"
     model_config = MockModelConfig(
@@ -121,6 +126,7 @@ def test_token_embed(pooling_type: str):
 
 
 @pytest.mark.parametrize("pooling_type", ["ALL", "STEP"])
+# [测试 token_classify 任务在 ALL/STEP 池化类型下的参数验证]
 def test_token_classify(pooling_type: str):
     task = "token_classify"
     model_config = MockModelConfig(

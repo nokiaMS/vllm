@@ -18,6 +18,7 @@ from vllm.multimodal import MULTIMODAL_REGISTRY
     info=LlavaProcessingInfo,
     dummy_inputs=LlavaDummyInputsBuilder,
 )
+# 测试用的虚拟 Llava 模型，始终预测第一个 token
 class MyLlava(LlavaForConditionalGeneration):
     def compute_logits(self, hidden_states: torch.Tensor) -> torch.Tensor | None:
         # this dummy model always predicts the first token

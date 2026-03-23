@@ -16,6 +16,7 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 assert ASSETS_DIR.exists()
 
 
+# [中文注释] 测试不同形状张量的哈希不同
 def test_hash_single_item_different_shape():
     x1 = torch.zeros(())
     x2 = torch.zeros((1,))
@@ -24,6 +25,7 @@ def test_hash_single_item_different_shape():
     assert hasher.hash_kwargs(x=x1) != hasher.hash_kwargs(x=x2)
 
 
+# [中文注释] 测试哈希对键顺序不敏感
 def test_hash_key_order_invariant():
     x = torch.zeros((5, 10))
     y = torch.ones((5, 10))
@@ -34,6 +36,7 @@ def test_hash_key_order_invariant():
 
 # NOTE: Images that are the same visually are allowed to have the same hash
 @pytest.mark.parametrize("mode_pair", [("1", "L"), ("RGBA", "CMYK")])
+# [中文注释] 测试不同图像模式（如"1"和"L"）的哈希不碰撞
 def test_hash_collision_image_mode(mode_pair):
     mode1, mode2 = mode_pair
     image1 = Image.new(mode1, size=(10, 10), color=1)
@@ -43,6 +46,7 @@ def test_hash_collision_image_mode(mode_pair):
     assert hasher.hash_kwargs(image=image1) != hasher.hash_kwargs(image=image2)
 
 
+# [中文注释] 测试不同调色板的图像哈希不碰撞
 def test_hash_collision_image_palette():
     # These images differ only in Image.palette._palette
     image1 = Image.open(ASSETS_DIR / "image1.png")
@@ -52,6 +56,7 @@ def test_hash_collision_image_palette():
     assert hasher.hash_kwargs(image=image1) != hasher.hash_kwargs(image=image2)
 
 
+# [中文注释] 测试转置图像的哈希不碰撞
 def test_hash_collision_image_transpose():
     image1 = Image.new("1", size=(10, 20))
     ImageDraw.Draw(image1).line([(0, 0), (10, 0)])
@@ -64,6 +69,7 @@ def test_hash_collision_image_transpose():
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+# [中文注释] 测试不同形状但数据相同的张量哈希不碰撞
 def test_hash_collision_tensor_shape(dtype):
     # The hash should be different though the data is the same when flattened
     arr1 = torch.zeros((5, 10, 20, 3), dtype=dtype)
@@ -73,6 +79,7 @@ def test_hash_collision_tensor_shape(dtype):
     assert hasher.hash_kwargs(data=arr1) != hasher.hash_kwargs(data=arr2)
 
 
+# [中文注释] 测试不同形状的numpy数组哈希不碰撞
 def test_hash_collision_array_shape():
     # The hash should be different though the data is the same when flattened
     arr1 = np.zeros((5, 10, 20, 3))
@@ -82,6 +89,7 @@ def test_hash_collision_array_shape():
     assert hasher.hash_kwargs(data=arr1) != hasher.hash_kwargs(data=arr2)
 
 
+# [中文注释] 测试非连续内存数组与连续数组产生相同的哈希
 def test_hash_non_contiguous_array():
     arr = np.arange(24).reshape(4, 6).T
     assert not arr.flags.c_contiguous
@@ -94,6 +102,7 @@ def test_hash_non_contiguous_array():
     assert hasher.hash_kwargs(data=arr) == hasher.hash_kwargs(data=arr_c)
 
 
+# [中文注释] 测试EXIF ImageID标签中的UUID用于哈希替代图像数据
 def test_hash_image_exif_id():
     # Test that EXIF ImageId tag can be used to store UUID
     # and the hasher will use that instead of the image data.

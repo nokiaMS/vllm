@@ -14,6 +14,7 @@ ASSETS_DIR = Path(__file__).parent.parent / "assets"
 assert ASSETS_DIR.exists()
 
 
+# [中文注释] 回归测试MediaWithBytes的pickle序列化往返：防止RecursionError
 def test_media_with_bytes_pickle_roundtrip():
     """Regression test for pickle/unpickle of MediaWithBytes.
 

@@ -27,6 +27,7 @@ from vllm.platforms import current_platform
     "vllm.model_executor.layers.fused_moe.oracle.unquantized.has_flashinfer",
     return_value=False,
 )
+# [中文注释] 测试不同平台（CUDA/ROCm/CPU/XPU/TPU/OOT）的默认未量化MoE后端选择
 def test_select_default_backend_by_platform(
     mock_has_flashinfer,
     monkeypatch,
@@ -69,6 +70,7 @@ def test_select_default_backend_by_platform(
 @pytest.mark.skipif(
     not current_platform.is_cuda(), reason="Only supported on NVIDIA platforms."
 )
+# [中文注释] 测试CUDA平台在FlashInfer TRT-LLM可用时的后端选择
 def test_select_cuda_flashinfer_trtllm_backend(
     mock_has_flashinfer, mock_is_supported_trtllm, monkeypatch
 ):
@@ -108,6 +110,7 @@ def test_select_cuda_flashinfer_trtllm_backend(
 @pytest.mark.skipif(
     not current_platform.is_cuda(), reason="Only supported on NVIDIA platforms."
 )
+# [中文注释] 测试CUDA平台在FlashInfer CUTLASS可用时（SM90+）的后端选择
 def test_select_cuda_flashinfer_cutlass_backend(
     mock_has_flashinfer, mock_is_supported_trtllm, monkeypatch
 ):

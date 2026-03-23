@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 分布式测试的公共配置文件，提供事件发布/订阅相关的测试夹具（fixtures）
 import random
 
 import msgspec

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 LoRA 解析器：通过自定义 resolver 动态解析、加载和验证 LoRA 适配器]
 
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -70,6 +71,7 @@ class MockVllmConfig:
     parallel_config: MockParallelConfig
 
 
+# [模拟 LoRA 解析器：test-lora 成功、invalid-lora 模拟失败、其他返回 None]
 class MockLoRAResolver(LoRAResolver):
     async def resolve_lora(
         self, base_model_name: str, lora_name: str
@@ -163,6 +165,7 @@ def mock_serving_setup():
 
 
 @pytest.mark.asyncio
+# [测试 resolver 成功解析 LoRA 后调用 add_lora 和 generate]
 async def test_serving_completion_with_lora_resolver(mock_serving_setup, monkeypatch):
     monkeypatch.setenv("VLLM_ALLOW_RUNTIME_LORA_UPDATING", "true")
 
@@ -191,6 +194,7 @@ async def test_serving_completion_with_lora_resolver(mock_serving_setup, monkeyp
 
 
 @pytest.mark.asyncio
+# [测试 resolver 无法找到 LoRA 时返回 404 NotFound 错误]
 async def test_serving_completion_resolver_not_found(mock_serving_setup, monkeypatch):
     monkeypatch.setenv("VLLM_ALLOW_RUNTIME_LORA_UPDATING", "true")
 
@@ -213,6 +217,7 @@ async def test_serving_completion_resolver_not_found(mock_serving_setup, monkeyp
 
 
 @pytest.mark.asyncio
+# [测试 add_lora 失败时返回 400 BadRequest 且不调用 generate]
 async def test_serving_completion_resolver_add_lora_fails(
     mock_serving_setup, monkeypatch
 ):
@@ -244,6 +249,7 @@ async def test_serving_completion_resolver_add_lora_fails(
 
 
 @pytest.mark.asyncio
+# [测试未设置 VLLM_ALLOW_RUNTIME_LORA_UPDATING 环境变量时不调用 resolver]
 async def test_serving_completion_flag_not_set(mock_serving_setup):
     mock_engine, serving_completion = mock_serving_setup
 

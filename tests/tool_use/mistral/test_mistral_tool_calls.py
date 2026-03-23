@@ -9,6 +9,7 @@ from tests.tool_use.utils import MESSAGES_ASKING_FOR_TOOLS, WEATHER_TOOL
 
 # test: a tool_choice with mistral-tokenizer results in an ID of length 9
 @pytest.mark.asyncio
+# [中文注释] 测试Mistral模型使用tool_choice指定工具时的调用，验证工具调用ID长度为9
 async def test_tool_call_with_tool_choice(client: openai.AsyncOpenAI):
     models = await client.models.list()
     model_name: str = models.data[0].id

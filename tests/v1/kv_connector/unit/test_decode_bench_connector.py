@@ -33,6 +33,7 @@ from .utils import (
 )
 
 
+# [中文注释] 测试运行器：封装DecodeBenchConnector的测试基础设施，管理调度器和请求创建。
 class DecodeBenchTestRunner:
     """Test runner for DecodeBenchConnector."""
 
@@ -136,6 +137,7 @@ class DecodeBenchTestRunner:
         return scheduler_output, kv_connector_metadata
 
 
+# [中文注释] 测试用例：验证DecodeBenchConnector基本功能，确保KV缓存被正确填充虚拟值。
 def test_decode_bench_connector_basic():
     """Test basic functionality of DecodeBenchConnector."""
     block_size = 16
@@ -180,6 +182,7 @@ def test_decode_bench_connector_basic():
             assert torch.allclose(block_data, torch.tensor(0.015))
 
 
+# [中文注释] 测试用例：验证no-refill模式下KV缓存不会被重复填充。
 def test_decode_bench_connector_no_refill():
     """Test that DecodeBenchConnector only fills once per request."""
     block_size = 16
@@ -202,6 +205,7 @@ def test_decode_bench_connector_no_refill():
     assert len(metadata2.reqs_to_fill) == 0
 
 
+# [中文注释] 测试用例：验证单token输入场景下连接器的行为。
 def test_decode_bench_connector_single_token():
     """Test DecodeBenchConnector with single token request."""
     block_size = 16
@@ -220,6 +224,7 @@ def test_decode_bench_connector_single_token():
     assert len(metadata.reqs_to_fill) == 0
 
 
+# [中文注释] 测试用例：验证两个token输入场景下连接器的行为。
 def test_decode_bench_connector_two_tokens():
     """Test DecodeBenchConnector with two token request."""
     block_size = 16
@@ -246,6 +251,7 @@ def test_decode_bench_connector_two_tokens():
     assert len(block_ids_per_group[0]) == 1  # 1 token needs 1 block
 
 
+# [中文注释] 测试用例：验证大上下文长度场景下连接器的填充行为。
 def test_decode_bench_connector_large_context():
     """Test DecodeBenchConnector with large context size."""
     block_size = 16
@@ -287,6 +293,7 @@ def test_decode_bench_connector_large_context():
             assert torch.allclose(block_data, torch.tensor(0.015))
 
 
+# [中文注释] 测试用例：验证多个请求同时使用连接器时的正确性。
 def test_decode_bench_connector_multiple_requests():
     """Test DecodeBenchConnector with multiple sequential requests."""
     block_size = 16
@@ -329,6 +336,7 @@ def test_decode_bench_connector_multiple_requests():
     assert num_tokens2 == block_size * 3 - 1
 
 
+# [中文注释] 测试用例：验证部分块（非完整块）场景下的填充行为。
 def test_decode_bench_connector_partial_block():
     """Test DecodeBenchConnector with partial block filling."""
     block_size = 16
@@ -364,6 +372,7 @@ def test_decode_bench_connector_partial_block():
     assert len(block_ids) == expected_num_blocks
 
 
+# [中文注释] 测试用例：验证并发请求场景下连接器的正确性和隔离性。
 def test_decode_bench_connector_concurrent_requests():
     """Test DecodeBenchConnector with multiple concurrent requests in the same batch."""
     block_size = 16

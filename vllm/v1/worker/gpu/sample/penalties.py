@@ -11,6 +11,12 @@ from vllm.v1.worker.gpu.buffer_utils import UvaBackedTensor
 from vllm.v1.worker.gpu.states import RequestState
 
 
+# 采样惩罚状态管理类
+# 管理三种惩罚机制：
+# 1. repetition_penalty（重复惩罚）：对已出现的 token 进行乘法惩罚（正 logit 除以惩罚系数，负 logit 乘以惩罚系数）
+# 2. frequency_penalty（频率惩罚）：按 token 出现次数进行线性惩罚
+# 3. presence_penalty（存在惩罚）：只要 token 出现过就施加固定惩罚
+# 使用位掩码（prompt_bin_mask）记录 prompt 中出现的 token，使用计数数组（output_bin_counts）记录输出中各 token 的出现次数
 class PenaltiesState:
     def __init__(self, req_states: RequestState):
         self.req_states = req_states
@@ -43,6 +49,7 @@ class PenaltiesState:
 
         self._new_penalties_reqs: list[int] = []
 
+    # 为新请求注册惩罚参数，并记录需要初始化 bincount 统计的请求
     def add_request(self, req_idx: int, sampling_params: SamplingParams) -> None:
         self.repetition_penalty.np[req_idx] = sampling_params.repetition_penalty
         self.frequency_penalty.np[req_idx] = sampling_params.frequency_penalty
@@ -53,6 +60,7 @@ class PenaltiesState:
         if do_penalty:
             self._new_penalties_reqs.append(req_idx)
 
+    # 刷写惩罚参数到 GPU，并为新请求初始化 prompt 位掩码和输出 token 计数
     def apply_staged_writes(self) -> None:
         if self._new_penalties_reqs:
             idx_mapping = async_tensor_h2d(
@@ -79,6 +87,7 @@ class PenaltiesState:
         self.frequency_penalty.copy_to_uva()
         self.presence_penalty.copy_to_uva()
 
+    # 对 logits 原地应用重复/频率/存在惩罚，支持投机解码中多位置的累计计数
     def apply_penalties(
         self,
         logits: torch.Tensor,
@@ -106,6 +115,12 @@ class PenaltiesState:
         )
 
 
+# Triton 惩罚内核
+# 算法：
+# 1. 加载基础输出 token 计数，并累加投机解码中前序位置的 draft token 计数
+# 2. 重复惩罚：解包 prompt 位掩码，对出现过的 token 按正负 logit 分别除以或乘以惩罚系数
+# 3. 频率惩罚：logit -= frequency_penalty * token 出现次数
+# 4. 存在惩罚：logit -= presence_penalty * (token 是否出现过)
 @triton.jit
 def _penalties_kernel(
     logits_ptr,
@@ -189,6 +204,7 @@ def _penalties_kernel(
     tl.store(logits_ptr + token_idx * logits_stride + block, logits, mask=mask)
 
 
+# 惩罚内核的入口函数，按词表大小分块启动二维 Triton 内核
 def apply_penalties(
     logits: torch.Tensor,
     expanded_idx_mapping: torch.Tensor,
@@ -223,6 +239,10 @@ def apply_penalties(
     )
 
 
+# Triton bincount 内核
+# 为新请求初始化惩罚统计：
+# 1. 对 prompt token 使用原子 OR 操作构建位掩码（每个 token ID 占 1 bit，压缩存储）
+# 2. 对已有输出 token 使用原子加法统计各 token 的出现次数
 @triton.jit
 def _bincount_kernel(
     expanded_idx_mapping_ptr,
@@ -275,6 +295,7 @@ def _bincount_kernel(
         )
 
 
+# bincount 内核入口函数，先清零目标行再启动 Triton 内核统计 token 分布
 def bincount(
     expanded_idx_mapping: torch.Tensor,
     all_token_ids: torch.Tensor,
@@ -303,6 +324,7 @@ def bincount(
     )
 
 
+# 判断采样参数中是否启用了任何惩罚（重复/频率/存在惩罚中至少一项非默认值）
 def use_penalty(sampling_params: SamplingParams) -> bool:
     return (
         sampling_params.repetition_penalty != 1.0

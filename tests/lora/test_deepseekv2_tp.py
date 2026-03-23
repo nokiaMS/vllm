@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 DeepSeek-V2 模型在张量并行下的 LoRA 推理正确性
 
 # NOTE To avoid overloading the CI pipeline, this test script will
 # not be triggered on CI and is primarily intended for local testing

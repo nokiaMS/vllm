@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试多模态 API 中嵌入向量形状验证：确保错误 hidden_size 的嵌入在推理前被拒绝]
 """
 Embedding shape validation in multimodal APIs.
 
@@ -21,6 +22,7 @@ from vllm.multimodal.parse import (
 )
 
 
+# [测试 MultiModalDataParser 中的 hidden_size 验证逻辑]
 class TestMultiModalParserShapeValidation:
     """Test hidden_size validation in MultiModalDataParser."""
 
@@ -113,6 +115,7 @@ class TestMultiModalParserShapeValidation:
         assert isinstance(result["image"], ImageEmbeddingItems)
 
 
+# [直接测试各模态 EmbeddingItems 类的 hidden_size 验证]
 class TestEmbeddingItemsDirectValidation:
     """Direct tests for EmbeddingItems hidden_size validation."""
 
@@ -174,6 +177,7 @@ class TestEmbeddingItemsDirectValidation:
         assert "video" in str(exc_info.value).lower()
 
 
+# [集成测试：验证通过 Chat API 发送错误维度嵌入的攻击场景被阻止]
 class TestShapeValidationIntegration:
     """Integration tests verifying attack scenarios are blocked."""
 

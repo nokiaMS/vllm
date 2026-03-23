@@ -34,6 +34,7 @@ if not aiter_available:
     pytest.skip("These tests require AITER to run.", allow_module_level=True)
 
 
+# [中文注释] 测试ROCm AITER biased_grouped_topk自定义算子是否正确注册
 def test_rocm_aiter_biased_grouped_topk_custom_op_registration():
     """Test that the custom op is correctly registered."""
     # Check if the op exists in torch.ops.vllm
@@ -43,6 +44,7 @@ def test_rocm_aiter_biased_grouped_topk_custom_op_registration():
     assert callable(torch.ops.vllm.rocm_aiter_biased_grouped_topk)
 
 
+# [中文注释] 测试ROCm AITER grouped_topk自定义算子是否正确注册
 def test_rocm_aiter_grouped_topk_custom_op_registration():
     """Test that the custom op is correctly registered."""
     # Check if the op exists in torch.ops.vllm
@@ -52,6 +54,7 @@ def test_rocm_aiter_grouped_topk_custom_op_registration():
     assert callable(torch.ops.vllm.rocm_aiter_grouped_topk)
 
 
+# [中文注释] 测试ROCm AITER biased_grouped_topk与torch.compile的兼容性
 def test_rocm_aiter_biased_grouped_topk_torch_compile_compatibility():
     """Test that the op can be used with torch.compile."""
     # Create test tensors
@@ -141,6 +144,7 @@ def test_rocm_aiter_biased_grouped_topk_torch_compile_compatibility():
     assert torch.allclose(topk_ids_original, topk_ids_compiled)
 
 
+# [中文注释] 测试ROCm AITER grouped_topk与torch.compile的兼容性
 def test_rocm_aiter_grouped_topk_torch_compile_compatibility():
     """Test that the op can be used with torch.compile."""
     # Create test tensors

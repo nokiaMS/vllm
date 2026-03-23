@@ -64,6 +64,19 @@ from vllm.v1.utils import record_function_or_nullcontext
 logger = init_logger(__name__)
 
 
+# [中文注释] vLLM V1 核心调度器，实现 SchedulerInterface 接口。
+#   调度算法核心思想：没有 prefill/decode 阶段划分。
+#     每个请求有 num_computed_tokens 和 num_tokens_with_spec，
+#     每步让 computed 追赶 total，统一处理 chunked prefill、prefix caching、
+#     speculative decoding。
+#   调度流程（schedule() 方法）：
+#     1. 调度 RUNNING 请求：为每个请求分配新 token slot，不足时抢占低优先级请求
+#     2. 调度 WAITING 请求：查找前缀缓存命中 → 分配 KV block → 移入 running 队列
+#   关键组件：
+#     kv_cache_manager — KV cache block 分配与管理
+#     encoder_cache_manager — 多模态编码器缓存
+#     connector — KV 传输连接器（P/D 分离）
+#     structured_output_manager — 结构化输出语法约束
 class Scheduler(SchedulerInterface):
     def __init__(
         self,
@@ -335,6 +348,12 @@ class Scheduler(SchedulerInterface):
                 pass
         return num_new_tokens
 
+    # [中文注释] schedule() — 单步调度入口（Engine Core 主循环每步调用一次）。
+    #   输出 SchedulerOutput，告诉 model runner 本步处理哪些请求的多少 token。
+    #   两阶段调度：
+    #     Phase 1: 遍历 running 队列，为每个请求计算 num_new_tokens 并分配 KV block
+    #     Phase 2: 遍历 waiting 队列，查前缀缓存 → 分配 slot → 移入 running
+    #   约束：max_num_running_reqs（最大并发数）、max_num_scheduled_tokens（token 预算）
     def schedule(self) -> SchedulerOutput:
         # NOTE(woosuk) on the scheduling algorithm:
         # There's no "decoding phase" nor "prefill phase" in the scheduler.
@@ -1272,6 +1291,14 @@ class Scheduler(SchedulerInterface):
         )
         return GrammarOutput(structured_output_request_ids, bitmask)
 
+    # [中文注释] update_from_output() — 模型推理完成后更新调度器状态。
+    #   处理每个请求的生成结果：
+    #     - 追加生成的 token 到请求
+    #     - 处理 speculative decoding 的 token 接受/拒绝
+    #     - 检查停止条件（EOS、stop_token、max_tokens、重复检测）
+    #     - 更新结构化输出的语法状态
+    #     - 释放已完成请求的资源
+    #   返回 dict[client_index → EngineCoreOutputs]，供前端按客户端分发。
     def update_from_output(
         self,
         scheduler_output: SchedulerOutput,
@@ -1702,6 +1729,9 @@ class Scheduler(SchedulerInterface):
         """Returns (num_running_reqs, num_waiting_reqs)."""
         return len(self.running), len(self.waiting) + len(self.skipped_waiting)
 
+    # [中文注释] add_request() — 添加新请求到调度器。
+    #   支持流式输入：同一 request_id 的后续调用会追加到 streaming_queue。
+    #   新请求根据状态加入 waiting 或 skipped_waiting 队列。
     def add_request(self, request: Request) -> None:
         existing = self.requests.get(request.request_id)
         if existing is not None:
@@ -1724,6 +1754,9 @@ class Scheduler(SchedulerInterface):
             if self.log_stats:
                 request.record_event(EngineCoreEventType.QUEUED)
 
+    # [中文注释] finish_requests() — 外部终止请求（如客户端断开、前端检测到 stop string）。
+    #   从 running/waiting 队列移除请求，释放 KV cache 和编码器缓存。
+    #   返回被终止的 (req_id, client_index) 列表。
     def finish_requests(
         self, request_ids: str | Iterable[str] | None, finished_status: RequestStatus
     ) -> list[tuple[str, int]]:

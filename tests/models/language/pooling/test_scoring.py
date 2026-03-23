@@ -26,11 +26,13 @@ TEXTS_2 = [
 DTYPE = "half"
 
 
+# 测试夹具：参数化交叉编码器模型名称
 @pytest.fixture(scope="module", params=CROSS_ENCODER_MODELS)
 def model_name(request):
     yield request.param
 
 
+# 测试交叉编码器的一对一评分：单个查询与单个文档的相关性评分
 def test_cross_encoder_1_to_1(vllm_runner, hf_runner, model_name):
     text_pair = [TEXTS_1[0], TEXTS_2[0]]
 
@@ -48,6 +50,7 @@ def test_cross_encoder_1_to_1(vllm_runner, hf_runner, model_name):
     assert hf_outputs[0] == pytest.approx(vllm_outputs[0], rel=0.01)
 
 
+# 测试交叉编码器的一对多评分：单个查询与多个文档的相关性评分
 def test_cross_encoder_1_to_N(vllm_runner, hf_runner, model_name):
     text_pairs = [
         [TEXTS_1[0], TEXTS_2[0]],
@@ -69,6 +72,7 @@ def test_cross_encoder_1_to_N(vllm_runner, hf_runner, model_name):
     assert hf_outputs[1] == pytest.approx(vllm_outputs[1], rel=0.01)
 
 
+# 测试交叉编码器的多对多评分：多个查询与多个文档的配对相关性评分
 def test_cross_encoder_N_to_N(vllm_runner, hf_runner, model_name):
     text_pairs = [
         [TEXTS_1[0], TEXTS_2[0]],
@@ -90,11 +94,13 @@ def test_cross_encoder_N_to_N(vllm_runner, hf_runner, model_name):
     assert hf_outputs[1] == pytest.approx(vllm_outputs[1], rel=0.01)
 
 
+# 测试夹具：参数化嵌入模型名称
 @pytest.fixture(scope="module", params=EMBEDDING_MODELS)
 def emb_model_name(request):
     yield request.param
 
 
+# 测试嵌入模型的一对一评分：基于余弦相似度比较单个文本对的评分
 def test_embedding_1_to_1(vllm_runner, hf_runner, emb_model_name):
     text_pair = [TEXTS_1[0], TEXTS_2[0]]
 
@@ -115,6 +121,7 @@ def test_embedding_1_to_1(vllm_runner, hf_runner, emb_model_name):
     assert hf_outputs[0] == pytest.approx(vllm_outputs[0], rel=0.01)
 
 
+# 测试嵌入模型的一对多评分：单个查询与多个文档的余弦相似度评分
 def test_embedding_1_to_N(vllm_runner, hf_runner, emb_model_name):
     text_pairs = [
         [TEXTS_1[0], TEXTS_2[0]],
@@ -142,6 +149,7 @@ def test_embedding_1_to_N(vllm_runner, hf_runner, emb_model_name):
     assert hf_outputs[1] == pytest.approx(vllm_outputs[1], rel=0.01)
 
 
+# 测试嵌入模型的多对多评分：多个查询与多个文档的配对余弦相似度评分
 def test_embedding_N_to_N(vllm_runner, hf_runner, emb_model_name):
     text_pairs = [
         [TEXTS_1[0], TEXTS_2[0]],

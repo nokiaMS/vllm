@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试公共配置和 fixtures：定义 HfRunner、VllmRunner 等测试运行器及各种通用 pytest fixtures]
 import contextlib
 import pathlib
 from copy import deepcopy
@@ -95,17 +96,20 @@ PromptAudioInput = _PromptMultiModalInput[tuple[np.ndarray, int]]
 PromptVideoInput = _PromptMultiModalInput[np.ndarray]
 
 
+# [从文件中读取测试提示文本列表]
 def _read_prompts(filename: str) -> list[str]:
     with open(filename) as f:
         prompts = f.readlines()
         return prompts
 
 
+# [定义图片资产对应的提示文本类型]
 class ImageAssetPrompts(TypedDict):
     stop_sign: str
     cherry_blossom: str
 
 
+# [图片测试资产集合：包含 stop_sign 和 cherry_blossom 两张测试图片]
 class ImageTestAssets(list[ImageAsset]):
     def __init__(self) -> None:
         super().__init__(
@@ -129,6 +133,7 @@ class VideoAssetPrompts(TypedDict):
     baby_reading: str
 
 
+# [视频测试资产集合：包含 baby_reading 测试视频]
 class VideoTestAssets(list[VideoAsset]):
     def __init__(self) -> None:
         super().__init__(
@@ -146,6 +151,7 @@ class AudioAssetPrompts(TypedDict):
     winning_call: str
 
 
+# [音频测试资产集合：包含 mary_had_lamb 和 winning_call 两段测试音频]
 class AudioTestAssets(list[AudioAsset]):
     def __init__(self) -> None:
         super().__init__(
@@ -167,6 +173,7 @@ AUDIO_ASSETS = AudioTestAssets()
 """Singleton instance of {class}`AudioTestAssets`."""
 
 
+# [自动 fixture：每个测试前重置 HTTP 连接客户端，避免事件循环复用问题]
 @pytest.fixture(autouse=True)
 def init_test_http_connection():
     # pytest_asyncio may use a different event loop per test
@@ -174,6 +181,7 @@ def init_test_http_connection():
     global_http_connection.reuse_client = False
 
 
+# [fixture：初始化单进程分布式环境，用于需要分布式上下文的测试]
 @pytest.fixture
 def dist_init():
     from tests.utils import ensure_current_vllm_config
@@ -259,6 +267,7 @@ def example_system_message() -> str:
         return f.read()
 
 
+# [编码器/解码器模型的提示类型枚举]
 class DecoderPromptType(Enum):
     """For encoder/decoder models only."""
 
@@ -291,6 +300,7 @@ _T = TypeVar("_T", nn.Module, torch.Tensor, BatchEncoding, BatchFeature, dict)
 _R = TypeVar("_R")
 
 
+# [HuggingFace 模型测试运行器：封装 HF 模型的加载、生成、分类、logprobs 计算等功能]
 class HfRunner:
     def get_default_device(self):
         from vllm.platforms import current_platform
@@ -764,6 +774,7 @@ def hf_runner():
     return HfRunner
 
 
+# [vLLM 模型测试运行器：封装 vLLM LLM 引擎的生成、嵌入、分类、beam search 等功能]
 class VllmRunner:
     """
     The default value of some arguments have been modified from
@@ -1222,6 +1233,7 @@ def caplog_mp_fork():
     return ctx
 
 
+# [日志持有器：用于在 spawn 子进程测试中存储日志文本]
 class LogHolder:
     def __init__(self):
         self.text = None
@@ -1364,12 +1376,14 @@ def dummy_gemma2_embedding_path():
 
 # Add the flag `--optional` to allow run tests
 # that are marked with @pytest.mark.optional
+# [添加 --optional 命令行选项，控制是否运行标记为 optional 的测试]
 def pytest_addoption(parser):
     parser.addoption(
         "--optional", action="store_true", default=False, help="run optional test"
     )
 
 
+# [测试收集修改钩子：未传 --optional 时跳过所有标记为 optional 的测试]
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--optional"):
         # --optional given in cli: do not skip optional tests
@@ -1392,6 +1406,7 @@ def cli_config_file_with_model():
     return os.path.join(_TEST_DIR, "config", "test_config_with_model.yaml")
 
 
+# [HTTP 请求处理器：提供本地图片资产的 HTTP 服务]
 class AssetHandler(http.server.BaseHTTPRequestHandler):
     # _IMAGE_CACHE : Dict[str, bytes] = {}
 
@@ -1434,6 +1449,7 @@ def _find_free_port() -> int:
         return s.getsockname()[1]
 
 
+# [本地资产服务器：在随机端口上启动 HTTP 服务器，提供测试图片资产访问]
 class LocalAssetServer:
     address: str
     port: int

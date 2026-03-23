@@ -5,6 +5,9 @@ import torch
 from vllm.triton_utils import tl, triton
 
 
+# Triton 温度缩放内核
+# 将每个 token 的 logits 除以对应请求的温度参数，控制采样的随机性
+# 温度为 0 或 1 时提前返回以避免不必要的显存访问
 @triton.jit
 def _temperature_kernel(
     logits_ptr,
@@ -31,6 +34,7 @@ def _temperature_kernel(
     tl.store(logits_ptr + token_idx * logits_stride + block, logits, mask=mask)
 
 
+# 温度缩放的入口函数，按词表大小分块启动 Triton 内核
 def apply_temperature(
     logits: torch.Tensor,
     expanded_idx_mapping: torch.Tensor,
@@ -49,6 +53,12 @@ def apply_temperature(
     )
 
 
+# Gumbel-Max 采样 Triton 内核
+# 核心算法：利用 Gumbel-Max 技巧实现无需显式归一化的随机采样
+# 1. 可选地对 logits 施加温度缩放
+# 2. 基于请求种子和位置生成确定性的 Gumbel 噪声（支持可复现采样）
+# 3. 将 Gumbel 噪声加到 logits 上，取 argmax 即等价于从 softmax 分布中采样
+# 4. 分块计算局部最大值，后续由主机端汇总得到全局采样结果
 @triton.jit
 def _gumbel_sample_kernel(
     local_argmax_ptr,
@@ -115,6 +125,9 @@ def _gumbel_sample_kernel(
     tl.store(local_max_ptr + token_idx * local_max_stride + block_idx, value)
 
 
+# Gumbel-Max 采样的入口函数
+# 先分块计算局部 argmax，再通过 gather 获取全局采样 token
+# 温度为 0 时退化为贪心解码（不加 Gumbel 噪声，直接取 argmax）
 def gumbel_sample(
     logits: torch.Tensor,  # [num_tokens, vocab_size]
     expanded_idx_mapping: torch.Tensor,  # [num_tokens]

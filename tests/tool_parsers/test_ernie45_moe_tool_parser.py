@@ -21,6 +21,7 @@ from vllm.tool_parsers.ernie45_tool_parser import Ernie45ToolParser
 MODEL = "baidu/ERNIE-4.5-21B-A3B-Thinking"
 
 
+# [中文注释] 加载ERNIE-4.5工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def ernie45_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL, trust_remote_code=True)

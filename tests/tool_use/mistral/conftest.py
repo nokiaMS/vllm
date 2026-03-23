@@ -11,6 +11,7 @@ from vllm.platforms import current_platform
 from .utils import ARGS, CONFIGS, ServerConfig
 
 
+# [中文注释] 包级fixture：遍历Mistral模型配置，下载模型并跳过不支持ROCm的配置
 # for each server config, download the model and return the config
 @pytest.fixture(scope="package", params=CONFIGS.keys())
 def server_config(request):
@@ -26,6 +27,7 @@ def server_config(request):
     yield CONFIGS[request.param]
 
 
+# [中文注释] 包级fixture：启动RemoteOpenAIServer用于Mistral模型测试
 # run this for each server config
 @pytest.fixture(scope="package")
 def server(request, server_config: ServerConfig):
@@ -37,6 +39,7 @@ def server(request, server_config: ServerConfig):
         yield server
 
 
+# [中文注释] 异步fixture：创建OpenAI异步客户端用于Mistral测试请求
 @pytest_asyncio.fixture
 async def client(server: RemoteOpenAIServer):
     async with server.get_async_client() as async_client:

@@ -14,6 +14,7 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 assert ASSETS_DIR.exists()
 
 
+# [中文注释] 测试RGB到RGB的图像模式转换（应为无操作）
 def test_rgb_to_rgb():
     # Start with an RGB image.
     original_image = Image.open(ASSETS_DIR / "image1.png").convert("RGB")
@@ -24,6 +25,7 @@ def test_rgb_to_rgb():
     assert diff.getbbox() is None
 
 
+# [中文注释] 测试RGBA到RGB转换：透明像素应转为白色
 def test_rgba_to_rgb():
     original_image = Image.open(ASSETS_DIR / "rgba.png")
     original_image_numpy = np.array(original_image)

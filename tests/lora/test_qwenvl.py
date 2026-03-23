@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Qwen-VL 多模态模型的 LoRA 推理正确性（支持视觉和语言 LoRA）
 from dataclasses import dataclass
 
 from packaging.version import Version

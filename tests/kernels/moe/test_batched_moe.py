@@ -49,6 +49,7 @@ vllm_config = VllmConfig()
 
 
 @dataclass
+# [中文注释] 批量矩阵乘法测试配置，定义专家数、token数、维度和量化参数
 class BatchedMMConfig:
     in_dtype: torch.dtype
     quant_dtype: torch.dtype | None
@@ -60,6 +61,7 @@ class BatchedMMConfig:
 
 
 @dataclass
+# [中文注释] 批量矩阵乘法测试张量容器，包含输入激活、权重及量化缩放因子
 class BatchedMMTensors:
     A: torch.Tensor  # [E, max_tokens, K]
     B: torch.Tensor  # [E, K, N] - column major
@@ -105,6 +107,7 @@ class BatchedMMTensors:
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("block_shape", [None, [128, 128]])
 @pytest.mark.parametrize("per_act_token_quant", [False, True])
+# [中文注释] 测试批量MoE矩阵乘法内核（invoke_moe_batched_triton_kernel）在不同量化配置下的正确性
 def test_batched_mm(
     num_experts: int,
     max_tokens_per_expert: int,
@@ -239,6 +242,7 @@ def test_batched_mm(
 @pytest.mark.parametrize("per_act_token_quant", [False, True])
 @pytest.mark.parametrize("block_shape", [None, [128, 128]])
 @pytest.mark.parametrize("input_scales", [False])
+# [中文注释] 测试完整的批量FusedMoE专家层（BatchedTritonExperts），包括路由、量化和MLP计算
 def test_fused_moe_batched_experts(
     m: int,
     n: int,

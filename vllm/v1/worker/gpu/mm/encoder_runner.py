@@ -10,6 +10,9 @@ from vllm.v1.worker.gpu.mm.encoder_cache import EncoderCache
 from vllm.v1.worker.utils import sanity_check_mm_encoder_outputs
 
 
+# 多模态编码器运行器
+# 负责执行多模态编码（如视觉编码器），管理编码器输出的收集与嵌入合并
+# 核心流程：准备输入 -> 执行编码 -> 收集嵌入 -> 与文本嵌入合并
 class EncoderRunner:
     def __init__(
         self,
@@ -31,6 +34,8 @@ class EncoderRunner:
             max_num_tokens, hidden_size, dtype=dtype, device=device
         )
 
+    # 准备多模态编码器输入：根据调度计划收集需要编码的多模态数据
+    # 返回对应的哈希值列表和多模态参数列表
     def prepare_mm_inputs(
         self, scheduled_encoder_inputs: dict[str, list[int]]
     ) -> tuple[list[str], list[tuple[str, MultiModalKwargsItem]]]:
@@ -47,6 +52,8 @@ class EncoderRunner:
 
         return mm_hashes, mm_kwargs
 
+    # 执行多模态编码器前向推理
+    # 将同模态的输入分组批处理以提高效率，返回编码器输出张量列表
     @torch.inference_mode()
     def execute_mm_encoder(
         self,
@@ -61,6 +68,9 @@ class EncoderRunner:
             encoder_outputs.extend(batch_outputs)
         return encoder_outputs
 
+    # 收集多模态嵌入向量，将编码器输出映射到对应的token位置
+    # 关键算法：根据每个请求的prefill进度，计算需要嵌入的token范围，
+    # 从编码器缓存中提取对应片段，并生成布尔掩码标记哪些位置是多模态嵌入
     def gather_mm_embeddings(
         self,
         req_ids: list[str],
@@ -135,6 +145,8 @@ class EncoderRunner:
         is_mm_embed = is_mm_embed.to(device=self.device, non_blocking=True)
         return mm_embeds, is_mm_embed
 
+    # 将文本token ID和多模态嵌入合并为统一的输入嵌入
+    # 结果复制到预分配的缓冲区中，以支持CUDA Graph的固定内存地址要求
     @torch.inference_mode()
     def get_inputs_embeds(
         self,

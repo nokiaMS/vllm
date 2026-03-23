@@ -43,6 +43,7 @@ from vllm.utils.torch_utils import set_random_seed
 @pytest.mark.parametrize("routed_scaling_factor", [1.0, 2.5])
 @pytest.mark.parametrize("input_dtype", [torch.bfloat16, torch.float32])
 @pytest.mark.parametrize("bias_dtype", [torch.float32])
+# [中文注释] 测试分组TopK路由内核在不同专家组配置、评分函数和缩放因子下的正确性
 def test_grouped_topk(
     monkeypatch: pytest.MonkeyPatch,
     n_token: int,

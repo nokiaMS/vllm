@@ -18,6 +18,7 @@ from vllm.platforms import current_platform
 from vllm.scalar_type import scalar_types
 
 
+# [中文注释] 将BF16张量量化为MXINT4格式（带块缩放因子）
 def mxint4_quantize(
     x: torch.Tensor, sf_vec_size: int = 32
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -44,6 +45,7 @@ def mxint4_quantize(
     )
 
 
+# [中文注释] 对MoE权重（w13和w2）进行MXINT4量化，生成TRT-LLM格式的权重和缩放因子
 def mxint4_quantize_moe_weights(
     weights_bf16: torch.Tensor, group_size: int = 32
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -76,6 +78,7 @@ __all__ = [
 ]
 
 
+# [中文注释] 对MoE权重进行Marlin INT4量化，生成Marlin格式的压缩权重
 def marlin_quantize_moe_weights(
     weights_bf16: torch.Tensor, group_size: int = 32
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -125,6 +128,7 @@ TRTLLM_GEN_AVAILABLE = (
 @pytest.mark.parametrize("e", [384])
 @pytest.mark.parametrize("topk", [8])
 @pytest.mark.parametrize("group_size", [32])
+# [中文注释] 测试Marlin INT4 MoE与FlashInfer TRT-LLM MXINT4 MoE的输出一致性（Kimi-K2模型参数）
 def test_marlin_vs_trtllm_mxint4_moe_kimik2(monkeypatch, m, n, k, e, topk, group_size):
     """Compare Marlin INT4 MoE vs FlashInfer TRT-LLM MXINT4 MoE.
 

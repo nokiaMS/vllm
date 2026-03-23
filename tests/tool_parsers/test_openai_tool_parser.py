@@ -21,6 +21,7 @@ from vllm.tool_parsers.openai_tool_parser import OpenAIToolParser
 MODEL = "gpt2"
 
 
+# [中文注释] 加载OpenAI工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def openai_tokenizer():
     # The parser does not use the tokenizer, but the constructor requires it.

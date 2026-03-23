@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试分布式通信操作（AllReduce、ReduceScatter、AllGather、广播字典、收发张量等）
 """Test the communication operators.
 
 Run `pytest tests/distributed/test_comm_ops.py`.

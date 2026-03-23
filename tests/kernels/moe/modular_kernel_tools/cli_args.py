@@ -16,6 +16,7 @@ from .mk_objects import (
 )
 
 
+# [中文注释] 创建命令行参数解析器，用于配置模块化MoE内核的测试参数（如PrepareFinalize类型、专家类型、量化选项等）
 def make_config_arg_parser(description: str):
     def to_pf_class_type(s: str) -> mk.FusedMoEPrepareAndFinalizeModular:
         for pf in MK_ALL_PREPARE_FINALIZE_TYPES:
@@ -112,6 +113,7 @@ def make_config_arg_parser(description: str):
     return parser
 
 
+# [中文注释] 验证命令行参数的合法性（量化数据类型、block形状、world_size、trace路径等）
 def _validate_args(args: argparse.Namespace):
     if args.quant_dtype is not None:
         assert args.quant_dtype == torch.float8_e4m3fn
@@ -131,6 +133,7 @@ def _validate_args(args: argparse.Namespace):
         )
 
 
+# [中文注释] 根据解析后的命令行参数构建模块化内核测试配置对象（Config）
 def make_config(args: argparse.Namespace) -> Config:
     _validate_args(args)
 

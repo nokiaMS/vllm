@@ -6,6 +6,7 @@ import torch
 from vllm.v1.worker.utils import bind_kv_cache
 
 
+# [中文注释] 测试bind_kv_cache将KV缓存张量正确绑定到注意力层
 def test_bind_kv_cache(default_vllm_config):
     from vllm.model_executor.layers.attention import Attention
 
@@ -34,6 +35,7 @@ def test_bind_kv_cache(default_vllm_config):
     assert runner_kv_caches[3] is kv_cache["layers.3.self_attn"]
 
 
+# [中文注释] 测试非标准注意力层（如Jamba PP=2）的KV缓存绑定
 def test_bind_kv_cache_non_attention(default_vllm_config):
     from vllm.model_executor.layers.attention import Attention
 
@@ -57,6 +59,7 @@ def test_bind_kv_cache_non_attention(default_vllm_config):
     assert runner_kv_caches[1] is kv_cache["model.layers.28.attn"]
 
 
+# [中文注释] 测试草稿模型场景下的KV缓存绑定（目标模型和草稿模型交错排序）
 def test_bind_kv_cache_draft_model(default_vllm_config):
     from vllm.model_executor.layers.attention import Attention
 

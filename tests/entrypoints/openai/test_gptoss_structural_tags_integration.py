@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 GPT-OSS 结构化标签集成：验证工具调用标签生成、JSON 有效性和并发隔离]
 
 """Integration tests for GPT-OSS structural tags functionality (PR #25515)."""
 
@@ -15,6 +16,7 @@ from vllm.reasoning.gptoss_reasoning_parser import (
 from vllm.sampling_params import StructuredOutputsParams
 
 
+# [GPT-OSS 结构化标签在工具调用中的集成测试类]
 class TestGptOssStructuralTagsIntegration:
     """Integration tests for structural tags in GPT-OSS tool calls."""
 

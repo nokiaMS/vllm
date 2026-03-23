@@ -47,6 +47,7 @@ except ImportError:
     BACKENDS_TO_TEST.remove(AttentionBackendEnum.FLASHINFER)
 
 
+# 将模型数据类型字符串转换为 torch.dtype 的辅助函数
 def _convert_dtype_to_torch(dtype):
     """Convert ModelDType to torch.dtype."""
     if isinstance(dtype, str):
@@ -94,6 +95,7 @@ BATCH_SPECS = {
 }
 
 
+# 创建并预填充分页 KV 缓存，模拟 vLLM 的块表结构用于测试
 def create_and_prepopulate_kv_cache(
     k_contexts: list[torch.Tensor],
     v_contexts: list[torch.Tensor],
@@ -193,6 +195,7 @@ def create_and_prepopulate_kv_cache(
     return kv_cache
 
 
+# 模拟注意力层，提供测试所需的缩放参数
 class MockAttentionLayer:
     """A mock attention layer for testing."""
 
@@ -206,6 +209,7 @@ class MockAttentionLayer:
         self._v_scale_float = 1.0
 
 
+# 使用指定后端运行注意力计算并返回输出结果
 def run_attention_backend(
     backend: AttentionBackendEnum,
     kv_cache_spec: FullAttentionSpec,
@@ -307,6 +311,7 @@ def run_attention_backend(
     return output
 
 
+# 核心测试函数：将各注意力后端的输出与 SDPA 参考实现对比，验证数值一致性
 def _test_backend_correctness(
     batch_spec: BatchSpec,
     model: str,

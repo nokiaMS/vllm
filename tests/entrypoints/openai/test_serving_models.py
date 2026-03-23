@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 OpenAIServingModels 的 LoRA 加载/卸载逻辑：成功、缺失字段、重复、未找到]
 
 from http import HTTPStatus
 from unittest.mock import MagicMock
@@ -27,6 +28,7 @@ LORA_UNLOADING_SUCCESS_MESSAGE = (
 )
 
 
+# [初始化带 mock 引擎的 OpenAIServingModels 实例]
 async def _async_serving_models_init() -> OpenAIServingModels:
     mock_engine_client = MagicMock(spec=EngineClient)
     # Set the max_model_len attribute to avoid missing attribute
@@ -48,6 +50,7 @@ async def _async_serving_models_init() -> OpenAIServingModels:
 
 
 @pytest.mark.asyncio
+# [测试模型名称获取：基础模型和 LoRA 请求]
 async def test_serving_model_name():
     serving_models = await _async_serving_models_init()
     assert serving_models.model_name(None) == MODEL_NAME
@@ -58,6 +61,7 @@ async def test_serving_model_name():
 
 
 @pytest.mark.asyncio
+# [测试成功加载 LoRA 适配器]
 async def test_load_lora_adapter_success():
     serving_models = await _async_serving_models_init()
     request = LoadLoRAAdapterRequest(lora_name="adapter", lora_path="/path/to/adapter2")
@@ -69,6 +73,7 @@ async def test_load_lora_adapter_success():
 
 
 @pytest.mark.asyncio
+# [测试加载 LoRA 时缺失必需字段应返回错误]
 async def test_load_lora_adapter_missing_fields():
     serving_models = await _async_serving_models_init()
     request = LoadLoRAAdapterRequest(lora_name="", lora_path="")
@@ -79,6 +84,7 @@ async def test_load_lora_adapter_missing_fields():
 
 
 @pytest.mark.asyncio
+# [测试重复加载同名 LoRA 适配器应返回错误]
 async def test_load_lora_adapter_duplicate():
     serving_models = await _async_serving_models_init()
     request = LoadLoRAAdapterRequest(
@@ -99,6 +105,7 @@ async def test_load_lora_adapter_duplicate():
 
 
 @pytest.mark.asyncio
+# [测试成功卸载 LoRA 适配器]
 async def test_unload_lora_adapter_success():
     serving_models = await _async_serving_models_init()
     request = LoadLoRAAdapterRequest(
@@ -114,6 +121,7 @@ async def test_unload_lora_adapter_success():
 
 
 @pytest.mark.asyncio
+# [测试卸载 LoRA 时缺失字段应返回错误]
 async def test_unload_lora_adapter_missing_fields():
     serving_models = await _async_serving_models_init()
     request = UnloadLoRAAdapterRequest(lora_name="", lora_int_id=None)
@@ -124,6 +132,7 @@ async def test_unload_lora_adapter_missing_fields():
 
 
 @pytest.mark.asyncio
+# [测试卸载不存在的 LoRA 适配器应返回 NotFound 错误]
 async def test_unload_lora_adapter_not_found():
     serving_models = await _async_serving_models_init()
     request = UnloadLoRAAdapterRequest(lora_name="nonexistent_adapter")

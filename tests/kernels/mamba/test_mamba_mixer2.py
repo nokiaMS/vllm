@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Mamba Mixer2门控RMSNorm在多GPU张量并行下的正确性，
+# 验证TP分片后的输出与单GPU参考输出一致
 
 import unittest
 
@@ -16,6 +18,7 @@ from vllm.utils.system_utils import update_environment_variables
 from vllm.utils.torch_utils import set_random_seed
 
 
+# 测试双GPU下Mixer2门控RMSNorm的张量并行正确性
 @multi_gpu_test(num_gpus=2)
 @pytest.mark.parametrize("batch_size", [8])
 @pytest.mark.parametrize("seq_len", [128])
@@ -58,6 +61,7 @@ def test_mixer2_gated_norm_multi_gpu(
     run_torch_spawn(mixer2_gated_norm_tensor_parallel, 2)
 
 
+# 在指定GPU rank上执行门控RMSNorm的张量并行计算并与单GPU参考结果对比
 def mixer2_gated_norm_tensor_parallel(
     local_rank: int,
     world_size: int,

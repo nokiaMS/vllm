@@ -11,6 +11,8 @@ from vllm.platforms import current_platform
 from vllm.v1.attention.backends.registry import AttentionBackendEnum
 from vllm.v1.attention.selector import AttentionSelectorConfig
 
+# 测试 ROCm 平台上标准注意力和 MLA 注意力后端的选择逻辑
+
 # ROCm-specific attention backend selection tests
 pytestmark = pytest.mark.skipif(
     not current_platform.is_rocm(), reason="ROCm-specific tests"

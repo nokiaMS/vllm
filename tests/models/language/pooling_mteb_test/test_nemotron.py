@@ -40,11 +40,13 @@ RERANK_MODELS = [
 ]
 
 
+# 测试 NVIDIA Nemotron 嵌入模型（Llama 双向架构）在 MTEB 基准上的评分
 @pytest.mark.parametrize("model_info", EMBEDDING_MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     mteb_test_embed_models(hf_runner, vllm_runner, model_info)
 
 
+# 测试 NVIDIA Nemotron 重排序模型在 MTEB 重排序基准上的性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
     mteb_test_rerank_models(vllm_runner, model_info)

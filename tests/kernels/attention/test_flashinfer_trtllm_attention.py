@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FlashInfer TRTLLM注意力内核在解码和预填充阶段的正确性（支持FP8/FP4量化输入输出）
 
 import pytest
 import torch
@@ -24,6 +25,7 @@ FP8_DTYPE = current_platform.fp8_dtype()
 FP4_DTYPE = torch.uint8
 
 
+# 将张量量化为FP8格式并返回反缩放因子
 def to_float8(x, dtype=torch.float8_e4m3fn):
     finfo = torch.finfo(dtype)
     min_val, max_val = x.aminmax()
@@ -55,6 +57,7 @@ HAS_SINKS = [True, False]
 NUM_BLOCKS = 32768  # Large enough to test overflow in index calculation.
 
 
+# 测试TRTLLM解码注意力内核与FlashInfer基线的数值一致性（支持FP8/FP4输出量化）
 @pytest.mark.parametrize("dtype", DTYPE)
 @pytest.mark.parametrize("quant_dtypes", QUANT_DTYPES)
 @pytest.mark.parametrize("batch_size", BATCH_SIZE)
@@ -266,6 +269,7 @@ def test_flashinfer_trtllm_decode_with_baseline(
 @pytest.mark.parametrize("soft_cap", [None])
 @pytest.mark.parametrize("has_sinks", HAS_SINKS)
 @torch.inference_mode
+# 测试TRTLLM预填充注意力内核与FlashInfer基线的数值一致性（支持FP8/FP4量化输入输出）
 def test_flashinfer_trtllm_prefill_with_baseline(
     dtype: torch.dtype,
     quant_dtypes: tuple[torch.dtype | None, torch.dtype | None, torch.dtype | None],

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试get_fp8_min_max()辅助函数在标准和fnuz（ROCm MI300）数据类型下的正确性
 """
 Unit tests for the get_fp8_min_max() helper function.
 
@@ -17,6 +18,7 @@ from vllm.model_executor.layers.quantization.utils.quant_utils import (
 )
 
 
+# 测试get_fp8_min_max()在标准FP8和fnuz(ROCm MI300)平台下的返回值
 class TestGetFp8MinMax:
     """Test cases for get_fp8_min_max() function."""
 

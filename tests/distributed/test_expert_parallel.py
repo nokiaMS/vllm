@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试专家并行（Expert Parallel）功能，通过对比 TP 和 EP 的输出验证正确性
 
 from dataclasses import dataclass
 from typing import Literal, NamedTuple

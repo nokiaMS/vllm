@@ -22,6 +22,7 @@ TEXT_PROMPTS = [
 ]
 
 
+# [中文注释] 输入测试用例数据类：包含文本、图片、期望长度和描述信息。
 class InputCase(NamedTuple):
     text: str
     img: list[Image]
@@ -29,16 +30,19 @@ class InputCase(NamedTuple):
     info: str
 
 
+# [中文注释] 辅助函数：返回目录下的条目数量。
 def _check_path_len(path):
     """Return the latest length in path"""
     return len(list(path.iterdir()))
 
 
+# [中文注释] 辅助函数：列出目录下的所有文件/文件夹路径（hash值）。
 def _list_path(path):
     """Return the list of foldername (hashes generated) under the path"""
     return list(path.iterdir())
 
 
+# [中文注释] 辅助函数：运行ExampleConnector测试，验证KV保存到存储后的hash正确性。
 def run_test(
     tmp_path,
     processor,
@@ -67,6 +71,7 @@ def run_test(
     )
 
 
+# [中文注释] 辅助函数：处理多模态提示词，构建包含图片的输入并生成结果。
 def process_prompt(processor, llm: LLM, question: str, image_urls: list[Image]):
     """
     Form the prompt based on the text and image input, then llm generate output
@@ -120,6 +125,7 @@ def process_prompt(processor, llm: LLM, question: str, image_urls: list[Image]):
         else []
     ),
 )
+# [中文注释] 测试用例：验证ExampleConnector对多模态输入生成的KV缓存hash是否正确和一致。
 def test_shared_storage_connector_hashes(tmp_path, attn_backend):
     """
     Tests that ExampleConnector saves KV to the storage locations

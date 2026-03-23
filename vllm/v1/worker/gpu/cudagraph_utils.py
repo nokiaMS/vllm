@@ -27,6 +27,9 @@ from vllm.v1.worker.utils import AttentionGroup
 logger = init_logger(__name__)
 
 
+# 批次执行描述符：描述一次模型前向传播的批次形状和 CUDA graph 模式。
+# 用于在 CUDA graph 捕获和回放时进行形状匹配。
+# uniform_token_count 非 None 表示批次中所有请求具有相同的 token 数（典型的解码场景）。
 @dataclass(frozen=True)
 class BatchExecutionDescriptor:
     """Describes the shape of the batch and CG mode to run; this is used to make shape
@@ -38,6 +41,8 @@ class BatchExecutionDescriptor:
     uniform_token_count: int | None = None
 
 
+# 检查一个 CUDA graph 描述符是否兼容给定的运行时批次参数。
+# PIECEWISE 模式的图可以匹配任意 uniform_token_count 和请求数。
 def _is_compatible(
     desc: BatchExecutionDescriptor,
     num_reqs: int,
@@ -56,6 +61,8 @@ def _is_compatible(
     )
 
 
+# 判断批次是否为均匀批次（所有请求的 token 数相同），如果是则返回每个请求的 token 数。
+# 均匀批次在解码阶段很常见，可以使用专门优化的 CUDA graph。
 def get_uniform_token_count(
     num_reqs: int,
     num_tokens: int,
@@ -72,6 +79,11 @@ def get_uniform_token_count(
     return None
 
 
+# CUDA Graph 管理器：负责 CUDA graph 的捕获、缓存和调度回放。
+# 设计思路：
+# - 预先按配置的 capture_sizes 生成候选描述符，按 token 数建立索引表以实现 O(1) 查找。
+# - 支持两种模式：FULL（整个前向传播捕获为单一图）和 PIECEWISE（分段捕获，更灵活）。
+# - PIECEWISE 优先捕获以确保其更大的激活缓冲区先分配，FULL 图可复用已有的图池内存。
 class CudaGraphManager:
     def __init__(
         self,
@@ -97,6 +109,8 @@ class CudaGraphManager:
         self._capture_descs: dict[CUDAGraphMode, list[BatchExecutionDescriptor]] = {}
         self._init_candidates()
 
+    # 构建按 token 数索引的候选描述符表：对于每个可能的 token 数，
+    # 找到最小的能容纳它的 capture_size 对应的描述符列表，实现快速调度。
     def _init_candidates(self) -> None:
         """Build priority-ordered candidate lists for each token count."""
         capture_sizes = self.compilation_config.cudagraph_capture_sizes
@@ -221,6 +235,8 @@ class CudaGraphManager:
                         self.graphs[desc] = graph
         self._graphs_captured = True
 
+    # 根据当前批次参数从候选表中查找最优的 CUDA graph 描述符。
+    # 如果没有匹配的图，则回退到 eager 模式（CUDAGraphMode.NONE）。
     def dispatch(
         self,
         num_reqs: int,
@@ -236,6 +252,8 @@ class CudaGraphManager:
             cg_mode=CUDAGraphMode.NONE, num_tokens=num_tokens, num_reqs=num_reqs
         )
 
+    # 回放已捕获的 FULL 模式 CUDA graph。回放前同步 offloader 的拷贝流，
+    # 防止从 eager/piecewise 模式切换到 FULL 模式时出现数据竞争。
     def run_fullgraph(self, desc: BatchExecutionDescriptor):
         """Replay a captured FULL cudagraph."""
         assert desc.cg_mode == CUDAGraphMode.FULL, (
@@ -252,6 +270,9 @@ class CudaGraphManager:
         self.graphs[desc].replay()
 
 
+# 模型专用的 CUDA Graph 管理器：继承 CudaGraphManager，增加了模型前向传播的
+# 输入准备和 hidden states 管理逻辑。捕获时自动创建 hidden_states 缓冲区，
+# 回放时从缓冲区中截取有效部分返回。
 class ModelCudaGraphManager(CudaGraphManager):
     """CudaGraphManager with model-specific capture and hidden state management."""
 
@@ -354,6 +375,8 @@ class ModelCudaGraphManager(CudaGraphManager):
         return hidden_states, [x[: desc.num_tokens] for x in self.aux_hidden_states]
 
 
+# 为 CUDA graph 捕获准备虚拟输入：创建虚拟批次、块表和 slot mapping，
+# 并构建注意力元数据，使得捕获时的输入形状与实际推理时一致。
 def prepare_inputs_to_capture(
     num_reqs: int,
     num_tokens: int,

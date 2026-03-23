@@ -34,17 +34,20 @@ from vllm.utils.argparse_utils import FlexibleArgumentParser
         (json.loads, '{"foo":1,"bar":2}', {"foo": 1, "bar": 2}),
     ],
 )
+# [中文注释] 参数化测试parse_type对int/float/str/json类型的解析
 def test_parse_type(type, value, expected):
     parse_type_func = parse_type(type)
     assert parse_type_func(value) == expected
 
 
+# [中文注释] 测试optional_type将"None"字符串解析为None值
 def test_optional_type():
     optional_type_func = optional_type(int)
     assert optional_type_func("None") is None
     assert optional_type_func("42") == 42
 
 
+# [中文注释] 测试is_type函数判断类型提示是否匹配指定类型
 @pytest.mark.parametrize(
     ("type_hint", "type", "expected"),
     [
@@ -71,6 +74,7 @@ def test_is_type(type_hint, type, expected):
         ({str, Literal["x", "y"]}, Literal, True),
     ],
 )
+# [中文注释] 测试contains_type函数检查类型集合中是否包含指定类型
 def test_contains_type(type_hints, type, expected):
     assert contains_type(type_hints, type) == expected
 
@@ -83,6 +87,7 @@ def test_contains_type(type_hints, type, expected):
         ({str, Literal["x", "y"]}, Literal, Literal["x", "y"]),
     ],
 )
+# [中文注释] 测试get_type函数从类型集合中获取匹配的类型
 def test_get_type(type_hints, type, expected):
     assert get_type(type_hints, type) == expected
 
@@ -95,6 +100,7 @@ def test_get_type(type_hints, type, expected):
         ({Literal[1, "a"]}, Exception),
     ],
 )
+# [中文注释] 测试literal_to_kwargs将Literal类型转换为argparse参数字典
 def test_literal_to_kwargs(type_hints, expected):
     context: AbstractContextManager[object] = nullcontext()
     if expected is Exception:
@@ -103,12 +109,14 @@ def test_literal_to_kwargs(type_hints, expected):
         assert literal_to_kwargs(type_hints) == expected
 
 
+# [中文注释] 嵌套配置类，用于测试CLI参数解析中的嵌套配置支持
 @config
 class NestedConfig:
     field: int = 1
     """field"""
 
 
+# [中文注释] 虚拟配置类：覆盖bool/optional/literal/tuple/list/set/dict等CLI参数类型
 @config
 class DummyConfig:
     regular_bool: bool = True
@@ -144,6 +152,7 @@ class DummyConfig:
         (DummyConfig, True),
     ],
 )
+# [中文注释] 测试is_not_builtin区分内置类型和自定义配置类型
 def test_is_not_builtin(type_hint, expected):
     assert is_not_builtin(type_hint) == expected
 
@@ -158,10 +167,12 @@ def test_is_not_builtin(type_hint, expected):
     ],
     ids=["Annotated", "or_None", "Annotated_or_None", "or_None_Annotated"],
 )
+# [中文注释] 测试get_type_hints解析Annotated和Optional类型提示
 def test_get_type_hints(type_hint, expected):
     assert get_type_hints(type_hint) == expected
 
 
+# [中文注释] 测试get_kwargs为DummyConfig各字段生成正确的argparse参数配置
 def test_get_kwargs():
     kwargs = get_kwargs(DummyConfig)
     print(kwargs)
@@ -210,6 +221,7 @@ def test_get_kwargs():
         ),
     ],
 )
+# [中文注释] 测试--media-io-kwargs CLI参数的JSON解析
 def test_media_io_kwargs_parser(arg, expected):
     parser = EngineArgs.add_cli_args(FlexibleArgumentParser())
     if arg is None:
@@ -232,6 +244,7 @@ def test_media_io_kwargs_parser(arg, expected):
         (["-O3"], "3"),
     ],
 )
+# [中文注释] 测试-O优化级别参数的解析（空格分隔和连写格式）
 def test_optimization_level(args, expected):
     """
     Test space-separated optimization levels (-O 1, -O 2, -O 3) map to
@@ -252,6 +265,7 @@ def test_optimization_level(args, expected):
         (["-cc.mode=3"], 3),
     ],
 )
+# [中文注释] 测试-cc.mode编译配置模式参数解析
 def test_mode_parser(args, expected):
     """
     Test compilation config modes (-cc.mode=int) map to compilation_config.
@@ -261,6 +275,7 @@ def test_mode_parser(args, expected):
     assert parsed_args.compilation_config.mode == expected
 
 
+# [中文注释] 测试CompilationConfig的默认值和JSON字符串CLI解析
 def test_compilation_config():
     parser = EngineArgs.add_cli_args(FlexibleArgumentParser())
 
@@ -296,6 +311,7 @@ def test_compilation_config():
     )
 
 
+# [中文注释] 测试AttentionConfig的CLI解析：点号表示法、简写和互斥检查
 def test_attention_config():
     from vllm.v1.attention.backends.registry import AttentionBackendEnum
 
@@ -429,6 +445,7 @@ def test_attention_config():
         engine_args.create_engine_config()
 
 
+# [中文注释] 测试enable_prefix_caching的默认值及启用/禁用标志
 def test_prefix_cache_default():
     parser = EngineArgs.add_cli_args(FlexibleArgumentParser())
     args = parser.parse_args([])
@@ -457,6 +474,7 @@ def test_prefix_cache_default():
         ('{"foo": {"bar": "baz"}}', {"foo": {"bar": "baz"}}, "mm-processor-kwargs"),
     ],
 )
+# [中文注释] 测试复合JSON参数（如mm-processor-kwargs）的CLI解析
 def test_composite_arg_parser(arg, expected, option):
     parser = EngineArgs.add_cli_args(FlexibleArgumentParser())
     if arg is None:
@@ -466,6 +484,7 @@ def test_composite_arg_parser(arg, expected, option):
     assert getattr(args, option.replace("-", "_")) == expected
 
 
+# [中文注释] 测试max_model_len的人类可读格式解析（k/m/g/t/K/M/G/T/auto/-1）
 def test_human_readable_model_len():
     # `exit_on_error` disabled to test invalid values below
     parser = EngineArgs.add_cli_args(FlexibleArgumentParser(exit_on_error=False))

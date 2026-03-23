@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试统一虚拟地址（UVA）功能：CPU pinned memory与CUDA视图之间的双向读写一致性
 import pytest
 import torch
 
@@ -13,6 +14,7 @@ CUDA_DEVICES = [
 
 @pytest.mark.skipif(not is_uva_available(), reason="UVA is not available.")
 @pytest.mark.parametrize("device", CUDA_DEVICES)
+# 测试CPU端写入pinned memory后通过CUDA视图读取的正确性
 def test_cpu_write(device):
     torch.set_default_device(device)
     cpu_tensor = torch.zeros(10, 10, device="cpu", pin_memory=True, dtype=torch.int32)
@@ -35,6 +37,7 @@ def test_cpu_write(device):
 
 @pytest.mark.skipif(not is_uva_available(), reason="UVA is not available.")
 @pytest.mark.parametrize("device", CUDA_DEVICES)
+# 测试GPU端通过CUDA视图写入后CPU端读取的正确性
 def test_gpu_write(device):
     torch.set_default_device(device)
     cpu_tensor = torch.zeros(10, 10, device="cpu", pin_memory=True, dtype=torch.int32)

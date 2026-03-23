@@ -36,6 +36,7 @@ class _TestConfig3:
         (_TestConfig3, "must use a single Literal"),
     ],
 )
+# [中文注释] 参数化测试@config装饰类的AST验证：必须有默认值、文档字符串和单一Literal类型
 def test_config(test_config, expected_error):
     tree = ast.parse(test_config)
     with pytest.raises(Exception, match=expected_error):

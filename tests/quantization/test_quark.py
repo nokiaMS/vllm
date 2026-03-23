@@ -26,6 +26,8 @@ from vllm.platforms import current_platform
 
 from .reference_mxfp4 import dq_mxfp4_torch, qdq_mxfp4_torch
 
+# 测试 Quark 量化框架（FP8/INT8/MXFP4）的模型加载、准确性验证和内核匹配
+
 # Minimum amd-quark version for MXFP4/OCP_MX tests (single source of truth).
 QUARK_MXFP4_MIN_VERSION = "0.8.99"
 

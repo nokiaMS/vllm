@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试EPD（编码器-预填充-解码）分离推理的正确性，对比基准和分离模式的输出
 """
 EPD Correctness Test
 
@@ -93,6 +94,7 @@ SAMPLE_PROMPTS_TEXT: list[dict] = [
 ]
 
 
+# [中文注释] 检查vLLM服务器是否可用，支持重试
 def check_vllm_server(url: str, timeout=5, retries=10) -> bool:
     """Check if the vLLM server is ready.
 
@@ -121,6 +123,7 @@ def check_vllm_server(url: str, timeout=5, retries=10) -> bool:
     return False
 
 
+# [中文注释] 执行聊天补全请求并返回生成文本
 def run_chat_completion(
     base_url: str,
     model_name: str,
@@ -151,6 +154,7 @@ def run_chat_completion(
     return completion.choices[0].message.content
 
 
+# [中文注释] 主函数：根据模式运行基准测试或分离推理对比测试
 def main():
     """Main test function."""
     parser = argparse.ArgumentParser(

@@ -31,6 +31,7 @@ from vllm.v1.metrics.perf import (
 )
 
 
+# [中文注释] Mock模型配置：实现解析器所需的getter方法，支持不同HF配置的FLOPS估算测试。
 class MockModelConfig:
     """Mock ModelConfig that implements the getter methods used by parsers."""
 
@@ -73,6 +74,7 @@ class MockModelConfig:
         return attr
 
 
+# [中文注释] 辅助函数：创建带并行配置的Mock VllmConfig对象。
 def create_mock_vllm_config(
     hf_config,
     model_dtype="bfloat16",
@@ -103,6 +105,7 @@ def create_mock_vllm_config(
 #### Parser Tests ####
 
 
+# [中文注释] 测试用例：验证BaseConfigParser正确解析模型配置参数。
 def test_base_config_parser():
     """Test BaseConfigParser extracts base model attributes correctly."""
     hf_config = Qwen3Config(
@@ -125,6 +128,7 @@ def test_base_config_parser():
     assert result.activation_byte_size == 2  # default activation size
 
 
+# [中文注释] 测试用例：验证带GQA（分组查询注意力）的注意力配置解析。
 def test_base_attention_config_parser_with_gqa():
     """Test BaseAttentionConfigParser with grouped query attention."""
     hf_config = Qwen3Config(
@@ -142,6 +146,7 @@ def test_base_attention_config_parser_with_gqa():
     assert result.head_dim == 128
 
 
+# [中文注释] 测试用例：验证不带GQA的注意力配置解析。
 def test_base_attention_config_parser_without_gqa():
     """
     Test BaseAttentionConfigParser defaults to MHA when num_key_value_heads not
@@ -161,6 +166,7 @@ def test_base_attention_config_parser_without_gqa():
     assert result.num_key_value_heads == 32
 
 
+# [中文注释] 测试用例：验证dense模型FFN配置解析。
 def test_base_ffn_config_parser_dense():
     """Test BaseFfnConfigParser for dense FFN."""
     hf_config = Qwen3Config(
@@ -179,6 +185,7 @@ def test_base_ffn_config_parser_dense():
     assert result.num_moe_layers == 0  # No MoE
 
 
+# [中文注释] 测试用例：验证MoE模型FFN配置解析。
 def test_base_ffn_config_parser_moe():
     """Test BaseFfnConfigParser for MoE FFN."""
     hf_config = Qwen3MoeConfig(
@@ -202,6 +209,7 @@ def test_base_ffn_config_parser_moe():
     assert result.num_moe_layers == 32  # All layers are MoE by default
 
 
+# [中文注释] 测试用例：验证交错MoE层步长解析器的正确性。
 def test_interleave_moe_layer_step_parser():
     """Test InterleaveMoeLayerStepParser correctly computes MoE layer count."""
     hf_config = Llama4Config(
@@ -220,6 +228,7 @@ def test_interleave_moe_layer_step_parser():
     assert result.num_moe_layers == 8
 
 
+# [中文注释] 测试用例：验证MoE层频率解析器的正确性。
 def test_moe_layer_freq_parser():
     """Test MoeLayerFreqParser correctly computes MoE layer count."""
     hf_config = DeepseekV3Config(
@@ -244,6 +253,7 @@ def test_moe_layer_freq_parser():
 #### ComponentMetrics Tests ####
 
 
+# [中文注释] 测试用例：验证注意力FLOPS随序列长度和批次大小线性缩放。
 def test_attention_metrics_scaling():
     """Test that attention metrics scale proportionally with model dimensions."""
     base_hf_config = Qwen3Config(
@@ -287,6 +297,7 @@ def test_attention_metrics_scaling():
     assert double_write == 2 * base_write
 
 
+# [中文注释] 测试用例：验证分组查询注意力（GQA）的FLOPS计算。
 def test_attention_metrics_grouped_query():
     """Test attention metrics handle grouped query attention correctly."""
     mha_hf_config = Qwen3Config(
@@ -318,6 +329,7 @@ def test_attention_metrics_grouped_query():
     assert gqa_read < mha_read
 
 
+# [中文注释] 测试用例：验证FFN FLOPS随token数线性缩放。
 def test_ffn_metrics_scaling():
     """Test FFN metrics scale proportionally with model dimensions."""
     base_hf_config = Qwen3Config(
@@ -347,6 +359,7 @@ def test_ffn_metrics_scaling():
     assert larger_flops == base_flops * 2
 
 
+# [中文注释] 测试用例：验证MoE与dense模型的FLOPS对比关系。
 def test_moe_metrics_vs_dense():
     """Test MoE metrics versus dense metrics."""
     dense_hf_config = Qwen3Config(
@@ -382,6 +395,7 @@ def test_moe_metrics_vs_dense():
     assert moe_flops == dense_flops * 2
 
 
+# [中文注释] 测试用例：验证unembed（输出投影）FLOPS随token数线性缩放。
 def test_unembed_metrics_scaling():
     """Test unembedding metrics scale with vocab size."""
     small_vocab_hf_config = Qwen3Config(
@@ -409,6 +423,7 @@ def test_unembed_metrics_scaling():
     assert large_flops == 2 * small_flops
 
 
+# [中文注释] 测试用例：验证prefill和decode阶段的FLOPS差异。
 def test_prefill_vs_decode_differences():
     """Test that prefill and decode have different memory access patterns."""
     hf_config = Qwen3Config(
@@ -434,6 +449,7 @@ def test_prefill_vs_decode_differences():
     assert prefill_read != decode_read
 
 
+# [中文注释] 测试用例：验证模型级别的FLOPS聚合（注意力+FFN+unembed）。
 def test_model_metrics_aggregation():
     """Test ModelMetrics correctly aggregates across components."""
     hf_config = Qwen3Config(
@@ -458,6 +474,7 @@ def test_model_metrics_aggregation():
     assert total_flops == sum(breakdown.values())
 
 
+# [中文注释] 测试用例：验证MoE专家激活数量与FLOPS的比例缩放关系。
 def test_moe_expert_activation_proportional_scaling():
     """Test that routed expert metrics scale proportionally with num_experts_per_tok."""
     base_moe_config = Qwen3MoeConfig(
@@ -537,6 +554,7 @@ def test_moe_expert_activation_proportional_scaling():
     assert two_expert_write_diff == 2 * one_expert_write_diff
 
 
+# [中文注释] 测试用例：验证FP8量化配置解析。
 def test_quantization_config_parser_fp8():
     """Test quantization parsers with fp8."""
 
@@ -556,6 +574,7 @@ def test_quantization_config_parser_fp8():
     assert ffn_result.weight_byte_size == 1  # fp8
 
 
+# [中文注释] 测试用例：验证MXFP4量化配置解析。
 def test_quantization_config_parser_mxfp4():
     """Test quantization parsers with mxfp4."""
 
@@ -575,6 +594,7 @@ def test_quantization_config_parser_mxfp4():
 #### Per-GPU Tests ####
 
 
+# [中文注释] 测试用例：验证张量并行下每GPU注意力FLOPS的计算。
 def test_attention_per_gpu_with_tensor_parallelism():
     """Test attention metrics with tensor parallelism - per_gpu vs global."""
     hf_config = Qwen3Config(
@@ -610,6 +630,7 @@ def test_attention_per_gpu_with_tensor_parallelism():
     assert global_write > per_gpu_write
 
 
+# [中文注释] 测试用例：验证流水线并行下每GPU注意力FLOPS的计算。
 def test_attention_per_gpu_with_pipeline_parallelism():
     """Test attention metrics with pipeline parallelism - per_gpu vs global."""
     hf_config = Qwen3Config(
@@ -638,6 +659,7 @@ def test_attention_per_gpu_with_pipeline_parallelism():
     assert global_read == 4 * per_gpu_read
 
 
+# [中文注释] 测试用例：验证张量并行下每GPU FFN FLOPS的计算。
 def test_ffn_per_gpu_with_tensor_parallelism():
     """Test FFN metrics with tensor parallelism - per_gpu vs global."""
     hf_config = Qwen3Config(
@@ -669,6 +691,7 @@ def test_ffn_per_gpu_with_tensor_parallelism():
     assert global_flops == 8 * per_gpu_flops
 
 
+# [中文注释] 测试用例：验证流水线并行下每GPU FFN FLOPS的计算。
 def test_ffn_per_gpu_with_pipeline_parallelism():
     """Test FFN metrics with pipeline parallelism - per_gpu vs global."""
     hf_config = Qwen3Config(
@@ -693,6 +716,7 @@ def test_ffn_per_gpu_with_pipeline_parallelism():
     assert global_flops == 6 * per_gpu_flops
 
 
+# [中文注释] 测试用例：验证专家并行下每GPU MoE FLOPS的计算。
 def test_moe_per_gpu_with_expert_parallelism():
     """
     Test MoE metrics with expert parallelism - verifies num_activated_experts bug fix.
@@ -751,6 +775,7 @@ def test_moe_per_gpu_with_expert_parallelism():
         assert ratio > 1
 
 
+# [中文注释] 测试用例：验证每GPU MoE专家激活的FLOPS核算。
 def test_moe_per_gpu_expert_activation_accounting():
     """
     Test that MoE correctly accounts for expert activations with small batch sizes.
@@ -806,6 +831,7 @@ def test_moe_per_gpu_expert_activation_accounting():
         assert large_input == 100 * small_input  # 1000/10 = 100x
 
 
+# [中文注释] 测试用例：验证张量并行下每GPU unembed FLOPS的计算。
 def test_unembed_per_gpu_with_tensor_parallelism():
     """Test unembed metrics with tensor parallelism - per_gpu vs global."""
     hf_config = Qwen3Config(
@@ -839,6 +865,7 @@ def test_unembed_per_gpu_with_tensor_parallelism():
     assert global_read_breakdown["weight"] == 8 * per_gpu_read_breakdown["weight"]
 
 
+# [中文注释] 测试用例：验证每GPU级别的模型FLOPS聚合。
 def test_model_metrics_per_gpu_aggregation():
     """Test ModelMetrics correctly aggregates per_gpu metrics across components."""
     hf_config = Qwen3Config(
@@ -881,6 +908,7 @@ def test_model_metrics_per_gpu_aggregation():
     assert ratio > 1  # Should be between PP and TP*PP depending on component mix
 
 
+# [中文注释] 测试用例：验证注意力头数不能被TP整除时的FLOPS计算处理。
 def test_attention_per_gpu_heads_not_evenly_divisible():
     """Test attention with heads not evenly divisible by TP."""
     hf_config = Qwen3Config(

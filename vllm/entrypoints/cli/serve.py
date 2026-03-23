@@ -115,6 +115,8 @@ class ServeSubcommand(CLISubcommand):
         else:
             # Single API server (this process).
             args.api_server_count = None
+
+            # 启动异步事件循环并持续运行。
             uvloop.run(run_server(args))
 
     def validate(self, args: argparse.Namespace) -> None:

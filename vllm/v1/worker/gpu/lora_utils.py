@@ -7,6 +7,9 @@ from vllm.lora.request import LoRARequest
 NO_LORA_ID = 0
 
 
+# LoRA 适配器状态管理类，跟踪每个请求对应的 LoRA 适配器。
+# 维护请求到 LoRA ID 的映射数组（lora_ids）和请求到 LoRA 请求对象的字典。
+# make_lora_inputs 方法生成 prompt 级和 token 级的 LoRA 映射，用于模型前向传播时选择正确的适配器。
 class LoraState:
     def __init__(self, max_num_reqs: int):
         self.lora_ids = np.zeros(max_num_reqs, dtype=np.int32)

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试异步调度的一致性，包括抢占、单/多进程执行器、预填充分块和推测解码的各种组合
 import os
 from itertools import repeat
 from typing import Any
@@ -39,6 +40,7 @@ default_params = dict(
 )
 
 
+# [中文注释] 测试不使用推测解码时，异步调度、抢占、单/多进程执行器和预填充分块组合的一致性
 @single_gpu_only
 def test_without_spec_decoding(
     sample_json_schema,
@@ -99,6 +101,7 @@ def test_without_spec_decoding(
     run_tests(monkeypatch, MODEL, test_configs, test_sampling_params)
 
 
+# [中文注释] 测试Eagle3推测解码与抢占、执行器、异步调度、预填充分块的一致性和接受率
 @single_gpu_only
 @large_gpu_mark(min_gb=16)
 def test_with_eagle3_spec_decoding(sample_json_schema, monkeypatch: pytest.MonkeyPatch):
@@ -150,6 +153,7 @@ def test_with_eagle3_spec_decoding(sample_json_schema, monkeypatch: pytest.Monke
     run_tests(monkeypatch, MTP_MODEL, test_configs, test_sampling_params)
 
 
+# [中文注释] 测试ngram_gpu推测解码在不同推测token数量、提示查找窗口大小和异步调度下的行为
 def test_with_ngram_gpu_spec_decoding(monkeypatch: pytest.MonkeyPatch):
     """Test ngram_gpu speculative decoding with different configurations.
 
@@ -186,6 +190,7 @@ def test_with_ngram_gpu_spec_decoding(monkeypatch: pytest.MonkeyPatch):
     run_tests(monkeypatch, MODEL, test_configs, [{}])
 
 
+# [中文注释] 运行所有测试配置组合，对比基准结果和各测试配置的输出、logprobs和接受率
 @dynamo_config.patch(cache_size_limit=16)
 def run_tests(
     monkeypatch: pytest.MonkeyPatch,
@@ -308,6 +313,7 @@ def run_tests(
         raise failure
 
 
+# [中文注释] 使用指定的模型和配置运行单次测试，返回测试配置、生成结果和接受率
 def run_test(
     model: str,
     test_str: str,
@@ -395,6 +401,7 @@ def run_test(
     return test_config, results, acceptance_rates
 
 
+# [中文注释] 比较两组请求的所有logprobs是否匹配
 def _all_logprobs_match(req_a, req_b) -> bool:
     return (
         req_a == req_b
@@ -407,6 +414,7 @@ def _all_logprobs_match(req_a, req_b) -> bool:
     )
 
 
+# [中文注释] 比较两个logprob字典是否在容差范围内匹配
 def _logprobs_match(lps_a: dict[int, Logprob], lps_b: dict[int, Logprob]) -> bool:
     rel_tol, abs_tol = 1e-3, 1e-6
     return (
@@ -421,12 +429,14 @@ def _logprobs_match(lps_a: dict[int, Logprob], lps_b: dict[int, Logprob]) -> boo
     )
 
 
+# [中文注释] 从度量指标中计算推测解码的接受率
 def _get_acceptance_rate(before: list[Metric], after: list[Metric]) -> float:
     draft = _get_count(before, after, "vllm:spec_decode_num_draft_tokens")
     accept = _get_count(before, after, "vllm:spec_decode_num_accepted_tokens")
     return accept / draft if draft > 0 else 0.0
 
 
+# [中文注释] 计算两次度量指标之间指定指标名的增量
 def _get_count(before: list[Metric], after: list[Metric], name: str) -> int:
     before_val = next(m.value for m in before if m.name == name)
     after_val = next(m.value for m in after if m.name == name)

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 综合测试 Chat Completion API，覆盖 logprobs、流式、结构化输出、LoRA、n 参数等场景
+
 # imports for structured outputs tests
 import json
 from collections import defaultdict
@@ -24,6 +26,7 @@ from vllm.sampling_params import SamplingParams
 MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
 
 
+# 下载 Zephyr LoRA 权重文件的 fixture
 @pytest.fixture(scope="module")
 def zephyr_lora_files():
     """Download zephyr LoRA files once per test session."""
@@ -32,6 +35,7 @@ def zephyr_lora_files():
     return snapshot_download(repo_id="typeof/zephyr-7b-beta-lora")
 
 
+# 启动带 LoRA 支持的远程 vLLM 服务器
 @pytest.fixture(scope="module")
 def server(zephyr_lora_files):
     args = [
@@ -63,6 +67,7 @@ async def client(server):
         yield async_client
 
 
+# 测试不请求 logprobs 时的基本聊天补全
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     # first test base model, then test loras
@@ -93,6 +98,7 @@ async def test_no_logprobs_chat(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     [MODEL_NAME, "zephyr-lora"],
 )
+# 测试 logprobs=0 时返回 logprobs 但不含 top_logprobs
 async def test_zero_logprobs_chat(client: openai.AsyncOpenAI, model_name: str):
     messages = [
         {"role": "system", "content": "you are a helpful assistant"},
@@ -119,6 +125,7 @@ async def test_zero_logprobs_chat(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     [MODEL_NAME, "zephyr-lora"],
 )
+# 测试请求指定数量 top_logprobs 的聊天补全
 async def test_some_logprobs_chat(client: openai.AsyncOpenAI, model_name: str):
     messages = [
         {"role": "system", "content": "you are a helpful assistant"},
@@ -145,6 +152,7 @@ async def test_some_logprobs_chat(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     [MODEL_NAME, "zephyr-lora"],
 )
+# 测试请求过多 logprobs 时返回错误
 async def test_too_many_chat_logprobs(client: openai.AsyncOpenAI, model_name: str):
     messages = [
         {"role": "system", "content": "you are a helpful assistant"},
@@ -187,6 +195,7 @@ async def test_too_many_chat_logprobs(client: openai.AsyncOpenAI, model_name: st
     "model_name, prompt_logprobs",
     [(MODEL_NAME, 1), (MODEL_NAME, 0), (MODEL_NAME, -1), (MODEL_NAME, None)],
 )
+# 测试 prompt logprobs 的返回
 async def test_prompt_logprobs_chat(
     client: openai.AsyncOpenAI, model_name: str, prompt_logprobs: int | None
 ):
@@ -223,6 +232,7 @@ async def test_prompt_logprobs_chat(
     "model_name",
     [MODEL_NAME],
 )
+# 测试多个 prompt logprobs 值的返回
 async def test_more_than_one_prompt_logprobs_chat(
     client: openai.AsyncOpenAI, model_name: str
 ):
@@ -254,6 +264,7 @@ async def test_more_than_one_prompt_logprobs_chat(
     "model_name",
     [MODEL_NAME, "zephyr-lora"],
 )
+# 测试单轮聊天会话的基本功能
 async def test_single_chat_session(client: openai.AsyncOpenAI, model_name: str):
     messages = [
         {"role": "system", "content": "you are a helpful assistant"},
@@ -299,6 +310,7 @@ async def test_single_chat_session(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     [MODEL_NAME, "zephyr-lora"],
 )
+# 测试流式聊天补全的输出完整性
 async def test_chat_streaming(client: openai.AsyncOpenAI, model_name: str):
     messages = [
         {"role": "system", "content": "you are a helpful assistant"},
@@ -345,6 +357,7 @@ async def test_chat_streaming(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     ["HuggingFaceH4/zephyr-7b-beta", "zephyr-lora"],
 )
+# 测试流式补全的 stream_options（含 include_usage）
 async def test_chat_completion_stream_options(
     client: openai.AsyncOpenAI, model_name: str
 ):
@@ -446,6 +459,7 @@ async def test_chat_completion_stream_options(
 
 
 @pytest.mark.asyncio
+# 测试选择型结构化输出（choice 格式）
 async def test_structured_outputs_choice_chat(
     client: openai.AsyncOpenAI,
     sample_structured_outputs_choices,
@@ -486,6 +500,7 @@ async def test_structured_outputs_choice_chat(
 
 
 @pytest.mark.asyncio
+# 测试 JSON 格式结构化输出
 async def test_structured_outputs_json_chat(
     client: openai.AsyncOpenAI,
     sample_json_schema,
@@ -528,6 +543,7 @@ async def test_structured_outputs_json_chat(
 
 
 @pytest.mark.asyncio
+# 测试正则表达式格式结构化输出
 async def test_structured_outputs_regex_chat(
     client: openai.AsyncOpenAI,
     sample_regex,
@@ -564,6 +580,7 @@ async def test_structured_outputs_regex_chat(
 
 
 @pytest.mark.asyncio
+# 测试结构化输出参数类型错误时返回错误
 async def test_structured_outputs_type_error(client: openai.AsyncOpenAI):
     messages = [
         {"role": "system", "content": "you are a helpful assistant"},
@@ -582,6 +599,7 @@ async def test_structured_outputs_type_error(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试选择型结构化输出与 logprobs 的组合
 async def test_structured_outputs_choice_chat_logprobs(
     client: openai.AsyncOpenAI, sample_structured_outputs_choices
 ):
@@ -613,6 +631,7 @@ async def test_structured_outputs_choice_chat_logprobs(
 
 
 @pytest.mark.asyncio
+# 测试 response_format 为 json_object 时的输出格式
 async def test_response_format_json_object(client: openai.AsyncOpenAI):
     for _ in range(2):
         resp = await client.chat.completions.create(
@@ -637,6 +656,7 @@ async def test_response_format_json_object(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试 response_format 为 json_schema 时的输出验证
 async def test_response_format_json_schema(client: openai.AsyncOpenAI):
     prompt = 'what is 1+1? The format is "result": 2'
     # Check that this prompt cannot lead to a valid JSON without json_schema
@@ -677,6 +697,7 @@ async def test_response_format_json_schema(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试 response_format 为 text 时的输出
 async def test_response_format_text(client: openai.AsyncOpenAI):
     for _ in range(2):
         resp = await client.chat.completions.create(
@@ -696,6 +717,7 @@ async def test_response_format_text(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试请求中允许额外字段（extra_body）
 async def test_extra_fields_allowed(client: openai.AsyncOpenAI):
     resp = await client.chat.completions.create(
         model=MODEL_NAME,
@@ -715,6 +737,7 @@ async def test_extra_fields_allowed(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试复杂消息内容格式（数组形式的 content）
 async def test_complex_message_content(client: openai.AsyncOpenAI):
     content = [
         {
@@ -738,6 +761,7 @@ async def test_complex_message_content(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试自定义角色消息的处理
 async def test_custom_role(client: openai.AsyncOpenAI):
     # Not sure how the model handles custom roles so we just check that
     # both string and complex message content are handled in the same way
@@ -772,6 +796,7 @@ async def test_custom_role(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试超大 seed 值的处理
 async def test_long_seed(client: openai.AsyncOpenAI):
     for seed in [torch.iinfo(torch.long).min - 1, torch.iinfo(torch.long).max + 1]:
         with pytest.raises(BadRequestError) as exc_info:
@@ -794,6 +819,7 @@ async def test_long_seed(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试 SageMaker 兼容的 /invocations 端点
 async def test_invocations(server: RemoteOpenAIServer, client: openai.AsyncOpenAI):
     messages = [
         {"role": "system", "content": "you are a helpful assistant"},
@@ -832,6 +858,7 @@ async def test_invocations(server: RemoteOpenAIServer, client: openai.AsyncOpenA
     "model_name",
     [MODEL_NAME],
 )
+# 测试 n 参数在非流式模式下生成多个选项
 async def test_chat_completion_n_parameter_non_streaming(
     client: openai.AsyncOpenAI, model_name: str
 ):
@@ -869,6 +896,7 @@ async def test_chat_completion_n_parameter_non_streaming(
     "model_name",
     [MODEL_NAME],
 )
+# 测试 n 参数在流式模式下生成多个选项
 async def test_chat_completion_n_parameter_streaming(
     client: openai.AsyncOpenAI, model_name: str
 ):
@@ -911,6 +939,7 @@ async def test_chat_completion_n_parameter_streaming(
     "model_name",
     [MODEL_NAME],
 )
+# 测试 n 参数与 seed 组合的确定性输出
 async def test_chat_completion_n_with_seed(client: openai.AsyncOpenAI, model_name: str):
     """Test that n parameter works correctly with seed parameter."""
     messages = [
@@ -943,6 +972,7 @@ async def test_chat_completion_n_with_seed(client: openai.AsyncOpenAI, model_nam
     "model_name",
     [MODEL_NAME],
 )
+# 测试 n=1 时的标准行为
 async def test_chat_completion_n_equals_1(client: openai.AsyncOpenAI, model_name: str):
     """Test that n=1 (default) still works correctly."""
     messages = [
@@ -964,6 +994,7 @@ async def test_chat_completion_n_equals_1(client: openai.AsyncOpenAI, model_name
 
 
 # Unit tests for n parameter in ChatCompletionRequest.to_sampling_params()
+# 测试 ChatCompletionRequest 的 n 参数到 SamplingParams 的映射
 def test_chat_completion_request_n_parameter_to_sampling_params():
     """Test that n parameter is correctly passed to SamplingParams."""
     # Test with n=3
@@ -983,6 +1014,7 @@ def test_chat_completion_request_n_parameter_to_sampling_params():
     assert sampling_params.n == 3, f"Expected n=3, got n={sampling_params.n}"
 
 
+# 测试 n 参数的默认值行为
 def test_chat_completion_request_n_parameter_default():
     """Test that n parameter defaults to 1."""
     request = ChatCompletionRequest(
@@ -1002,6 +1034,7 @@ def test_chat_completion_request_n_parameter_default():
     assert sampling_params.n == 1, f"Expected n=1 (default), got n={sampling_params.n}"
 
 
+# 测试 n 参数的各种值对 SamplingParams 的影响
 def test_chat_completion_request_n_parameter_various_values():
     """Test n parameter with various values."""
     for n_value in [1, 2, 5, 10]:

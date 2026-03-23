@@ -11,6 +11,9 @@ from vllm.model_executor.models.interfaces import SupportsEagle3, supports_eagle
 logger = init_logger(__name__)
 
 
+# 为 EAGLE3 模型设置辅助隐藏状态层。
+# EAGLE3 通过融合目标模型多个中间层的隐藏状态来提升草稿质量。
+# 优先从推测解码配置中读取辅助层 ID，若未配置则使用模型默认值。
 def set_eagle3_aux_hidden_state_layers(
     model: nn.Module,
     spec_config: SpeculativeConfig,
@@ -32,6 +35,8 @@ def set_eagle3_aux_hidden_state_layers(
     eagle3_model.set_aux_hidden_state_layers(aux_layers)
 
 
+# 从推测解码配置的 HuggingFace 配置中提取 EAGLE3 辅助层 ID 列表，
+# 若配置不存在或未指定则返回 None
 def get_eagle3_aux_layers_from_config(
     spec_config: SpeculativeConfig,
 ) -> tuple[int, ...] | None:

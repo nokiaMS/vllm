@@ -22,6 +22,7 @@ from vllm.tool_parsers.step3p5_tool_parser import Step3p5ToolParser
 MODEL = "stepfun-ai/Step-3.5-Flash"
 
 
+# [中文注释] 加载Step-3.5工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def step3p5_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL)

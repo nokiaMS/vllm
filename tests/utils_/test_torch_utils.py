@@ -10,6 +10,7 @@ from vllm.utils.torch_utils import (
 )
 
 
+# [中文注释] 测试无损类型转换：验证不同精度级别的dtype之间是否可以无损转换
 @pytest.mark.parametrize(
     ("src_dtype", "tgt_dtype", "expected_result"),
     [
@@ -47,6 +48,7 @@ def test_is_lossless_cast(src_dtype, tgt_dtype, expected_result):
     assert is_lossless_cast(src_dtype, tgt_dtype) == expected_result
 
 
+# [中文注释] 测试通用可广播dtype：验证多个dtype列表能否正确推导出共同的可广播dtype
 @pytest.mark.parametrize(
     ("dtypes", "expected_result"),
     [
@@ -60,6 +62,7 @@ def test_common_broadcastable_dtype(dtypes, expected_result):
     assert common_broadcastable_dtype(dtypes) == expected_result
 
 
+# [中文注释] 辅助函数：在多线程环境下验证主线程的CUDA流不会被子线程污染
 def _test_stream_thread(main_expected_stream: torch.cuda.Stream):
     import threading
 
@@ -98,6 +101,7 @@ def _test_stream_thread(main_expected_stream: torch.cuda.Stream):
             pytest.fail("Child thread failed to exit properly")
 
 
+# [中文注释] 测试多线程环境下current_stream的线程安全性：确保每个线程有独立的CUDA流
 def test_current_stream_multithread():
     if not torch.cuda.is_available():
         pytest.skip("CUDA not available")

@@ -17,6 +17,7 @@ TOP_KS = [2, 4, 6]
 NUM_EXPERTS = [8, 16, 64]
 
 
+# [中文注释] 设置EPLB（专家并行负载均衡）状态，用于路由测试
 def setup_eplb_state(enable_eplb: bool, global_num_experts: int) -> EplbLayerState:
     if not enable_eplb:
         return EplbLayerState()
@@ -47,6 +48,7 @@ def setup_eplb_state(enable_eplb: bool, global_num_experts: int) -> EplbLayerSta
     )
 
 
+# [中文注释] 创建路由测试数据：生成隐藏状态和路由logits
 def make_test_data(
     m: int, k: int, num_experts: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -55,6 +57,7 @@ def make_test_data(
     return hidden_states, logits
 
 
+# [中文注释] 创建专家评分校正偏置张量，用于偏置路由测试
 def make_e_score_correction_bias(
     e_score_correction_bias_val: float,
     num_experts: int,
@@ -65,6 +68,7 @@ def make_e_score_correction_bias(
     )
 
 
+# [中文注释] 断言路由结果接近：比较topk_weights和topk_ids（考虑排列差异）
 def assert_routing_results_close(
     topk_weights: torch.Tensor,
     topk_ids: torch.Tensor,
@@ -96,6 +100,7 @@ def assert_routing_results_close(
     )
 
 
+# [中文注释] 融合TopK路由基准实现：使用softmax/sigmoid计算路由权重
 def baseline_fused_topk(
     router_logits: torch.Tensor, top_k: int, renormalize: bool
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -118,6 +123,7 @@ def baseline_fused_topk(
     return topk_weights.to(torch.float32), topk_ids.to(torch.int32)
 
 
+# [中文注释] 带偏置的融合TopK路由基准实现
 def baseline_fused_topk_bias(
     router_logits: torch.Tensor,
     top_k: int,
@@ -159,6 +165,7 @@ def baseline_fused_topk_bias(
     return topk_weights.to(torch.float32), topk_ids.to(torch.int32)
 
 
+# [中文注释] 分组TopK路由基准实现：支持专家组内选择和缩放因子
 def baseline_grouped_topk(
     router_logits: torch.Tensor,
     top_k: int,
@@ -238,6 +245,7 @@ def baseline_grouped_topk(
     return topk_weights.to(torch.float32), topk_ids.to(torch.int32)
 
 
+# [中文注释] Llama4自定义路由基准实现
 def baseline_custom_llama4(
     router_logits: torch.Tensor, top_k: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -258,6 +266,7 @@ def baseline_custom_llama4(
 @pytest.mark.parametrize("global_num_experts", NUM_EXPERTS)
 @pytest.mark.parametrize("renormalize", [False, True])
 @pytest.mark.parametrize("enable_eplb", [False, True])
+# [中文注释] 测试路由工厂创建的FusedTopK路由器与基准实现的一致性
 def test_fused_topk(
     m: int,
     k: int,
@@ -299,6 +308,7 @@ def test_fused_topk(
 @pytest.mark.parametrize("enable_eplb", [False, True])
 @pytest.mark.parametrize("e_score_correction_bias_val", [0.9])
 @pytest.mark.parametrize("routed_scaling_factor", [1.0, 1.1])
+# [中文注释] 测试路由工厂创建的带偏置FusedTopK路由器的正确性
 def test_fused_topk_bias(
     m: int,
     k: int,
@@ -361,6 +371,7 @@ def test_fused_topk_bias(
 @pytest.mark.parametrize("e_score_correction_bias_val", [0.9])
 @pytest.mark.parametrize("routed_scaling_factor", [1.0, 1.1])
 @pytest.mark.parametrize("scoring_func", ["sigmoid", "softmax"])
+# [中文注释] 测试路由工厂创建的GroupedTopK路由器在不同评分函数下的正确性
 def test_grouped_topk(
     m: int,
     k: int,
@@ -425,6 +436,7 @@ def test_grouped_topk(
 @pytest.mark.parametrize("renormalize", [False, True])
 @pytest.mark.parametrize("enable_eplb", [False, True])
 @pytest.mark.parametrize("custom_routing_function", [Llama4MoE.custom_routing_function])
+# [中文注释] 测试路由工厂创建的Llama4自定义路由器的正确性
 def test_custom(
     m: int,
     k: int,

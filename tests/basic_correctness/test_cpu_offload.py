@@ -8,6 +8,7 @@ from ..utils import compare_two_settings
 
 @pytest.mark.parametrize("disable_pin_memory", [False, True])
 @pytest.mark.parametrize("disable_uva", [False, True])
+# [中文注释] 测试CPU卸载功能，参数化pin_memory和UVA设置，验证卸载前后输出一致性
 def test_cpu_offload(disable_pin_memory, disable_uva):
     env_vars = {
         "VLLM_WEIGHT_OFFLOADING_DISABLE_PIN_MEMORY": str(int(disable_pin_memory)),

@@ -39,6 +39,7 @@ from vllm.utils.deep_gemm import (
 BLOCK_SIZE = [128, 128]
 
 
+# [中文注释] 创建FP8块量化权重：生成w1、w2及其块量化缩放因子
 def make_block_quant_fp8_weights(
     e: int,
     n: int,
@@ -86,6 +87,7 @@ def make_block_quant_fp8_weights(
     return w1, w2, w1_s, w2_s
 
 
+# [中文注释] 执行单个DeepGEMM测试用例：创建输入并比较DeepGEMM与Triton的输出
 def run_single_case(m, n, k, topk, num_experts, block_size):
     """
     Run one (M,N,K) configuration on a single GPU and assert DeepGEMM ==
@@ -170,6 +172,7 @@ NUM_EXPERTS = [32]
 @pytest.mark.parametrize("topk", TOPKS)
 @pytest.mark.parametrize("num_experts", NUM_EXPERTS)
 @pytest.mark.skipif(not is_deep_gemm_supported(), reason="Requires deep_gemm kernels")
+# [中文注释] 参数化测试：比较DeepGEMM FP8内核与Triton后备实现在不同维度下的数值一致性
 def test_deepgemm_vs_triton(m, n, k, topk, num_experts, monkeypatch, workspace_init):
     with monkeypatch.context() as mp:
         mp.setenv("VLLM_USE_DEEP_GEMM", "1")

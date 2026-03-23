@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试ROCm平台上注意力后端选择器的正确性
 
 import pytest
 import torch
@@ -10,12 +11,14 @@ from vllm.v1.attention.backends.registry import AttentionBackendEnum
 from vllm.v1.attention.selector import _cached_get_attn_backend, get_attn_backend
 
 
+# 每个测试用例前清除注意力后端LRU缓存
 @pytest.fixture(autouse=True)
 def clear_cache():
     """Clear lru cache to ensure each test case runs without caching."""
     _cached_get_attn_backend.cache_clear()
 
 
+# 测试ROCm平台下标准注意力、Triton MLA和AITER MLA后端的选择逻辑
 @pytest.mark.skip(reason="Skipped for now. Should be revisited.")
 def test_selector(monkeypatch: pytest.MonkeyPatch):
     # Set the current platform to ROCm using monkeypatch

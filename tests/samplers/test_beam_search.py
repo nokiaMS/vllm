@@ -40,6 +40,7 @@ MM_BEAM_WIDTHS = [2]
 MODELS = ["TinyLlama/TinyLlama-1.1B-Chat-v1.0"]
 
 
+# [中文注释] 测试单条输入下beam search的HF与vLLM输出一致性
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("dtype", ["half"])
 @pytest.mark.parametrize("max_tokens", MAX_TOKENS)
@@ -85,6 +86,7 @@ def test_beam_search_single_input(
             )
 
 
+# [中文注释] 测试beam search在并发限制下的输出与无限制时一致
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("dtype", ["half"])
 @pytest.mark.parametrize("max_tokens", MAX_TOKENS)
@@ -147,6 +149,7 @@ def test_beam_search_with_concurrency_limit(
     assert correct
 
 
+# [中文注释] 测试beam search正确传递多模态数据（音频）并比较HF与vLLM输出
 @pytest.mark.parametrize("dtype", ["half"])
 @pytest.mark.parametrize("max_tokens", MAX_TOKENS)
 @pytest.mark.parametrize("beam_width", MM_BEAM_WIDTHS)

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Triton预填充注意力内核在因果和滑动窗口模式下的正确性
 
 import pytest
 import torch
@@ -8,6 +9,7 @@ import torch.nn.functional as F
 from vllm.v1.attention.ops.triton_prefill_attention import context_attention_fwd
 
 
+# 基于PyTorch SDPA的带掩码注意力参考实现（支持因果和滑动窗口）
 def ref_masked_attention(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -72,6 +74,7 @@ def ref_masked_attention(
     return output
 
 
+# 测试Triton预填充注意力内核在因果/非因果模式下与SDPA参考实现的一致性
 @pytest.mark.parametrize("B", [5])
 @pytest.mark.parametrize("max_seq_len", [1024])
 @pytest.mark.parametrize("H_Q", [32])
@@ -148,6 +151,7 @@ def test_context_attention(
     torch.testing.assert_close(o, o_ref, rtol=1e-2, atol=1e-2)
 
 
+# 测试Triton预填充注意力内核在双向滑动窗口配置下与参考实现的一致性
 @pytest.mark.parametrize("B", [4])
 @pytest.mark.parametrize("max_seq_len", [1024])
 @pytest.mark.parametrize("H_Q", [32])

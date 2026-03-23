@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试多种多模态模型在不同 ViT 注意力后端下的生成功能
 """
 Consolidated test for ViT attention backend functionality across multiple models.
 

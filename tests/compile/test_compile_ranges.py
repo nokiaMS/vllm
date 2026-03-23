@@ -27,6 +27,7 @@ BATCH_SIZE = 64
 MLP_SIZE = 128
 
 
+# 编译范围测试用的简单模型
 @support_torch_compile
 class TestModel(nn.Module):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = "", **kwargs) -> None:
@@ -41,6 +42,7 @@ class TestModel(nn.Module):
         return x
 
 
+# 在推理模式下运行模型，依次使用不同批大小触发编译
 @torch.inference_mode
 def run_model(vllm_config: VllmConfig, model: nn.Module, batch_sizes: list[int]):
     with set_forward_context({}, vllm_config=vllm_config):
@@ -49,6 +51,7 @@ def run_model(vllm_config: VllmConfig, model: nn.Module, batch_sizes: list[int])
             model(torch.randn(batch_size, MLP_SIZE))
 
 
+# 后梯度 pass 检查器，验证编译范围在预期列表中
 class PostGradRangeChecker(InductorPass):
     def __init__(self, ranges: list[Range]):
         self.ranges = ranges
@@ -66,6 +69,7 @@ class PostGradRangeChecker(InductorPass):
         return InductorPass.hash_dict(state)
 
 
+# 测试编译范围（compile_ranges_endpoints + compile_sizes）的划分和编译次数
 def test_compile_ranges(use_fresh_inductor_cache):
     post_grad_range_checker = PostGradRangeChecker(
         [
@@ -108,6 +112,7 @@ def test_compile_ranges(use_fresh_inductor_cache):
         assert post_grad_range_checker.num_calls == 6
 
 
+# 测试 CompilationConfig.get_compile_ranges() 返回正确的范围列表
 def test_compile_config_get_compile_ranges():
     compilation_config = CompilationConfig(
         compile_ranges_endpoints=[8, 32],
@@ -127,6 +132,7 @@ def test_compile_config_get_compile_ranges():
     ]
 
 
+# 后梯度 pass 检查器，验证 compile_sizes 产生静态形状而 compile_ranges 保留动态形状
 class PostGradStaticShapeChecker(InductorPass):
     """Asserts that compile_sizes entries produce graphs with fully concrete
     (non-symbolic) shapes, and compile_ranges entries have symbolic shapes."""
@@ -168,6 +174,7 @@ class PostGradStaticShapeChecker(InductorPass):
         return InductorPass.hash_dict(state)
 
 
+# 验证 compile_sizes 编译时产生完全具体的形状，compile_ranges 保留符号形状
 def test_compile_sizes_produce_static_shapes(use_fresh_inductor_cache):
     """Verify that compile_sizes entries are compiled with fully concrete
     shapes (no SymInts), while compile_ranges entries retain dynamic shapes."""
@@ -209,6 +216,7 @@ def test_compile_sizes_produce_static_shapes(use_fresh_inductor_cache):
     )
 
 
+# 测试 Inductor 缓存在相同编译范围下的复用（第二次运行不触发后梯度 pass）
 def test_inductor_cache_compile_ranges(monkeypatch, use_fresh_inductor_cache):
     # To force multiple compilations, we disable the compile cache
     monkeypatch.setenv("VLLM_DISABLE_COMPILE_CACHE", "1")

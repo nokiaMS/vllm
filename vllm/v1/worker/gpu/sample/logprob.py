@@ -7,6 +7,10 @@ from vllm.triton_utils import tl, triton
 from vllm.v1.outputs import LogprobsTensors
 
 
+# Triton Top-K Log-Softmax 内核
+# 仅对指定的 top-k 个 token 计算 log-softmax 值，而非对整个词表进行 softmax
+# 算法：两遍扫描词表——第一遍求全局最大值，第二遍求 log-sum-exp，然后仅对 top-k token 计算 log 概率
+# 这种方式节省显存，避免具象化完整的 logprobs 张量
 @triton.jit
 def _topk_log_softmax_kernel(
     output_ptr,
@@ -49,6 +53,8 @@ def _topk_log_softmax_kernel(
     tl.store(output_ptr + req_idx * topk + k_offset, o, mask=k_mask)
 
 
+# Triton 排名计算内核
+# 计算采样 token 在 logits 分布中的排名（有多少 token 的 logit 值大于等于它）
 @triton.jit
 def _ranks_kernel(
     output_ptr,
@@ -72,6 +78,7 @@ def _ranks_kernel(
     tl.store(output_ptr + req_idx, n)
 
 
+# 计算给定 token 的 log 概率值，调用 top-k log-softmax 内核
 def compute_token_logprobs(
     logits: torch.Tensor, token_ids: torch.Tensor
 ) -> torch.Tensor:
@@ -92,6 +99,9 @@ def compute_token_logprobs(
     return logprobs
 
 
+# 计算 top-k logprobs 的主入口函数
+# 将采样 token 与 top-k token 合并，计算它们的 log 概率和采样 token 的排名
+# 返回 LogprobsTensors 包含 token ID、log 概率值和排名信息
 def compute_topk_logprobs(
     logits: torch.Tensor,
     num_logprobs: int,

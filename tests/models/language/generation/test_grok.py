@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试Grok-2模型使用dummy权重和缩小配置的生成功能
+
 import pytest
 
 from ...utils import dummy_hf_overrides

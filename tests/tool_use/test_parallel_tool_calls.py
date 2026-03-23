@@ -20,6 +20,7 @@ from .utils import (
 # may be added in the future. e.g. llama 3.1 models are not designed to support
 # parallel tool calls.
 @pytest.mark.asyncio
+# [中文注释] 测试模型生成并行工具调用（非流式和流式），验证同时返回两个天气查询工具调用
 async def test_parallel_tool_calls(
     client: openai.AsyncOpenAI, server_config: ServerConfig
 ):
@@ -147,6 +148,7 @@ async def test_parallel_tool_calls(
 # test: providing parallel tool calls back to the model to get a response
 # (streaming/not)
 @pytest.mark.asyncio
+# [中文注释] 测试将并行工具调用结果回传模型后获取文本响应（非流式和流式）
 async def test_parallel_tool_calls_with_results(
     client: openai.AsyncOpenAI, server_config: ServerConfig
 ):
@@ -215,6 +217,7 @@ async def test_parallel_tool_calls_with_results(
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试parallel_tool_calls=False时只返回一个工具调用（非流式和流式）
 async def test_parallel_tool_calls_false(client: openai.AsyncOpenAI):
     """
     Ensure only one tool call is returned when parallel_tool_calls is False.

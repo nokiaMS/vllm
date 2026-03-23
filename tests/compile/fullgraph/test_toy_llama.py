@@ -35,6 +35,7 @@ from ...utils import create_new_process_for_each_test
 from .. import silly_attention  # noqa: F401
 
 
+# 简化的 Llama 模型配置，支持可推导（tractable）初始化
 @dataclass
 class LlamaConfig:
     hidden_size: int = 128
@@ -60,6 +61,7 @@ class LlamaConfig:
         assert self.mlp_size >= self.hidden_size
 
 
+# Llama MLP 层，tractable 初始化时相当于逐元素平方
 class LlamaMLP(nn.Module):
     def __init__(self, config: LlamaConfig) -> None:
         super().__init__()
@@ -99,6 +101,7 @@ class LlamaMLP(nn.Module):
         return x
 
 
+# Llama 注意力层，使用 silly attention 替代真实注意力
 class LlamaAttention(nn.Module):
     def __init__(self, config: LlamaConfig) -> None:
         super().__init__()
@@ -156,6 +159,7 @@ class LlamaAttention(nn.Module):
         return output
 
 
+# Llama 解码器层，包含注意力和 MLP，支持残差连接
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig) -> None:
         super().__init__()
@@ -197,6 +201,7 @@ class LlamaDecoderLayer(nn.Module):
         return hidden_states, residual
 
 
+# 完整的 toy Llama 模型，支持 torch.compile 分段编译
 @support_torch_compile
 class LlamaModel(nn.Module):
     def __init__(
@@ -231,6 +236,7 @@ class LlamaModel(nn.Module):
         return hidden_states
 
 
+# 手动计算 tractable 初始化下模型的期望输出，用于验证编译正确性
 def tractable_computation(
     input_ids: torch.Tensor,
     positions: torch.Tensor,
@@ -337,6 +343,7 @@ def run_model(llama_config, compile_config: CompilationConfig) -> torch.Tensor:
     ],
 )
 @create_new_process_for_each_test("spawn")
+# 比较 toy Llama 在无编译、无分割编译、有分割编译下的输出一致性
 def test_toy_llama(
     backend: str, use_inductor_graph_partition: bool, monkeypatch, tmp_path
 ):
@@ -426,6 +433,7 @@ def test_toy_llama(
 
 
 @torch.inference_mode
+# 基准测试：比较 eager、full CUDA graph、piecewise CUDA graph 的延迟
 def benchmark():
     from triton.testing import do_bench
 

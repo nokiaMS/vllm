@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试因果一维卷积（causal conv1d）内核的正确性，
+# 覆盖状态更新、批量索引收集、变长序列和PAD_SLOT_ID填充等场景
 
 import pytest
 import torch
@@ -15,6 +17,7 @@ from vllm.utils.torch_utils import set_random_seed
 from vllm.v1.attention.backends.utils import PAD_SLOT_ID
 
 
+# 因果一维卷积的参考实现，支持初始状态和SiLU激活
 def causal_conv1d_ref(
     x: torch.Tensor,
     weight: torch.Tensor,
@@ -57,6 +60,7 @@ def causal_conv1d_ref(
     return (out, None) if not return_final_states else (out, final_states_out)
 
 
+# 因果一维卷积状态更新的参考实现，支持循环缓冲区
 def causal_conv1d_update_ref(
     x, conv_state, weight, bias=None, activation=None, cache_seqlens=None
 ):
@@ -148,6 +152,7 @@ def causal_conv1d_opcheck_fn(
 @pytest.mark.parametrize("seqlen", [1])
 @pytest.mark.parametrize("width", [4])
 @pytest.mark.parametrize("dim", [2048, 2048 + 16, 4096])
+# 测试因果一维卷积状态更新内核的基本正确性
 def test_causal_conv1d_update(dim, width, seqlen, has_bias, silu_activation, itype):
     device = "cuda"
     rtol, atol = (3e-4, 1e-3) if itype == torch.float32 else (3e-3, 5e-3)
@@ -192,6 +197,7 @@ def test_causal_conv1d_update(dim, width, seqlen, has_bias, silu_activation, ity
 # tests correctness in case subset of the sequences are padded
 @pytest.mark.parametrize("with_padding", [True, False])
 @pytest.mark.parametrize("batch_size", [3])
+# 测试带批量索引收集和PAD填充的因果一维卷积状态更新
 def test_causal_conv1d_update_with_batch_gather(
     batch_size, with_padding, dim, width, seqlen, has_bias, silu_activation, itype
 ):
@@ -269,6 +275,7 @@ def test_causal_conv1d_update_with_batch_gather(
 @pytest.mark.parametrize("dim", [64, 4096])
 @pytest.mark.parametrize("with_padding", [True, False])
 @pytest.mark.parametrize("batch", [4, 10])
+# 测试变长序列下因果一维卷积的正确性，包含初始状态和PAD处理
 def test_causal_conv1d_varlen(
     batch, with_padding, dim, seqlen, width, has_bias, silu_activation, itype
 ):

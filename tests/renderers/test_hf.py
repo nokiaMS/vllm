@@ -76,6 +76,7 @@ TEST_MESSAGES = [
 ASSISTANT_MESSAGE_TO_CONTINUE = {"role": "assistant", "content": "The capital of"}
 
 
+# [中文注释] 测试从jinja文件加载聊天模板内容
 def test_load_chat_template():
     # Testing chatml template
     template_content = load_chat_template(chat_template=chatml_jinja_path)
@@ -90,6 +91,7 @@ def test_load_chat_template():
     )
 
 
+# [中文注释] 测试不存在的文件路径模板加载应抛出ValueError
 def test_no_load_chat_template_filelike():
     # Testing chatml template
     template = "../../examples/does_not_exist"
@@ -98,6 +100,7 @@ def test_no_load_chat_template_filelike():
         load_chat_template(chat_template=template)
 
 
+# [中文注释] 测试直接传入Jinja模板字符串时返回原样
 def test_no_load_chat_template_literallike():
     # Testing chatml template
     template = "{{ messages }}"
@@ -115,6 +118,7 @@ def test_no_load_chat_template_literallike():
     ],
 )
 @pytest.mark.parametrize("use_tools", [True, False])
+# [中文注释] 参数化测试聊天模板解析，验证str/dict类型模板和工具配置的正确处理
 def test_resolve_chat_template(sample_json_schema, model, use_tools):
     """checks that chat_template is a dict type for HF models."""
     model_info = HF_EXAMPLE_MODELS.find_hf_info(model)
@@ -188,6 +192,7 @@ def test_resolve_chat_template(sample_json_schema, model, use_tools):
         ),
     ],
 )
+# [中文注释] 测试聊天模板kwargs解析，验证未知参数过滤和HF基础参数透传
 def test_resolve_chat_template_kwargs(sample_json_schema, model, expected_kwargs):
     """checks that chat_template is a dict type for HF models."""
     model_info = HF_EXAMPLE_MODELS.find_hf_info(model)
@@ -299,6 +304,7 @@ def test_resolve_chat_template_kwargs(sample_json_schema, model, expected_kwargs
     assert "unknown_param" not in resolved_mock
 
 
+# [中文注释] 测试模板名称解析为实际Jinja内容
 def test_resolve_chat_template_resolves_name():
     """When chat_template is a name, resolve_chat_template should return
     the actual Jinja content so that kwargs detection works correctly."""
@@ -321,6 +327,7 @@ def test_resolve_chat_template_resolves_name():
     tokenizer.get_chat_template.assert_called_once_with("tool_use", tools=None)
 
 
+# [中文注释] 测试模板名称解析后kwargs不被静默丢弃
 def test_resolve_chat_template_kwargs_with_template_name():
     """Ensures template kwargs are not silently dropped when chat_template
     was originally a template name that has been resolved to Jinja content."""
@@ -368,6 +375,7 @@ def test_resolve_chat_template_kwargs_with_template_name():
         ("meta-llama/Llama-Guard-3-1B", "openai"),
     ],
 )
+# [中文注释] 测试HF定义的聊天模板的内容格式自动检测（string/openai）
 def test_resolve_content_format_hf_defined(model, expected_format):
     model_info = HF_EXAMPLE_MODELS.find_hf_info(model)
     model_info.check_available_online(on_fail="skip")
@@ -428,6 +436,7 @@ def test_resolve_content_format_hf_defined(model, expected_format):
         ("Qwen/Qwen-VL-Chat", "string"),
     ],
 )
+# [中文注释] 测试无默认模板时的内容格式回退检测
 def test_resolve_content_format_fallbacks(model, expected_format):
     model_info = HF_EXAMPLE_MODELS.find_hf_info(model)
     model_info.check_available_online(on_fail="skip")
@@ -500,6 +509,7 @@ def test_resolve_content_format_fallbacks(model, expected_format):
         ("tool_chat_template_mistral.jinja", "string"),
     ],
 )
+# [中文注释] 测试examples目录下各种Jinja模板文件的内容格式检测
 def test_resolve_content_format_examples(template_path, expected_format):
     model = "Qwen/Qwen2-VL-2B-Instruct"  # Dummy
     model_config = ModelConfig(
@@ -537,6 +547,7 @@ def test_resolve_content_format_examples(template_path, expected_format):
     "model,template,add_generation_prompt,continue_final_message,expected_output",
     MODEL_TEMPLATE_GENERATION_OUTPUT,
 )
+# [中文注释] 参数化测试生成提示的正确性，验证add_generation_prompt和continue_final_message的效果
 def test_get_gen_prompt(
     model, template, add_generation_prompt, continue_final_message, expected_output
 ):

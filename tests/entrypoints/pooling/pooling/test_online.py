@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# [通用池化在线测试模块：验证 pooling 端点的完整功能，包括请求格式、批量处理、聊天模板、多种编码格式及 invocations 端点]
+
 import base64
 import json
 
@@ -26,6 +28,7 @@ input_text = "The chef prepared a delicious meal."
 input_tokens = [1, 918, 29981, 10166, 395, 18067, 15265, 281]
 
 
+# [测试夹具：启动 internlm2-1_8b-reward 模型的远程池化服务器]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -46,6 +49,7 @@ def server():
         yield remote_server
 
 
+# [测试基础功能：验证 /v1/models 和 /tokenize 端点]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_basic(server: RemoteOpenAIServer, model_name: str):
     # test /v1/models
@@ -61,6 +65,7 @@ def test_basic(server: RemoteOpenAIServer, model_name: str):
     assert response.json()["tokens"] == input_tokens
 
 
+# [测试池化请求：验证字符串和 token 列表输入的池化输出]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_completion_request(server: RemoteOpenAIServer, model_name: str):
@@ -95,6 +100,7 @@ def test_completion_request(server: RemoteOpenAIServer, model_name: str):
     assert poolings.usage.total_tokens == len(input_tokens)
 
 
+# [测试批量池化请求：验证多条文本和 token 列表的批量池化处理]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_completion_request_batched(server: RemoteOpenAIServer, model_name: str):
     N = 10
@@ -134,6 +140,7 @@ def test_completion_request_batched(server: RemoteOpenAIServer, model_name: str)
     assert poolings.usage.total_tokens == len(input_tokens) * N
 
 
+# [测试聊天格式池化请求：验证聊天模板应用及 add_generation_prompt、continue_final_message 等参数]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_chat_request(server: RemoteOpenAIServer, model_name: str):
@@ -255,6 +262,7 @@ async def test_chat_request(server: RemoteOpenAIServer, model_name: str):
     )
 
 
+# [测试 base64 编码池化：验证 float、base64 和默认编码格式返回一致结果]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_batch_base64_pooling(server: RemoteOpenAIServer, model_name: str):
@@ -321,6 +329,7 @@ async def test_batch_base64_pooling(server: RemoteOpenAIServer, model_name: str)
     )
 
 
+# [测试 base64 编码的数据类型与字节序：验证不同 embed_dtype 和 endianness 组合的正确性]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_base64_embed_dtype_and_endianness(
@@ -368,6 +377,7 @@ async def test_base64_embed_dtype_and_endianness(
             )
 
 
+# [测试 bytes 编码的数据类型与字节序：验证不同 embed_dtype 和 endianness 组合下 bytes 格式正确性]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_bytes_embed_dtype_and_endianness(
@@ -416,6 +426,7 @@ async def test_bytes_embed_dtype_and_endianness(
             )
 
 
+# [测试 bytes_only 编码格式：验证无 metadata 头的纯二进制编码池化输出正确性]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_bytes_only_embed_dtype_and_endianness(
@@ -469,6 +480,7 @@ async def test_bytes_only_embed_dtype_and_endianness(
             )
 
 
+# [测试不支持的参数值：验证传入无效参数值时返回 400 错误]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("param_name", ["encoding_format", "embed_dtype", "endianness"])
@@ -490,6 +502,7 @@ async def test_params_not_supported(
     assert f"bad_{param_name}" in responses_base64.json()["error"]["message"]
 
 
+# [测试 invocations 端点（补全请求）：验证 invocations 与 pooling 端点结果一致]
 @pytest.mark.asyncio
 async def test_invocations_chat_request(server: RemoteOpenAIServer):
     request_args = {
@@ -522,6 +535,7 @@ async def test_invocations_chat_request(server: RemoteOpenAIServer):
         )
 
 
+# [测试 invocations 端点（聊天请求）：验证聊天格式下 invocations 与 pooling 端点结果一致]
 @pytest.mark.asyncio
 async def test_invocations_conversation_chat_request(server: RemoteOpenAIServer):
     messages = [

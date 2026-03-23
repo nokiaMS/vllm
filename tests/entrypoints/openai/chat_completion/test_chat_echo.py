@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 echo 和 continue_final_message 功能，包括 prompt logprobs 和 top logprobs
+
 from typing import NamedTuple
 
 import openai  # use the official client for correctness check
@@ -14,6 +16,7 @@ from vllm.config import ModelConfig
 MODEL_NAME = "Qwen/Qwen2-1.5B-Instruct"
 
 
+# 获取模型词汇表大小
 def get_vocab_size(model_name):
     config = ModelConfig(
         model=model_name,
@@ -59,6 +62,7 @@ class TestCase(NamedTuple):
         TestCase(model_name=MODEL_NAME, echo=False),
     ],
 )
+# 测试 echo 和 continue_final_message 参数的组合行为
 async def test_chat_session_with_echo_and_continue_final_message(
     client: openai.AsyncOpenAI, test_case: TestCase
 ):
@@ -91,6 +95,7 @@ async def test_chat_session_with_echo_and_continue_final_message(
 
 
 @pytest.mark.asyncio
+# 测试 prompt_logprobs=-1 时返回完整词汇表的概率
 async def test_prompt_logprobs(client: openai.AsyncOpenAI):
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -108,6 +113,7 @@ async def test_prompt_logprobs(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# 测试 top_logprobs 参数返回指定数量的最高概率 token
 async def test_top_logprobs(client: openai.AsyncOpenAI):
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},

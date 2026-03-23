@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试MLA KV缓存写入+旋转位置编码融合内核concat_and_cache_mla_rope_fused的正确性，
+# 覆盖auto/fp8缓存格式、neox风格、不同块大小和rope维度等场景
 """
 Tests for fused MLA KV-cache write and RoPE fused kernel
 """
@@ -32,6 +34,7 @@ from vllm.utils.torch_utils import set_random_seed
     [f"cuda:{i}" for i in range(1 if torch.accelerator.device_count() == 1 else 2)],
 )
 @torch.inference_mode()
+# 测试融合MLA KV缓存写入+RoPE内核与分步参考实现的数值一致性
 def test_concat_and_cache_mla_rope_fused(
     default_vllm_config,
     dtype: torch.dtype,

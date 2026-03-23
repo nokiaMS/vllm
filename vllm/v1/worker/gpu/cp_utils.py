@@ -5,6 +5,9 @@ import torch
 from vllm.triton_utils import tl, triton
 
 
+# 计算分布式上下文并行（DCP）中当前 rank 的本地序列长度。
+# 在 DCP 模式下，每个请求的 KV 缓存以交错（interleave）方式分片到多个 rank 上。
+# 此函数根据全局序列长度计算当前 rank 实际持有的 token 数量。
 def prepare_dcp_local_seq_lens(
     dcp_local_seq_lens: torch.Tensor,
     seq_lens: torch.Tensor,
@@ -32,6 +35,10 @@ def prepare_dcp_local_seq_lens(
     )
 
 
+# Triton 内核：计算 DCP 下每个请求在当前 rank 的本地序列长度。
+# 算法：将序列按 (dcp_size * cp_interleave) 分组为完整轮次，每个 rank 获得
+# rounds * cp_interleave 个 token，加上余数中属于当前 rank 的部分。
+# 超出 num_reqs 范围的位置填充为 0。
 @triton.jit
 def _dcp_local_seq_lens_kernel(
     out_ptr,

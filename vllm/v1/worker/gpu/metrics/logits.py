@@ -6,6 +6,9 @@ from torch._inductor.runtime.triton_helpers import libdevice
 from vllm.triton_utils import tl, triton
 
 
+# Triton内核：统计logits张量中每个请求对应行的NaN数量
+# 设计思路：每个Triton程序实例处理一个请求，以BLOCK_SIZE为步长遍历词表维度，
+# 累加NaN计数并写入输出张量
 @triton.jit
 def _num_nans_kernel(
     logits_ptr,
@@ -28,6 +31,8 @@ def _num_nans_kernel(
     tl.store(num_nans_ptr + req_idx, num_nans)
 
 
+# 计算logits张量中每个请求（每行）的NaN数量
+# 用于推理质量监控，检测模型输出中的异常值
 def get_num_nans(logits: torch.Tensor) -> torch.Tensor:
     num_reqs, vocab_size = logits.shape
     BLOCK_SIZE = 8192

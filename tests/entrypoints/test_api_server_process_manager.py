@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 API 服务器进程管理器（APIServerProcessManager）的初始化、关闭、
+# 进程故障检测及外部进程监控功能
+
 import multiprocessing
 import socket
 import threading
@@ -16,6 +19,7 @@ WORKER_RUNTIME_SECONDS = 0.5
 
 
 # Mock implementation of run_api_server_worker
+# 模拟 API 服务器工作进程，运行指定时长后退出
 def mock_run_api_server_worker(listen_address, sock, args, client_config=None):
     """Mock run_api_server_worker that runs for a specific time."""
     print(f"Mock worker started with client_config: {client_config}")
@@ -23,6 +27,7 @@ def mock_run_api_server_worker(listen_address, sock, args, client_config=None):
     print("Mock worker completed successfully")
 
 
+# 提供 API 服务器进程管理器的初始化参数 fixture
 @pytest.fixture
 def api_server_args():
     """Fixture to provide arguments for APIServerProcessManager."""

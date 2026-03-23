@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试注意力状态合并操作的Triton和CUDA内核实现的正确性和性能对比
 
 import pytest
 import torch
@@ -11,6 +12,7 @@ from vllm.v1.attention.ops.triton_merge_attn_states import (
 )
 
 
+# 基于PyTorch的注意力状态合并参考实现（论文2501.01005第2.2节的split-KV合并算法）
 # Naive PyTorch Implements section 2.2 of https://www.arxiv.org/pdf/2501.01005
 # can be used to combine partial attention results (in the split-KV case)
 def merge_attn_states_torch(
@@ -51,6 +53,7 @@ DTYPES = [torch.float32, torch.half, torch.bfloat16]
 all_case_info: list[tuple] = []
 
 
+# 生成Torch/Triton/CUDA三种实现的性能对比Markdown表格
 def generate_markdown_table():
     global all_case_info
     table_header = (
@@ -90,6 +93,7 @@ def generate_markdown_table():
         )
 
 
+# 测试Triton和CUDA注意力状态合并内核与PyTorch参考实现的正确性和性能
 @pytest.mark.parametrize("num_tokens", NUM_BATCH_TOKENS)
 @pytest.mark.parametrize("num_query_heads", NUM_QUERY_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)

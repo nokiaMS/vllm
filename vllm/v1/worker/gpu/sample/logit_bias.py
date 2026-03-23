@@ -12,6 +12,11 @@ MAX_NUM_LOGIT_BIAS_TOKENS = 1024
 MAX_NUM_STOP_TOKEN_IDS = 128
 
 
+# Logit 偏置状态管理类
+# 统一管理三种 logit 修改机制：
+# 1. allowed_token_ids（白名单）：仅允许指定 token，其余 token 的 logit 置为 -inf
+# 2. logit_bias（偏置）：对指定 token 的 logit 加上偏置值
+# 3. min_tokens（最小生成长度）：在达到最小长度前，将 stop token 的 logit 置为 -inf
 class LogitBiasState:
     def __init__(self, max_num_reqs: int, device: torch.device):
         self.max_num_reqs = max_num_reqs
@@ -49,6 +54,7 @@ class LogitBiasState:
         # Using any of the above.
         self.use_logit_bias = np.zeros(max_num_reqs, dtype=bool)
 
+    # 为新请求注册 logit 偏置相关参数，包括白名单 token、logit 偏置值和最小生成长度约束
     def add_request(
         self, req_idx: int, prompt_len: int, sampling_params: SamplingParams
     ) -> None:
@@ -106,6 +112,7 @@ class LogitBiasState:
 
         self.use_logit_bias[req_idx] = use_logit_bias
 
+    # 将暂存的偏置数据批量刷写到 GPU 显存
     def apply_staged_writes(self) -> None:
         self.num_allowed_token_ids.copy_to_uva()
         self.allowed_token_ids.apply_write()
@@ -118,6 +125,7 @@ class LogitBiasState:
         self.num_stop_token_ids.copy_to_uva()
         self.stop_token_ids.apply_write()
 
+    # 对 logits 原地应用所有偏置操作（白名单、偏置值、最小长度约束）
     def apply_logit_bias(
         self,
         logits: torch.Tensor,
@@ -144,6 +152,11 @@ class LogitBiasState:
         )
 
 
+# Triton logit 偏置内核
+# 在一个内核中依次执行三种操作：
+# 1. 白名单：先保存白名单 token 的 logit，将所有 logit 设为 -inf，再恢复白名单 token 的 logit
+# 2. 偏置：将指定 token 的 logit 加上对应的偏置值
+# 3. 最小长度：若当前位置未达到最小生成长度，将 stop token 的 logit 设为 -inf
 @triton.jit
 def _bias_kernel(
     logits_ptr,
@@ -235,6 +248,7 @@ def _bias_kernel(
         )
 
 
+# 偏置内核的入口函数，计算合适的 BLOCK_SIZE 并启动 Triton 内核
 def apply_logit_bias(
     logits: torch.Tensor,
     expanded_idx_mapping: torch.Tensor,

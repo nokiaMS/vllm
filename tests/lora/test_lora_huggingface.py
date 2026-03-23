@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试从 HuggingFace Hub 运行时下载 LoRA 适配器的功能
 
 import pytest
 

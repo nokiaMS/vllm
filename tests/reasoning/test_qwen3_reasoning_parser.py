@@ -23,6 +23,7 @@ REASONING_MODEL_NAMES = [
 ]
 
 
+# [中文注释] 加载多个Qwen3模型的分词器夹具：参数化测试不同Qwen3变体
 @pytest.fixture(scope="module", params=REASONING_MODEL_NAMES)
 def qwen3_tokenizer(request):
     return AutoTokenizer.from_pretrained(request.param)
@@ -202,6 +203,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试Qwen3多模型推理提取：覆盖Qwen3-0.6B、Qwen3.5、Qwen3-4B-Thinking等
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,
@@ -258,6 +260,7 @@ MULTI_TOKEN_DELTA_CASES = [
 ]
 
 
+# [中文注释] 测试多token增量的流式推理：模拟投机解码中单个delta包含多个token的情况
 @pytest.mark.parametrize(
     "deltas, expected_reasoning, expected_content", MULTI_TOKEN_DELTA_CASES
 )
@@ -299,6 +302,7 @@ THINKING_DISABLED_CASES = [
 ]
 
 
+# [中文注释] 测试enable_thinking=False时所有输出作为content返回
 @pytest.mark.parametrize(
     "output, expected_reasoning, expected_content", THINKING_DISABLED_CASES
 )

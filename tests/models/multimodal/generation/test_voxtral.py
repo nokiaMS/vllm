@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Voxtral 语音模型的多音频推理、在线服务及与 HF 参考输出的对比
 
 import json
 

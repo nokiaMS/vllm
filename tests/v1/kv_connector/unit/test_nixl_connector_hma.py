@@ -30,6 +30,7 @@ from .utils import (
     ],
 )
 @patch("vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector.current_platform")
+# [中文注释] 测试用例：验证HMA启用/禁用时sw_sizes（滑动窗口大小）的计算正确性。
 def test_sw_sizes(mock_platform, hma_enabled, expected_sw_sizes):
     """Test sw_sizes is correctly computed based on HMA enabled/disabled."""
     from vllm.distributed.kv_transfer.kv_connector.v1.nixl_connector import (
@@ -57,6 +58,7 @@ def test_sw_sizes(mock_platform, hma_enabled, expected_sw_sizes):
 
 
 @pytest.mark.cpu_test
+# [中文注释] 测试用例：验证HMA场景下逻辑块ID到内核块ID的映射正确性。
 def test_logical_to_kernel_block_ids_with_hma():
     """Test _logical_to_kernel_block_ids expands blocks when HMA is enabled.
 
@@ -86,6 +88,7 @@ def test_logical_to_kernel_block_ids_with_hma():
 
 
 @pytest.mark.parametrize("model_name, sw_size", [("google/gemma-3-1b-it", 512)])
+# [中文注释] 测试用例：验证HMA模式下SWA（滑动窗口注意力）组使用更少的块。
 def test_fewer_blocks_with_hma(monkeypatch, model_name, sw_size):
     """Test that a prefill instance returns fewer "remote blocks" for the SWA groups
     when sequence exceeds the sliding window.
@@ -160,6 +163,7 @@ def test_fewer_blocks_with_hma(monkeypatch, model_name, sw_size):
 
 
 @pytest.mark.cpu_test
+# [中文注释] 测试用例：验证NixlConnectorMetadata在HMA模式下块ID的数据结构正确性。
 def test_nixl_metadata_hma_block_ids_structure():
     """
     Test that NixlConnectorMetadata correctly stores block IDs for multiple

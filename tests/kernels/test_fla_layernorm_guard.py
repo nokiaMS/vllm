@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试FLA（Flash Linear Attention）库的LayerNorm和RMSNorm Triton内核，
+# 覆盖基础前向传播、门控机制、分组归一化、多维输入以及RMSNormGated的dtype保持等场景
 import pytest
 import torch
 import torch.nn.functional as F
@@ -13,6 +15,7 @@ from vllm.model_executor.layers.fla.ops.layernorm_guard import (
 from vllm.utils.torch_utils import set_random_seed
 
 
+# LayerNorm和RMSNorm的参考实现，支持门控和分组归一化
 def layer_norm_ref(
     x,
     weight,
@@ -106,6 +109,7 @@ SEEDS = [0, 42]
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("is_rms_norm", IS_RMS_NORM)
 @torch.inference_mode()
+# 测试无门控的基础LayerNorm/RMSNorm前向传播正确性
 def test_layer_norm_fwd_basic(
     num_tokens: int,
     hidden_size: int,
@@ -148,6 +152,7 @@ def test_layer_norm_fwd_basic(
 @pytest.mark.parametrize("norm_before_gate", NORM_BEFORE_GATE)
 @pytest.mark.parametrize("is_rms_norm", IS_RMS_NORM)
 @torch.inference_mode()
+# 测试带门控z张量的LayerNorm前向传播，含norm_before_gate选项
 def test_layer_norm_fwd_with_gate(
     num_tokens: int,
     hidden_size: int,
@@ -200,6 +205,7 @@ def test_layer_norm_fwd_with_gate(
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @pytest.mark.parametrize("is_rms_norm", IS_RMS_NORM)
 @torch.inference_mode()
+# 测试分组归一化模式下的LayerNorm前向传播
 def test_layer_norm_fwd_with_groups(
     num_tokens: int,
     hidden_size: int,
@@ -248,6 +254,7 @@ def test_layer_norm_fwd_with_groups(
 @pytest.mark.parametrize("num_tokens", [7, 63, 128, 513, 1024, 2049])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @torch.inference_mode()
+# 测试Triton内核中rows_per_block逻辑在各种token数量下的正确性
 def test_layer_norm_rows_per_block(
     num_tokens: int,
     dtype: torch.dtype,
@@ -275,6 +282,7 @@ def test_layer_norm_rows_per_block(
 
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @torch.inference_mode()
+# 测试内核对非连续（步进）输入张量的处理
 def test_strided_input(dtype: torch.dtype) -> None:
     """Test that the kernel handles non-contiguous (strided)
     inputs correctly."""
@@ -312,6 +320,7 @@ def test_strided_input(dtype: torch.dtype) -> None:
 @pytest.mark.parametrize("hidden_size", [768, 4096])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @torch.inference_mode()
+# 测试预分配输出缓冲区时内核是否原地写入
 def test_output_buffer_provided(
     num_tokens: int,
     hidden_size: int,
@@ -354,6 +363,7 @@ def test_output_buffer_provided(
 )
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @torch.inference_mode()
+# 测试多维输入（3D、4D张量）的自动展平和恢复
 def test_multidimensional_input(
     shape: tuple,
     dtype: torch.dtype,
@@ -387,6 +397,7 @@ def test_multidimensional_input(
 @pytest.mark.parametrize("group_size", [None, 64])
 @pytest.mark.parametrize("norm_before_gate", [True, False])
 @torch.inference_mode()
+# 测试RMSNormGated的forward_native方法保持输入dtype并与参考实现一致
 def test_rmsnorm_gated_forward_native_dtype(
     default_vllm_config,
     num_tokens: int,

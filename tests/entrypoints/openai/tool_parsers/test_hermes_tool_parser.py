@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 Hermes2Pro 工具解析器，包括端到端集成测试和单元级流式/非流式解析测试
+
 import json
 
 import pytest
@@ -86,6 +88,7 @@ PRODUCT_MESSAGES = [
 ]
 
 
+# 测试非流式模式下 Hermes 工具调用的完整解析流程
 @pytest.mark.asyncio
 async def test_non_streaming_tool_call():
     """Test tool call in non-streaming mode."""
@@ -119,6 +122,7 @@ async def test_non_streaming_tool_call():
         print(f"Arguments: {arguments}")
 
 
+# 测试流式模式下 Hermes 工具调用的增量解析和重组
 @pytest.mark.asyncio
 async def test_streaming_tool_call():
     """Test tool call in streaming mode."""
@@ -168,6 +172,7 @@ async def test_streaming_tool_call():
         print(f"Reconstructed Arguments: {arguments}")
 
 
+# 测试非流式模式下整型和布尔型参数的工具调用解析
 @pytest.mark.asyncio
 async def test_non_streaming_product_tool_call():
     """Test tool call integer and boolean parameters in non-streaming mode."""
@@ -210,6 +215,7 @@ async def test_non_streaming_product_tool_call():
         print(f"Arguments: {arguments}")
 
 
+# 测试流式模式下整型和布尔型参数的工具调用解析
 @pytest.mark.asyncio
 async def test_streaming_product_tool_call():
     """Test tool call integer and boolean parameters in streaming mode."""
@@ -269,6 +275,7 @@ async def test_streaming_product_tool_call():
         print(f"Reconstructed Arguments: {arguments}")
 
 
+# 提供 Qwen3-32B 分词器 fixture 用于 Hermes 解析器单元测试
 @pytest.fixture
 def qwen_tokenizer() -> TokenizerLike:
     from vllm.tokenizers import get_tokenizer
@@ -290,6 +297,7 @@ def any_chat_request() -> ChatCompletionRequest:
     )
 
 
+# 测试流式解析器在纯文本（无工具调用）输入时正确透传内容
 def test_hermes_parser_streaming_just_forward_text(
     qwen_tokenizer: TokenizerLike,
     hermes_parser: Hermes2ProToolParser,
@@ -322,6 +330,7 @@ def test_hermes_parser_streaming_just_forward_text(
     assert "".join([delta.content for delta in delta_messages]) == text
 
 
+# 回归测试：验证 issue #19056 中流式解析 tool_call 标签的 bug 已修复
 def test_hermes_parser_streaming_failure_case_bug_19056(
     qwen_tokenizer: TokenizerLike,
     hermes_parser: Hermes2ProToolParser,
@@ -356,6 +365,7 @@ def test_hermes_parser_streaming_failure_case_bug_19056(
     assert tool_call_args == '{"trigger": true}'
 
 
+# 测试流式解析器正确提取带有复杂参数的工具调用
 def test_hermes_parser_streaming(
     qwen_tokenizer: TokenizerLike,
     hermes_parser: Hermes2ProToolParser,
@@ -395,6 +405,7 @@ def test_hermes_parser_streaming(
     )
 
 
+# 测试非流式解析器在无工具调用输入时返回正确结果
 def test_hermes_parser_non_streaming_no_tool_call(
     hermes_parser: Hermes2ProToolParser,
     any_chat_request: ChatCompletionRequest,
@@ -409,6 +420,7 @@ def test_hermes_parser_non_streaming_no_tool_call(
     assert not tool_call.tools_called
 
 
+# 测试非流式解析器正确解析 <tool_call> 标签包裹的工具调用
 def test_hermes_parser_non_streaming_tool_call_between_tags(
     hermes_parser: Hermes2ProToolParser,
     any_chat_request: ChatCompletionRequest,
@@ -427,6 +439,7 @@ def test_hermes_parser_non_streaming_tool_call_between_tags(
     assert tool_call.tool_calls[0].function.arguments == '{"trigger": true}'
 
 
+# 测试非流式解析器在缺少闭合标签时仍能正确提取工具调用
 def test_hermes_parser_non_streaming_tool_call_until_eos(
     hermes_parser: Hermes2ProToolParser,
     any_chat_request: ChatCompletionRequest,
@@ -444,6 +457,7 @@ def test_hermes_parser_non_streaming_tool_call_until_eos(
     assert tool_call.tool_calls[0].function.arguments == '{"trigger": true}'
 
 
+# 测试非流式解析器在遇到无效 JSON 时的优雅降级处理
 def test_hermes_parser_non_streaming_tool_call_invalid_json(
     hermes_parser: Hermes2ProToolParser,
     any_chat_request: ChatCompletionRequest,

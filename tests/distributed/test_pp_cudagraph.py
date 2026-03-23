@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试流水线并行与 CUDA Graph 结合时的正确性
 import pytest
 from typing_extensions import LiteralString
 

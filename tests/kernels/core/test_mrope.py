@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试多模态旋转位置编码（MRoPE）在Qwen2-VL/Qwen2.5-VL/Qwen3-VL/GLM-4.1V等模型上的正确性，
+# 验证forward_native与forward_cuda的一致性以及torch.compile追踪的兼容性
 from typing import NamedTuple
 
 import pytest
@@ -13,6 +15,7 @@ from vllm.utils.torch_utils import set_random_seed
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+# 生成MRoPE测试数据：2D位置张量、查询和键张量
 def generate_test_data(
     num_tokens: int,
     num_q_heads: int,
@@ -36,6 +39,7 @@ def generate_test_data(
     return positions, query, key
 
 
+# MRoPE测试配置：模型名称和容差参数
 class MRoPETestInfo(NamedTuple):
     model_name: str
     # https://github.com/pytorch/pytorch/blob/main/torch/testing/_comparison.py#L1317
@@ -69,6 +73,7 @@ num_tokens_list = [11, 8192]
 @pytest.mark.parametrize("tp_size", [1, 2])
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @pytest.mark.parametrize("num_tokens", num_tokens_list)
+# 测试MRoPE的CUDA实现与原生Python实现在多种VL模型上的数值一致性
 def test_mrope(
     default_vllm_config,
     model_name: str,
@@ -139,6 +144,7 @@ def test_mrope(
 @pytest.mark.parametrize("tp_size", [1, 2])
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @pytest.mark.parametrize("num_tokens", num_tokens_list)
+# 测试MRoPE的forward_cuda能否被torch.compile(inductor)正确追踪和编译
 def test_mrope_torch_compile_tracing(
     default_vllm_config,
     model_name: str,

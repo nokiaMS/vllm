@@ -29,6 +29,7 @@ from vllm.platforms import current_platform
         ),
     ],
 )
+# [中文注释] 测试Eagle3 speculators模型的初始化和推测解码配置自动检测
 def test_eagle3_speculators_model(
     vllm_runner, example_prompts, model_path, monkeypatch
 ):

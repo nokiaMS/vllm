@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试Responses API基本功能：简单输入、指令、聊天、输入类型、logprobs和流式输出
 
 import openai  # use the official client for correctness check
 import openai.types.responses as openai_responses_types

@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# LRU 缓存模块，基于 cachetools.LRUCache 扩展，提供缓存命中率统计、
+# 项目固定（pin）防止被淘汰、以及有序视图访问等增强功能。
+# 主要用于 vLLM 中需要容量受限且可追踪使用情况的缓存场景。
+
 from collections import UserDict
 from collections.abc import Callable, Hashable, Iterator, KeysView, Mapping
 from types import MappingProxyType
@@ -12,12 +17,16 @@ _V = TypeVar("_V")
 _T = TypeVar("_T")
 
 
+# 哨兵类型，用于区分"未找到非固定项"和 None 值的情况
 class _Sentinel: ...
 
 
+# 全局哨兵实例，在 popitem 中表示所有缓存项均被固定、无法淘汰
 ALL_PINNED_SENTINEL = _Sentinel()
 
 
+# 缓存的有序只读视图，迭代时按 LRU 顺序返回键，
+# 用于在不暴露内部数据结构的前提下提供有序访问能力
 class _MappingOrderCacheView(UserDict[_K, _V]):
     def __init__(self, data: Mapping[_K, _V], ordered_keys: Mapping[_K, None]):
         super().__init__(data)
@@ -30,6 +39,8 @@ class _MappingOrderCacheView(UserDict[_K, _V]):
         return KeysView(self.ordered_keys)
 
 
+# 缓存统计信息的不可变数据结构，记录命中次数和总查询次数，
+# 支持计算命中率和通过减法运算获取增量统计
 class CacheInfo(NamedTuple):
     hits: int
     total: int
@@ -48,6 +59,11 @@ class CacheInfo(NamedTuple):
         )
 
 
+# 增强版 LRU 缓存，在 cachetools.LRUCache 基础上扩展了以下功能：
+# 1. 命中率统计（hits/total）及增量查询（delta 模式）
+# 2. 项目固定（pin）机制——被固定的项不会被 LRU 淘汰
+# 3. 有序视图属性（cache/order）用于按 LRU 顺序遍历
+# 4. 可覆写的 _on_remove 回调，在项目被删除时触发自定义逻辑
 class LRUCache(cachetools.LRUCache[_K, _V]):
     def __init__(self, capacity: float, getsizeof: Callable[[_V], float] | None = None):
         super().__init__(capacity, getsizeof)

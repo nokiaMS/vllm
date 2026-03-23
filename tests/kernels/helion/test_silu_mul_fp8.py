@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试Helion SiLU*Mul+FP8量化内核的正确性，
+# 覆盖配置选择器逻辑、多种batch/intermediate大小/scale/dtype下与参考实现的数值对比、以及内核注册集成
 import pytest
 import torch
 import torch.nn.functional as F
@@ -51,6 +53,7 @@ def reset_config_manager_singleton():
     ConfigManager.reset_instance()
 
 
+# 测试silu_mul_fp8配置选择器的匹配逻辑：精确匹配、最近匹配、默认回退和异常处理
 class TestSiluMulFp8ConfigPicker:
     def test_config_picker_exact_match(self):
         config_keys = [
@@ -181,6 +184,7 @@ class TestSiluMulFp8ConfigPicker:
         assert selected_key == "intermediate_4096_numtokens_128"
 
 
+# 测试Helion silu_mul_fp8内核与vLLM C++基线实现的数值正确性
 class TestSiluMulFp8Correctness:
     @pytest.mark.parametrize("batch_size", [1, 8, 32, 128])
     @pytest.mark.parametrize("intermediate_size", [2048, 3000, 3500, 4096, 5000])
@@ -284,6 +288,7 @@ class TestSiluMulFp8Correctness:
         )
 
 
+# 纯PyTorch参考实现：F.silu(x[:d]) * x[d:] + FP8量化
 def silu_mul_fp8_pytorch(input: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     """Pure PyTorch reference using F.silu.
 
@@ -295,6 +300,7 @@ def silu_mul_fp8_pytorch(input: torch.Tensor, scale: torch.Tensor) -> torch.Tens
     return (result.to(torch.float32) / scale).to(torch.float8_e4m3fn)
 
 
+# 测试Helion内核与纯PyTorch参考实现的对比（使用更严格的容差）
 class TestSiluMulFp8PytorchReference:
     """Tests comparing Helion kernel against pure PyTorch implementation.
 
@@ -366,6 +372,7 @@ class TestSiluMulFp8PytorchReference:
         )
 
 
+# 测试silu_mul_fp8内核在全局注册表中的注册和fake_impl功能
 class TestSiluMulFp8Integration:
     def test_kernel_registration_integration(self):
         from vllm.kernels.helion.register import get_registered_kernels

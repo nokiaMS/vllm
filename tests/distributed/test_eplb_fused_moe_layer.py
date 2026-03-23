@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 EPLB 与 FusedMoE 层之间的交互，验证权重重排后的正确性
 
 # Test that the interaction between EPLB and FusedMoE Layer is okay
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# LoRA 测试的公共配置文件，提供分布式初始化、模型夹具和 LoRA 权重下载等测试夹具
 
 import tempfile
 from collections import OrderedDict

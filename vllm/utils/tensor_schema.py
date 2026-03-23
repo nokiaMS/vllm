@@ -10,6 +10,8 @@ from vllm.logger import init_logger
 logger = init_logger(__name__)
 
 
+# 张量形状描述类，用于声明张量的维度信息（支持符号化维度名称和动态维度标记）
+# 设计思路：通过字符串维度名实现符号化形状约束，配合 resolve() 方法在运行时将符号绑定为具体数值
 class TensorShape:
     def __init__(
         self,
@@ -21,6 +23,7 @@ class TensorShape:
         self.dims = dims
         self.dynamic_dims = dynamic_dims if dynamic_dims else set()
 
+    # 将符号化维度名替换为具体的整数值，未绑定的维度名保持原样
     def resolve(self, **bindings: int) -> tuple[int | str, ...]:
         resolved = list[int | str]()
         for dim in self.dims:
@@ -44,6 +47,9 @@ class TensorShape:
         return f"({', '.join(dim_strs)})"
 
 
+# 张量模式验证类，利用 Python 类型注解（Annotated + TensorShape）对字段进行形状校验
+# 设计思路：通过 type hints 自动提取每个字段的期望形状，在构造时自动验证张量维度是否匹配
+# 关键算法：validate() 遍历所有带 TensorShape 注解的字段，使用 shape_env 字典追踪符号维度的绑定关系，确保跨字段维度一致性
 class TensorSchema:
     def __init__(
         self,
@@ -68,6 +74,7 @@ class TensorSchema:
     def get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)
 
+    # 比较两个形状是否匹配，跳过动态维度（dynamic_dims 中标记的维度名不参与比较）
     def _match_shape_with_dynamic(
         self,
         actual: tuple[int, ...],
@@ -97,6 +104,7 @@ class TensorSchema:
 
         return str(list(idxs))
 
+    # 递归验证单个字段的值：标量直接返回空形状，张量返回其形状，列表/元组则递归验证每个元素并检查形状一致性
     def _validate_field(
         self,
         value: object,
@@ -152,6 +160,7 @@ class TensorSchema:
         # shape = (len(list), *tensor.shape)
         return (len(value),) + first_shape
 
+    # 逐维度验证实际形状与期望形状的匹配：整数维度精确比较，字符串维度通过 shape_env 实现跨字段绑定一致性检查
     def _validate_tensor_shape_expected(
         self,
         actual_shape: tuple[int, ...],
@@ -196,6 +205,7 @@ class TensorSchema:
                     f"{field_name} dim[{i}] has unsupported type: {type(dim)}"
                 )
 
+    # 主校验入口：遍历所有类型注解字段，处理 Optional 字段和 Annotated[TensorShape] 字段的形状验证
     def validate(self) -> None:
         type_hints = get_type_hints(self.__class__, include_extras=True)
         shape_env = dict[str, int]()

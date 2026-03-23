@@ -10,6 +10,7 @@ else:
     VllmConfig = None
 
 
+# 测试用的虚拟平台，模拟 OOT（Out-Of-Tree）硬件平台
 class DummyPlatform(Platform):
     _enum = PlatformEnum.OOT
     device_name = "DummyDevice"

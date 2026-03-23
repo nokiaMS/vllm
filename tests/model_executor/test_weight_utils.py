@@ -15,6 +15,9 @@ from vllm.model_executor.model_loader.weight_utils import (
 )
 
 
+# 测试 HuggingFace 模型权重下载工具函数和 KV 缓存缩放名称重映射
+
+# 测试 hf_transfer 自动激活功能
 def test_hf_transfer_auto_activation():
     if "HF_HUB_ENABLE_HF_TRANSFER" in os.environ:
         # in case it is already set, we can't test the auto activation
@@ -30,6 +33,7 @@ def test_hf_transfer_auto_activation():
     assert huggingface_hub.constants.HF_HUB_ENABLE_HF_TRANSFER == HF_TRANSFER_ACTIVE
 
 
+# 测试从 HuggingFace 下载权重，包括离线模式和在线模式
 def test_download_weights_from_hf():
     with tempfile.TemporaryDirectory() as tmpdir:
         # assert LocalEntryNotFoundError error is thrown
@@ -62,6 +66,7 @@ def test_download_weights_from_hf():
         )
 
 
+# 测试 maybe_remap_kv_scale_name 在各种检查点格式下的重映射行为
 class TestMaybeRemapKvScaleName:
     """Tests for maybe_remap_kv_scale_name covering all checkpoint formats."""
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Voxtral Realtime 实时语音转录模型的同步和异步流式生成功能
 from dataclasses import asdict
 
 import pytest

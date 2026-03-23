@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试音频翻译 API：基本翻译、LoRA、流式、长音频、max_tokens 和非 ASR 模型错误处理]
 
 import io
 
@@ -20,6 +21,7 @@ from .conftest import add_attention_backend
 SERVER_ARGS = ["--enforce-eager"]
 
 
+# [根据注意力配置获取服务器参数]
 def _get_server_args(attention_config):
     """Get server args with attention backend if specified."""
     args = SERVER_ARGS.copy()
@@ -46,6 +48,7 @@ async def client_and_model(server):
 
 
 @pytest.mark.asyncio
+# [测试非 ASR 模型调用翻译端点应返回 NotFound 错误]
 async def test_non_asr_model(foscolo, rocm_aiter_fa_attention):
     # text to text model
     model_name = "JackFram/llama-68m"
@@ -61,6 +64,7 @@ async def test_non_asr_model(foscolo, rocm_aiter_fa_attention):
 
 
 @pytest.mark.asyncio
+# [测试使用 LoRA 适配器的音频翻译（英语到西班牙语）]
 async def test_basic_audio_with_lora(mary_had_lamb, rocm_aiter_fa_attention):
     """Ensure STT (translate) requests can pass LoRA through to generate."""
     # ROCm SPECIFIC CONFIGURATION:
@@ -103,6 +107,7 @@ async def test_basic_audio_with_lora(mary_had_lamb, rocm_aiter_fa_attention):
 
 # NOTE: (NickLucche) the large-v3-turbo model was not trained on translation!
 @pytest.mark.asyncio
+# [测试基本意大利语到英语的音频翻译]
 async def test_basic_audio(foscolo, client_and_model):
     client, model_name = client_and_model
     translation = await client.audio.translations.create(
@@ -118,6 +123,7 @@ async def test_basic_audio(foscolo, client_and_model):
 
 
 @pytest.mark.asyncio
+# [测试翻译提示对输出的条件作用]
 async def test_audio_prompt(foscolo, client_and_model):
     client, model_name = client_and_model
     # Condition whisper on starting text
@@ -136,6 +142,7 @@ async def test_audio_prompt(foscolo, client_and_model):
 
 
 @pytest.mark.asyncio
+# [测试流式翻译响应与非流式结果的一致性]
 async def test_streaming_response(foscolo, client_and_model, server):
     client, model_name = client_and_model
     translation = ""
@@ -187,6 +194,7 @@ async def test_streaming_response(foscolo, client_and_model, server):
 
 
 @pytest.mark.asyncio
+# [测试流式翻译的 usage 统计选项]
 async def test_stream_options(foscolo, server):
     server, model_name = server
     url = server.url_for("v1/audio/translations")
@@ -226,6 +234,7 @@ async def test_stream_options(foscolo, server):
 
 
 @pytest.mark.asyncio
+# [测试长音频（2 倍重复）的翻译]
 async def test_long_audio_request(foscolo, client_and_model):
     client, model_name = client_and_model
     if model_name == "google/gemma-3n-E2B-it":
@@ -249,6 +258,7 @@ async def test_long_audio_request(foscolo, client_and_model):
 
 
 @pytest.mark.asyncio
+# [测试 max_completion_tokens 参数限制翻译输出长度]
 async def test_audio_with_max_tokens(mary_had_lamb, client_and_model):
     client, model_name = client_and_model
     transcription = await client.audio.translations.create(

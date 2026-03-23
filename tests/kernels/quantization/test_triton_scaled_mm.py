@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Triton缩放矩阵乘法内核在FP8/INT8数据类型下的正确性
 """Tests for the triton_scaled_mm kernel
 
 Run `pytest tests/kernels/quantization/test_triton_scaled_mm.py`.
@@ -21,6 +22,7 @@ triton_scaled_mm_module = importlib.import_module(
 triton_scaled_mm = triton_scaled_mm_module.triton_scaled_mm
 
 
+# 使用PyTorch实现的缩放矩阵乘法参考函数，用于正确性验证
 def torch_scaled_mm(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -39,6 +41,7 @@ def torch_scaled_mm(
     return out
 
 
+# 获取当前平台支持的8位数据类型列表（INT8及可选的FP8）
 def get_8bit_types():
     types = [torch.int8]
     if current_platform.supports_fp8():
@@ -46,6 +49,7 @@ def get_8bit_types():
     return types
 
 
+# 验证ROCm平台上W8A8压缩张量模型的INT8推理回归
 # This test is to check regressions for int8 support on ROCm.
 @pytest.mark.parametrize(
     "model_path",
@@ -75,6 +79,7 @@ MNK_FACTORS = [
 ]
 
 
+# 测试Triton缩放矩阵乘法在多种形状、数据类型和缩放模式下的数值正确性
 @pytest.mark.parametrize("M,N,K", MNK_FACTORS)
 @pytest.mark.parametrize("out_dtype", [torch.bfloat16])
 @pytest.mark.parametrize("in_dtype", get_8bit_types())

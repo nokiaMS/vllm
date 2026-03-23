@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Machete量化矩阵乘法内核在不同量化类型和分组大小下的正确性
 """Tests for the machete kernel.
 
 Run `pytest tests/kernels/quantization/test_machete_mm.py`.
@@ -53,6 +54,7 @@ MNK_SHAPES = [
 ]
 
 
+# Machete测试的类型配置数据类
 @dataclass
 class TypeConfig:
     act_type: torch.dtype
@@ -139,6 +141,7 @@ TEST_TYPES = [
 IS_SUPPORTED_BY_GPU = current_platform.has_device_capability(90)
 
 
+# 生成指定形状、类型和范围的随机测试数据
 def rand_data(shape, dtype=torch.float16, scale=1, offset=0):
     if dtype.is_floating_point:
         return (scale * torch.rand(shape, device="cuda") - offset).to(dtype)
@@ -154,6 +157,7 @@ def group_size_valid(shape: tuple[int, int, int], group_size: int | None) -> boo
     return group_size is None or group_size == -1 or shape[2] % group_size == 0
 
 
+# 量化权重并打包为Machete内核所需格式
 def machete_quantize_and_pack(
     atype: torch.dtype,
     w: torch.Tensor,
@@ -182,6 +186,7 @@ def machete_quantize_and_pack(
     return w_ref, w_q_machete, w_s, w_zp
 
 
+# 创建Machete测试所需的全套张量（含量化权重和各类缩放因子）
 def create_test_tensors(
     shape: tuple[int, int, int],
     types: TypeConfig,
@@ -246,6 +251,7 @@ def create_test_tensors(
     )
 
 
+# Machete矩阵乘法测试辅助函数，比较Machete输出与PyTorch参考结果
 # None stype means scales use the same dtype as a
 def machete_mm_test_helper(
     types: TypeConfig,

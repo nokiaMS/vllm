@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# [基础编码测试模块：验证 vLLM 离线 encode API 的池化参数与截断行为]
+
 import weakref
 
 import pytest
@@ -28,6 +30,7 @@ TOKEN_IDS = [
 ]
 
 
+# [测试夹具：创建 LLM 实例用于编码测试，使用弱引用以支持垃圾回收]
 @pytest.fixture(scope="module")
 def llm():
     # ROCm: Use FLEX_ATTENTION backend as it's the only attention backend
@@ -55,6 +58,7 @@ def llm():
     cleanup_dist_env_and_memory()
 
 
+# [测试多种池化参数组合：验证参数数量匹配、单参数广播及默认参数行为]
 @pytest.mark.skip_global_cleanup
 def test_multiple_pooling_params(llm: LLM):
     pooling_params = [
@@ -86,6 +90,7 @@ def test_multiple_pooling_params(llm: LLM):
     assert len(PROMPTS) == len(outputs)
 
 
+# [测试右侧截断：验证嵌入模型默认从提示末尾进行截断]
 def test_right_side_truncation(llm: LLM):
     # Embeddings models should truncate the end of the prompt
     tokenizer = llm.get_tokenizer()

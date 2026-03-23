@@ -13,6 +13,8 @@ from vllm.model_executor.layers.quantization.ptpc_fp8 import PTPCFp8LinearMethod
 from vllm.platforms import current_platform
 
 
+# 测试 PTPC（Per-Tensor-Per-Channel）FP8 量化在 ROCm 平台上的正确性
+
 @pytest.fixture(scope="function", autouse=True)
 def enable_pickle(monkeypatch):
     """`LLM.apply_model` requires pickling a function."""

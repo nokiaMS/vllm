@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试批次不变性 RMS 归一化：对比 Triton 实现与标准 CUDA 实现的数值精度和确定性
 """
 Test batch-invariant RMS normalization against standard implementations.
 
@@ -15,6 +16,7 @@ from vllm.model_executor.layers.batch_invariant import rms_norm as triton_rms_no
 from vllm.model_executor.layers.layernorm import RMSNorm
 
 
+# 对比批次不变性 Triton RMS norm 与标准 CUDA 实现在不同配置下的数值一致性
 @skip_unsupported
 @pytest.mark.parametrize("batch_size", [1, 4, 16, 64])
 @pytest.mark.parametrize("hidden_size", [512, 2048, 4096, 8192])
@@ -68,6 +70,7 @@ def test_rms_norm_batch_invariant_vs_standard(
     )
 
 
+# 测试 3D 输入张量（batch, seq_len, hidden_size）下的 RMS norm 正确性
 @skip_unsupported
 @pytest.mark.parametrize("batch_size", [1, 16, 128])
 @pytest.mark.parametrize("seq_len", [1, 32, 512])
@@ -112,6 +115,7 @@ def test_rms_norm_3d_input(
     )
 
 
+# 测试极端值输入下 RMS norm 的数值稳定性，确保不产生 NaN 或 Inf
 @skip_unsupported
 def test_rms_norm_numerical_stability(default_vllm_config):
     """
@@ -172,6 +176,7 @@ def test_rms_norm_numerical_stability(default_vllm_config):
         )
 
 
+# 验证 RMS norm 是否遵循正确的数学公式：output = input / sqrt(mean(input^2) + eps) * weight
 @skip_unsupported
 def test_rms_norm_formula(default_vllm_config):
     """
@@ -205,6 +210,7 @@ def test_rms_norm_formula(default_vllm_config):
     )
 
 
+# 测试不同 hidden_size 下的 RMS norm，验证 Triton 内核的块大小处理逻辑
 @skip_unsupported
 @pytest.mark.parametrize("hidden_size", [128, 1024, 4096, 16384])
 def test_rms_norm_different_hidden_sizes(default_vllm_config, hidden_size: int):
@@ -243,6 +249,7 @@ def test_rms_norm_different_hidden_sizes(default_vllm_config, hidden_size: int):
     )
 
 
+# 测试批次不变性 RMS norm 多次运行的确定性（相同输入应产生完全相同的输出）
 @skip_unsupported
 def test_rms_norm_determinism(default_vllm_config):
     """

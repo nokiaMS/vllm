@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试服务器关闭行为：引擎故障、等待超时、中止超时、请求拒绝和多 API 服务器关闭]
 """Integration tests for shutdown behavior, timeout, and signal handling."""
 
 import asyncio
@@ -28,6 +29,7 @@ _SHUTDOWN_DETECTION_TIMEOUT = 10
 _CHILD_CLEANUP_TIMEOUT = 10
 
 
+# [获取父进程的所有子进程 PID]
 def _get_child_pids(parent_pid: int) -> list[int]:
     try:
         parent = psutil.Process(parent_pid)
@@ -36,6 +38,7 @@ def _get_child_pids(parent_pid: int) -> list[int]:
         return []
 
 
+# [等待并断言所有子进程已退出]
 async def _assert_children_cleaned_up(
     child_pids: list[int],
     timeout: float = _CHILD_CLEANUP_TIMEOUT,
@@ -75,6 +78,7 @@ class ShutdownState:
     errors: list[str] = field(default_factory=list)
 
 
+# [并发请求循环：持续发送请求以保持服务器繁忙]
 async def _concurrent_request_loop(
     client: openai.AsyncOpenAI,
     state: ShutdownState,
@@ -122,6 +126,7 @@ async def _concurrent_request_loop(
 
 
 @pytest.mark.asyncio
+# [测试服务器进程被杀死后 API 调用返回连接错误]
 async def test_shutdown_on_engine_failure():
     """Verify that API returns connection error when server process is killed.
 
@@ -207,6 +212,7 @@ async def test_shutdown_on_engine_failure():
 
 
 @pytest.mark.asyncio
+# [测试等待超时：SIGTERM 后拒绝新请求但完成进行中的请求]
 async def test_wait_timeout_completes_requests():
     """Verify wait timeout: new requests rejected, in-flight requests complete."""
     server_args = [
@@ -266,6 +272,7 @@ async def test_wait_timeout_completes_requests():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("wait_for_engine_idle", [0.0, 2.0])
+# [测试中止超时（0秒）时 SIGTERM 后服务器快速退出]
 async def test_abort_timeout_exits_quickly(wait_for_engine_idle: float):
     server_args = [
         "--dtype",
@@ -319,6 +326,7 @@ async def test_abort_timeout_exits_quickly(wait_for_engine_idle: float):
 
 
 @pytest.mark.asyncio
+# [测试短等待超时时服务器在限定时间内干净退出]
 async def test_wait_timeout_with_short_duration():
     """Verify server exits cleanly with a short wait timeout."""
     wait_timeout = 3
@@ -379,6 +387,7 @@ async def test_wait_timeout_with_short_duration():
 
 
 @pytest.mark.asyncio
+# [测试中止超时（0秒）立即中止进行中的请求]
 async def test_abort_timeout_fails_inflight_requests():
     """Verify abort timeout (0) immediately aborts in-flight requests."""
     server_args = [
@@ -451,6 +460,7 @@ async def test_abort_timeout_fails_inflight_requests():
 
 
 @pytest.mark.asyncio
+# [测试关闭期间新请求被拒绝返回错误]
 async def test_request_rejection_during_shutdown():
     """Verify new requests are rejected with error during shutdown."""
     server_args = [
@@ -500,6 +510,7 @@ async def test_request_rejection_during_shutdown():
 
 
 @pytest.mark.asyncio
+# [测试多 API 服务器模式下 SIGTERM 传播到所有子进程并干净关闭]
 async def test_multi_api_server_shutdown():
     """Verify shutdown works with multiple API servers."""
     server_args = [

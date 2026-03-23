@@ -19,6 +19,7 @@ PROMPT = "Red Hat is the best company in the world to work for because it works 
 SHORT_PROMPT = "Red Hat is "
 
 
+# [中文注释] 边界情况测试：验证短提示词、decode端完全前缀缓存命中、部分前缀缓存命中等场景。
 def test_edge_cases():
     # Set the OpenAI API key and base URL
     decode_client = openai.OpenAI(

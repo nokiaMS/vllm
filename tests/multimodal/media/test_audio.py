@@ -15,6 +15,7 @@ ASSETS_DIR = Path(__file__).parent.parent / "assets"
 assert ASSETS_DIR.exists()
 
 
+# [中文注释] 创建虚拟音频数据和字节夹具
 @pytest.fixture
 def dummy_audio():
     return np.array([0.0, 0.1, 0.2, 0.3, 0.4], dtype=float)
@@ -25,6 +26,7 @@ def dummy_audio_bytes():
     return b"FAKEAUDIOBYTES"
 
 
+# [中文注释] 测试AudioMediaIO从字节加载音频
 def test_audio_media_io_load_bytes(dummy_audio_bytes):
     audio_io = AudioMediaIO()
     with patch("librosa.load") as mock_load:
@@ -35,6 +37,7 @@ def test_audio_media_io_load_bytes(dummy_audio_bytes):
         assert out[1] == 16000
 
 
+# [中文注释] 测试AudioMediaIO从base64编码加载音频
 def test_audio_media_io_load_base64(dummy_audio_bytes):
     audio_io = AudioMediaIO()
     encoded = base64.b64encode(dummy_audio_bytes).decode("utf-8")
@@ -46,6 +49,7 @@ def test_audio_media_io_load_base64(dummy_audio_bytes):
         assert out[1] == 16000
 
 
+# [中文注释] 测试AudioMediaIO从文件路径加载音频
 def test_audio_media_io_load_file():
     audio_io = AudioMediaIO()
     path = Path("/fake/path.wav")
@@ -57,6 +61,7 @@ def test_audio_media_io_load_file():
         assert out[1] == 16000
 
 
+# [中文注释] 测试AudioMediaIO将音频编码为base64
 def test_audio_media_io_encode_base64(dummy_audio):
     audio_io = AudioMediaIO()
     media = (dummy_audio, 16000)

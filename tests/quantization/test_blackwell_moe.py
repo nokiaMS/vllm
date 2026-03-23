@@ -10,6 +10,8 @@ import pytest
 from tests.utils import RemoteOpenAIServer
 from vllm.platforms import current_platform
 
+# 测试 Blackwell GPU（SM10x）上各种 MoE 量化后端的模型初始化
+
 if not current_platform.is_device_capability_family(100):
     pytest.skip(
         "This test only runs on Blackwell GPUs (SM10x).", allow_module_level=True

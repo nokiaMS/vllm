@@ -22,12 +22,14 @@ from vllm.v1.serial_utils import MsgpackDecoder, MsgpackEncoder
 pytestmark = pytest.mark.cpu_test
 
 
+# 用于测试不可识别类型序列化的自定义字典子类
 class UnrecognizedType(UserDict):
     def __init__(self, an_int: int):
         super().__init__()
         self.an_int = an_int
 
 
+# 包含多种数据类型的测试数据类，用于验证序列化的完整性
 @dataclass
 class MyType:
     tensor1: torch.Tensor
@@ -98,6 +100,7 @@ def test_encode_decode(monkeypatch: pytest.MonkeyPatch):
         assert_equal(decoded2, obj)
 
 
+# 用于测试多模态数据序列化的模拟请求结构
 class MyRequest(msgspec.Struct):
     mm: list[MultiModalKwargsItems] | None
 
@@ -160,12 +163,14 @@ def test_multimodal_kwargs():
     assert all(nested_equal(mm_data[k], decoded_data[k]) for k in mm_data)
 
 
+# 递归比较嵌套张量结构是否相等的辅助函数
 def nested_equal(a: NestedTensors, b: NestedTensors):
     if isinstance(a, torch.Tensor):
         return torch.equal(a, b)
     return all(nested_equal(x, y) for x, y in zip(a, b))
 
 
+# 断言两个 MyType 对象所有字段逐一相等的辅助函数
 def assert_equal(obj1: MyType, obj2: MyType):
     assert torch.equal(obj1.tensor1, obj2.tensor1)
     assert obj1.a_string == obj2.a_string
@@ -239,6 +244,7 @@ def test_numpy_array_serialization():
     )
 
 
+# 用于测试自定义类序列化行为（pickle 允许/禁止）的简单类
 class CustomClass:
     def __init__(self, value):
         self.value = value

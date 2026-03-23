@@ -18,6 +18,8 @@ from vllm.v1.kv_cache_interface import (
 from vllm.v1.worker.utils import AttentionGroup, bind_kv_cache
 
 
+# 遍历模型中所有注意力层，收集每一层的 KV 缓存规格（如块大小、头数等）。
+# 跳过不需要 KV 缓存的层（如纯编码器注意力）。
 def get_kv_cache_spec(vllm_config: VllmConfig) -> dict[str, KVCacheSpec]:
     kv_cache_spec: dict[str, KVCacheSpec] = {}
     layer_type = cast(type[Any], AttentionLayerBase)
@@ -29,6 +31,8 @@ def get_kv_cache_spec(vllm_config: VllmConfig) -> dict[str, KVCacheSpec]:
     return kv_cache_spec
 
 
+# 初始化注意力后端：将注意力层按后端类型和 KV 缓存规格分组（AttentionGroup），
+# 为每个分组创建元数据构建器，并在各构建器之间共享工作空间缓冲区以节省显存。
 def init_attn_backend(
     kv_cache_config: KVCacheConfig, vllm_config: VllmConfig, device: torch.device
 ):
@@ -85,6 +89,8 @@ def init_attn_backend(
     return attn_backends, attn_groups
 
 
+# 在 GPU 上分配 KV 缓存的原始张量（int8 格式）。
+# 同一张量可被多个层共享（通过 shared_by 机制），以减少显存占用。
 def _allocate_kv_cache(kv_cache_config: KVCacheConfig, device: torch.device):
     kv_cache_raw_tensors: dict[str, torch.Tensor] = {}
     for kv_cache_tensor in kv_cache_config.kv_cache_tensors:
@@ -102,6 +108,8 @@ def _allocate_kv_cache(kv_cache_config: KVCacheConfig, device: torch.device):
     return kv_cache_raw_tensors
 
 
+# 将原始 int8 KV 缓存张量按照各注意力后端所需的形状和步幅顺序进行重塑（reshape）。
+# 通过 view + permute 将扁平张量转换为 [num_blocks, block_size, num_heads, head_size] 等形状。
 def _reshape_kv_cache(
     kv_cache_config: KVCacheConfig,
     kv_cache_raw_tensors: dict[str, torch.Tensor],
@@ -144,6 +152,7 @@ def _reshape_kv_cache(
     return kv_caches
 
 
+# KV 缓存初始化入口：分配原始张量、按后端需求重塑、并绑定到前向传播上下文中。
 def init_kv_cache(
     runner_kv_caches: list[torch.Tensor],
     forward_context: dict[str, Any],
@@ -157,6 +166,8 @@ def init_kv_cache(
     return kv_caches
 
 
+# 将按 KV 缓存组索引的 slot_mappings 展开为按层名称索引的字典，
+# 使得每一层都能直接查找到自己的 slot 映射。
 def build_slot_mappings_by_layer(
     slot_mappings: torch.Tensor, kv_cache_config: KVCacheConfig
 ) -> dict[str, torch.Tensor]:
@@ -168,6 +179,9 @@ def build_slot_mappings_by_layer(
     return slot_mappings_by_layer
 
 
+# 构建注意力元数据：为每个 KV 缓存组和注意力分组生成 CommonAttentionMetadata，
+# 其中包含 query 位置、序列长度、block table、slot mapping 等信息，
+# 供注意力后端在前向传播中使用。支持编码器-解码器模型和分布式上下文并行（DCP）。
 def build_attn_metadata(
     attn_groups: list[list[AttentionGroup]],
     num_reqs: int,

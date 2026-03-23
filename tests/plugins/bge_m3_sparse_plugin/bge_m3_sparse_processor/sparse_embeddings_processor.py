@@ -25,6 +25,7 @@ from .types import (
 logger = init_logger(__name__)
 
 
+# BGE-M3 稀疏嵌入处理器：将模型池化输出转换为稀疏嵌入格式（token_id -> weight）
 class BgeM3SparseEmbeddingsProcessor(
     IOProcessor[SparseEmbeddingCompletionRequestMixin, SparseEmbeddingResponse]
 ):

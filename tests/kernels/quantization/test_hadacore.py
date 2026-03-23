@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Hadamard变换(hadacore_transform)内核的计算正确性
 
 import math
 
@@ -17,6 +18,7 @@ if current_platform.is_rocm():
     )
 
 
+# 测试Hadamard变换内核的正向和反向变换正确性（二次变换应恢复原矩阵）
 @pytest.mark.parametrize("batch_size", [1, 32])
 @pytest.mark.parametrize("hidden_dim", [2**n for n in range(10)])
 def test_hadacore(batch_size, hidden_dim, dtype=torch.bfloat16, device="cuda"):

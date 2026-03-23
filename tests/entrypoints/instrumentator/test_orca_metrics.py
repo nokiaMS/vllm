@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 ORCA 负载指标头部（endpoint-load-metrics）在聊天补全和普通补全请求中的返回
+
 import openai
 import pytest
 import pytest_asyncio

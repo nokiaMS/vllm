@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 定义多模态模型测试的核心类型，包括测试配置、测试类型枚举和可扩展参数
 """Types for writing multimodal model tests."""
 
 from collections.abc import Callable, Iterable
@@ -55,6 +56,7 @@ EMBEDDING_SIZE_FACTORS = [(1.0,), (1.0, 1.0, 1.0)]
 RunnerOutput = tuple[list[int], str, SampleLogprobs | None]
 
 
+# 封装单个测试用例的多模态输入，包含提示和可选的图像/视频/音频数据
 class PromptWithMultiModalInput(NamedTuple):
     """Holds the multimodal input for a single test case."""
 
@@ -64,6 +66,7 @@ class PromptWithMultiModalInput(NamedTuple):
     audio_data: PromptAudioInput | None = None
 
 
+# VLM 测试类型枚举：单图、多图、嵌入、视频、音频和自定义输入
 class VLMTestType(Enum):
     IMAGE = 1
     MULTI_IMAGE = 2
@@ -90,6 +93,7 @@ class ImageSizeWrapper(NamedTuple):
     data: Iterable[float] | Iterable[tuple[int, int]]
 
 
+# 保存一个模型架构的一项或多项测试配置，包括模型列表、提示格式化器、运行参数等
 class VLMTestInfo(NamedTuple):
     """Holds the configuration for 1+ tests for one model architecture."""
 
@@ -201,6 +205,7 @@ class VLMTestInfo(NamedTuple):
         }
 
 
+# 展开后的 VLM 测试参数，对应单个测试用例的完整参数组合
 class ExpandableVLMTestArgs(NamedTuple):
     """The expanded kwargs which correspond to a single test case."""
 

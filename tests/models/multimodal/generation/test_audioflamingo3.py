@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 AudioFlamingo3 模型的音频理解生成能力，包括单条和批量音频推理
 
 # Copyright 2025 The vLLM team.
 # Copyright 2025 NVIDIA CORPORATION and the HuggingFace Inc. team. All rights
@@ -28,6 +29,7 @@ from vllm import LLM, SamplingParams
 MODEL_NAME = "nvidia/audio-flamingo-3-hf"
 
 
+# 获取测试固定数据文件的路径
 def get_fixture_path(filename):
     return os.path.join(
         os.path.dirname(__file__), "../../fixtures/audioflamingo3", filename
@@ -53,6 +55,7 @@ def llm():
         pytest.skip(f"Failed to load model {MODEL_NAME}: {e}")
 
 
+# 测试单条音频输入的语音转文字生成结果
 def test_single_generation(llm):
     fixture_path = get_fixture_path("expected_results_single.json")
     if not os.path.exists(fixture_path):
@@ -86,6 +89,7 @@ def test_single_generation(llm):
     assert expected_text in generated_text or generated_text in expected_text
 
 
+# 测试批量音频输入的推理结果，验证多条音频同时处理的正确性
 def test_batched_generation(llm):
     fixture_path = get_fixture_path("expected_results_batched.json")
     if not os.path.exists(fixture_path):

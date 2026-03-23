@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 通用多模态处理测试：验证 vLLM 处理器与 HF 处理器对各模型的输入预处理结果一致
 
 from collections.abc import Set as AbstractSet
 from functools import partial

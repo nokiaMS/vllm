@@ -25,6 +25,15 @@ from vllm.v1.kv_cache_interface import (
 from vllm.v1.request import Request
 
 
+# [中文注释] KV Cache 协调器抽象基类，协调多个 KV cache group 的缓存管理。
+#   每个 group 对应一种注意力类型（如 FullAttention、SlidingWindow 等），
+#   由各自的 SingleTypeKVCacheManager 管理。
+#   协调器统一管理 BlockPool，并为所有 group 提供统一接口：
+#     get_num_blocks_to_allocate() — 计算各 group 需要分配的总 block 数
+#     allocate_new_computed_blocks() — 将前缀缓存命中的 block 分配给请求
+#     allocate_new_blocks() — 为请求分配新 block
+#     cache_blocks() — 将满 block 加入前缀缓存
+#     find_longest_cache_hit() — 查找最长前缀缓存命中（各子类实现不同策略）
 class KVCacheCoordinator(ABC):
     """
     Coordinate the KV cache of different KV cache groups.
@@ -253,6 +262,8 @@ class KVCacheCoordinator(ABC):
             manager.new_step_starts()
 
 
+# [中文注释] 无前缀缓存的协调器。支持任意数量的 KV cache group（包括 0 个）。
+#   find_longest_cache_hit() 总是返回空，不执行任何缓存查找。
 class KVCacheCoordinatorNoPrefixCache(KVCacheCoordinator):
     """
     KV cache coordinator to use if prefix caching is disabled or unsupported.
@@ -299,6 +310,9 @@ class KVCacheCoordinatorNoPrefixCache(KVCacheCoordinator):
         return blocks, 0
 
 
+# [中文注释] 单一 KV cache group 的协调器（最常见情况）。
+#   适用于所有注意力层类型相同的模型（如全部是 FullAttention 或全部是 SlidingWindow）。
+#   find_longest_cache_hit() 直接委托给唯一的 SingleTypeKVCacheManager。
 class UnitaryKVCacheCoordinator(KVCacheCoordinator):
     """
     KV cache coordinator for models with only one KV cache group. This is the
@@ -365,6 +379,14 @@ class UnitaryKVCacheCoordinator(KVCacheCoordinator):
         return hit_blocks, len(hit_blocks[0]) * self.block_size
 
 
+# [中文注释] 混合注意力类型模型的协调器（多个 KV cache group）。
+#   适用于混合模型（如 Gemma3 同时有 FullAttention 和 SlidingWindow 层）。
+#   find_longest_cache_hit() 使用迭代不动点算法：
+#     每种注意力类型要么接受当前候选长度，要么缩短它。
+#     如果任何类型缩短了长度，从头重新检查所有类型。
+#     收敛性保证：长度单调递减且下界为 0。
+#   优化：将 FullAttention 排在前面（其左到右扫描提供更紧的初始上界）。
+#   LCM block size：缓存命中长度必须是所有 block size 最小公倍数的整数倍。
 class HybridKVCacheCoordinator(KVCacheCoordinator):
     """
     KV cache coordinator for hybrid models with multiple KV cache types, and
@@ -544,6 +566,10 @@ class HybridKVCacheCoordinator(KVCacheCoordinator):
         ), hit_length
 
 
+# [中文注释] 工厂函数：根据配置选择合适的 KVCacheCoordinator 子类。
+#   不启用缓存 → KVCacheCoordinatorNoPrefixCache
+#   单一 group → UnitaryKVCacheCoordinator
+#   多个 group → HybridKVCacheCoordinator
 def get_kv_cache_coordinator(
     kv_cache_config: KVCacheConfig,
     max_model_len: int,

@@ -14,6 +14,7 @@ end_token = "</think>"
 REASONING_MODEL_NAME = "MiniMaxAI/MiniMax-M2"
 
 
+# [中文注释] 加载MiniMax-M2分词器夹具（用于追加think模式）
 @pytest.fixture(scope="module")
 def minimax_m2_tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -167,6 +168,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试MiniMax-M2追加think模式：在输出前添加<think>标记，不分离推理和内容
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,

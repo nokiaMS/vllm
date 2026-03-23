@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试图片聊天补全 API：单图/多图、base64 编码、beam search、流式、uuid 缓存和错误处理]
 
 import json
 
@@ -41,6 +42,7 @@ REQUIRED_BEAM_SEARCH_TERMS = [
 ]
 
 
+# [检查输出内容是否匹配所有必需的术语组]
 def check_output_matches_terms(content: str, term_groups: list[list[str]]) -> bool:
     """
     Check if content matches all required term groups.
@@ -53,6 +55,7 @@ def check_output_matches_terms(content: str, term_groups: list[list[str]]) -> bo
     )
 
 
+# [断言聊天补全的第一个 choice 有非空内容并返回]
 def assert_non_empty_content(chat_completion, *, context: str = "") -> str:
     """Assert the first choice has non-empty string content; return it.
 
@@ -129,6 +132,7 @@ def url_encoded_image(local_asset_server) -> dict[str, str]:
     }
 
 
+# [构造包含图片 URL 的聊天消息]
 def dummy_messages_from_image_url(
     image_urls: str | list[str],
     content_text: str = "What's in this image?",
@@ -150,6 +154,7 @@ def dummy_messages_from_image_url(
     ]
 
 
+# [构建用于图片描述测试的 system + user 消息]
 def describe_image_messages(
     image_url: str, *, extra_image_fields: dict | None = None
 ) -> list[dict]:
@@ -175,6 +180,7 @@ def describe_image_messages(
     ]
 
 
+# [执行聊天补全并断言输出非空]
 async def complete_and_check(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -195,6 +201,7 @@ async def complete_and_check(
     return assert_non_empty_content(chat_completion, context=context)
 
 
+# [使用 HuggingFace processor 计算图片 prompt 的预期 token 数]
 def get_hf_prompt_tokens(model_name, content, image_url):
     processor = AutoProcessor.from_pretrained(
         model_name, trust_remote_code=True, num_crops=4
@@ -224,6 +231,7 @@ def get_hf_prompt_tokens(model_name, content, image_url):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("image_url", TEST_IMAGE_ASSETS, indirect=True)
+# [测试单图聊天会话：补全、token 用量、logprobs 和多轮对话]
 async def test_single_chat_session_image(
     client: openai.AsyncOpenAI, model_name: str, image_url: str
 ):
@@ -284,6 +292,7 @@ async def test_single_chat_session_image(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("image_url", TEST_IMAGE_ASSETS, indirect=True)
+# [测试 image_url 格式错误（字符串而非字典）应返回 BadRequest]
 async def test_error_on_invalid_image_url_type(
     client: openai.AsyncOpenAI, model_name: str, image_url: str
 ):
@@ -311,6 +320,7 @@ async def test_error_on_invalid_image_url_type(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("image_url", TEST_IMAGE_ASSETS, indirect=True)
+# [测试图片输入的 beam search 产生不同的多候选结果]
 async def test_single_chat_session_image_beamsearch(
     client: openai.AsyncOpenAI, model_name: str, image_url: str
 ):
@@ -342,6 +352,7 @@ async def test_single_chat_session_image_beamsearch(
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("raw_image_url", TEST_IMAGE_ASSETS)
 @pytest.mark.parametrize("image_url", TEST_IMAGE_ASSETS, indirect=True)
+# [测试 base64 编码图片的聊天会话和多轮对话]
 async def test_single_chat_session_image_base64encoded(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -410,6 +421,7 @@ async def test_single_chat_session_image_base64encoded(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("image_idx", list(range(len(TEST_IMAGE_ASSETS))))
+# [测试 base64 编码图片的 beam search 并验证输出包含预期术语]
 async def test_single_chat_session_image_base64encoded_beamsearch(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -472,6 +484,7 @@ async def test_single_chat_session_image_base64encoded_beamsearch(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("image_url", TEST_IMAGE_ASSETS, indirect=True)
+# [测试图片聊天的流式响应与非流式结果一致性]
 async def test_chat_streaming_image(
     client: openai.AsyncOpenAI, model_name: str, image_url: str
 ):
@@ -532,6 +545,7 @@ async def test_chat_streaming_image(
     [TEST_IMAGE_ASSETS[:i] for i in range(2, len(TEST_IMAGE_ASSETS))],
     indirect=True,
 )
+# [测试多图输入：超过限制返回错误，未超过限制正常补全]
 async def test_multi_image_input(
     client: openai.AsyncOpenAI, model_name: str, image_urls: list[str]
 ):
@@ -575,6 +589,7 @@ async def test_multi_image_input(
     [TEST_IMAGE_ASSETS[:i] for i in range(2, len(TEST_IMAGE_ASSETS))],
     indirect=True,
 )
+# [测试带图片的补全请求]
 async def test_completions_with_image(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -597,6 +612,7 @@ async def test_completions_with_image(
     [TEST_IMAGE_ASSETS[:i] for i in range(2, len(TEST_IMAGE_ASSETS))],
     indirect=True,
 )
+# [测试带 uuid 缓存的图片补全：首次请求和缓存命中请求]
 async def test_completions_with_image_with_uuid(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -634,6 +650,7 @@ async def test_completions_with_image_with_uuid(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# [测试未见过的 uuid 引用空图片应返回 BadRequest]
 async def test_completions_with_empty_image_with_uuid_without_cache_hit(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -665,6 +682,7 @@ async def test_completions_with_empty_image_with_uuid_without_cache_hit(
     [TEST_IMAGE_ASSETS[:i] for i in range(2, len(TEST_IMAGE_ASSETS))],
     indirect=True,
 )
+# [测试错误的 uuid 键名格式不影响补全正常执行]
 async def test_completions_with_image_with_incorrect_uuid_format(
     client: openai.AsyncOpenAI,
     model_name: str,

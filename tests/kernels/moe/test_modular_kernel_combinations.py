@@ -54,6 +54,7 @@ if current_platform.is_fp8_fnuz():
     )
 
 
+# [中文注释] 格式化测试结果消息，包含可选的异常信息
 def format_result(verbose, msg, ex=None):
     if ex is not None:
         x = str(ex)
@@ -70,6 +71,7 @@ def format_result(verbose, msg, ex=None):
         print(".", end="")
 
 
+# [中文注释] 多GPU rank工作函数：运行模块化内核并与参考实现比较结果
 def rank_worker(
     pgi: ProcessGroupInfo,
     vllm_config: VllmConfig,
@@ -136,6 +138,7 @@ def rank_worker(
         print(f"{count} of {count} tests passed in child process, rank={pgi.rank}.")
 
 
+# [中文注释] 执行单个模块化内核组合测试：创建权重并启动并行运行
 def run(config: Config, verbose: bool):
     assert config.is_valid()[0]
     assert not is_nyi_config(config)
@@ -158,6 +161,7 @@ Es = [32]
 DTYPEs = [torch.bfloat16]
 
 
+# [中文注释] 检查配置是否为尚未实现（NYI）的组合，用于跳过不支持的测试
 def is_nyi_config(config: Config) -> bool:
     # We know these configs to be legitimate. but still fail.
     info = expert_info(config.fused_experts_type)
@@ -172,6 +176,7 @@ def is_nyi_config(config: Config) -> bool:
     return not info.supports_expert_map
 
 
+# [中文注释] 生成所有有效的模块化内核测试用例组合（PrepareFinalize x Expert x 量化配置）
 def generate_valid_test_cases(
     world_size: int, prepare_finalize_types
 ) -> list[tuple[Any, ...]]:
@@ -241,6 +246,7 @@ def generate_valid_test_cases(
     ),
 )
 @meets_multi_gpu_requirements
+# [中文注释] 测试多GPU模块化内核组合的端到端正确性（需要多GPU和相关依赖包）
 def test_modular_kernel_combinations_multigpu(
     k: int,
     n: int,
@@ -281,6 +287,7 @@ def test_modular_kernel_combinations_multigpu(
         world_size=1, prepare_finalize_types=MK_SINGLE_GPU_PREPARE_FINALIZE_TYPES
     ),
 )
+# [中文注释] 测试单GPU模块化内核组合的端到端正确性
 def test_modular_kernel_combinations_singlegpu(
     k: int,
     n: int,

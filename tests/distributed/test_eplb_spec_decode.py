@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 EPLB 与推测解码（MTP/Eagle）结合时的推理精度
 from __future__ import annotations
 
 import lm_eval

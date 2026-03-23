@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试重复惩罚（repetition penalty）CUDA内核的正确性，
+# 验证CUDA实现与PyTorch参考实现的输出一致性
 import pytest
 import torch
 
@@ -28,6 +30,7 @@ DTYPES = [torch.float32, torch.float16]
     not current_platform.is_cuda(), reason="This test for checking CUDA kernel"
 )
 @torch.inference_mode()
+# 测试重复惩罚自定义算子在不同序列数、词表大小和数据类型下的正确性
 def test_apply_repetition_penalties(
     num_seqs: int,
     vocab_size: int,
@@ -85,6 +88,7 @@ def test_apply_repetition_penalties(
     not current_platform.is_cuda(), reason="This test for checking CUDA kernel"
 )
 @torch.inference_mode()
+# 测试序列数为零时重复惩罚内核的边界情况
 def test_apply_repetition_penalties_zero_seqs() -> None:
     """
     Test the apply_repetition_penalties custom op with num_seqs=0

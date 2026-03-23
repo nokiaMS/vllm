@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 Qwen3 模型在可解析上下文模式下的 Responses API（含函数调用和 MCP 工具）
+
 import importlib.util
 import json
 import logging
@@ -27,6 +29,7 @@ _PYTHON_TOOL_INSTRUCTION = (
 )
 
 
+# 启动带 Qwen3 推理解析器和工具服务的远程 vLLM 服务器
 @pytest.fixture(scope="module")
 def server():
     assert importlib.util.find_spec("gpt_oss") is not None, (
@@ -64,6 +67,7 @@ async def client(server):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试基本 Responses API 调用在可解析上下文模式下的正确性
 async def test_basic(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -78,6 +82,7 @@ async def test_basic(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试推理项和函数调用项作为输入时输出中包含对应类型
 async def test_reasoning_and_function_items(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -138,6 +143,7 @@ def call_function(name, args):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试首轮对话中函数调用的触发和参数正确性
 async def test_function_call_first_turn(client: OpenAI, model_name: str):
     tools = [
         {
@@ -185,6 +191,7 @@ async def test_function_call_first_turn(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 MCP 工具调用（code_interpreter）的完整流程和输出验证
 async def test_mcp_tool_call(client: OpenAI, model_name: str):
     """MCP tool calling with code_interpreter.
 
@@ -266,6 +273,7 @@ async def test_mcp_tool_call(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 max_output_tokens 限制导致响应不完整
 async def test_max_tokens(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,

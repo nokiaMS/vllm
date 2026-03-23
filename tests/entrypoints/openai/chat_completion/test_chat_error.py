@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试聊天补全的错误处理（finish_reason=error、系统消息验证、媒体内容警告等）
+
 from dataclasses import dataclass, field
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -118,6 +120,7 @@ def _build_serving_chat(engine: AsyncLLM) -> OpenAIServingChat:
 
 
 @pytest.mark.asyncio
+# 测试非流式模式下 finish_reason=error 时返回 500 错误
 async def test_chat_error_non_stream():
     """test finish_reason='error' returns 500 InternalServerError (non-streaming)"""
     mock_engine = MagicMock(spec=AsyncLLM)
@@ -168,6 +171,7 @@ async def test_chat_error_non_stream():
 
 
 @pytest.mark.asyncio
+# 测试流式模式下 finish_reason=error 时的错误 chunk 输出
 async def test_chat_error_stream():
     """test finish_reason='error' returns 500 InternalServerError (streaming)"""
     mock_engine = MagicMock(spec=AsyncLLM)
@@ -256,6 +260,7 @@ async def test_chat_error_stream():
         [{"image_url": {"url": "https://example.com/image.jpg"}}],
     ],
 )
+# 测试系统消息中包含图片内容时发出警告
 def test_system_message_warns_on_image(image_content):
     """Test that system messages with image content trigger a warning."""
     with patch(
@@ -277,6 +282,7 @@ def test_system_message_warns_on_image(image_content):
     assert "image_url" in call_args
 
 
+# 测试系统消息接受纯文本内容
 def test_system_message_accepts_text():
     """Test that system messages can contain text content."""
     # Should not raise an exception
@@ -289,6 +295,7 @@ def test_system_message_accepts_text():
     assert request.messages[0]["role"] == "system"
 
 
+# 测试系统消息接受文本数组格式内容
 def test_system_message_accepts_text_array():
     """Test that system messages can contain an array with text content."""
     # Should not raise an exception
@@ -304,6 +311,7 @@ def test_system_message_accepts_text_array():
     assert request.messages[0]["role"] == "system"
 
 
+# 测试用户消息接受图片内容
 def test_user_message_accepts_image():
     """Test that user messages can still contain image content."""
     # Should not raise an exception
@@ -337,6 +345,7 @@ def test_user_message_accepts_image():
         [{"input_audio": {"data": "base64data", "format": "wav"}}],
     ],
 )
+# 测试系统消息中包含音频内容时发出警告
 def test_system_message_warns_on_audio(audio_content):
     """Test that system messages with audio content trigger a warning."""
     with patch(
@@ -365,6 +374,7 @@ def test_system_message_warns_on_audio(audio_content):
         [{"video_url": {"url": "https://example.com/video.mp4"}}],
     ],
 )
+# 测试系统消息中包含视频内容时发出警告
 def test_system_message_warns_on_video(video_content):
     """Test that system messages with video content trigger a warning."""
     with patch(
@@ -386,6 +396,7 @@ def test_system_message_warns_on_video(video_content):
     assert "video_url" in call_args
 
 
+# 测试 json_schema 格式缺少 schema 字段时的验证错误
 def test_json_schema_response_format_missing_schema():
     """When response_format type is 'json_schema' but the json_schema field
     is not provided, request construction should raise a validation error

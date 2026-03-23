@@ -26,6 +26,7 @@ if current_platform.is_fp8_fnuz():
     )
 
 
+# [中文注释] 原生W8A8逐token矩阵乘法：支持逐token输入量化和逐通道权重量化
 def native_w8a8_per_token_matmul(A, B, As, Bs, output_dtype=torch.float16):
     """Matrix multiplication function that supports per-token input
     quantization and per-column weight quantization"""
@@ -49,11 +50,13 @@ def native_w8a8_per_token_matmul(A, B, As, Bs, output_dtype=torch.float16):
     return C.reshape(origin_C_shape).to(output_dtype)
 
 
+# [中文注释] 对FP8张量应用布尔掩码（通过int8视图操作绕过FP8限制）
 def fp8_mask(a, mask):
     dtype = a.dtype
     return a.view(torch.int8)[mask].view(dtype)
 
 
+# [中文注释] 逐通道W8A8 MoE参考实现：使用原生torch进行FP8量化和MoE计算
 def torch_w8a8_per_column_moe(a, w1, w2, w1_s, w2_s, score, topk):
     """This function performs fused moe with per-column int8
     quantization using native torch."""
@@ -122,6 +125,7 @@ SEEDS = [0]
     itertools.product(M, N, K, E, TOP_KS, DTYPES, SEEDS),
 )
 @torch.inference_mode()
+# [中文注释] 测试FP8逐token/逐通道融合MoE内核与参考实现的数值一致性
 def test_w8a8_fp8_fused_moe(M, N, K, E, topk, dtype, seed):
     torch.manual_seed(seed)
     # Initialize int8 quantization parameters

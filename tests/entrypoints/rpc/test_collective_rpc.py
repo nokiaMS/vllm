@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试通过 HTTP 端点调用 collective_rpc 的 worker 扩展方法：
+# 基本响应、返回 None、参数传递及字典返回值
+
 from typing import Any
 
 import pytest
@@ -11,6 +14,7 @@ from tests.utils import RemoteOpenAIServer
 MODEL_NAME = "Qwen/Qwen3-0.6B"
 
 
+# 用于测试 collective_rpc 的 worker 扩展类
 class TestWorkerExtension:
     def get_model_name(self) -> str:
         """Test non-pydantic return type."""
@@ -29,6 +33,7 @@ class TestWorkerExtension:
         return
 
 
+# 创建配置了 worker 扩展类的远程服务器 fixture
 @pytest.fixture(scope="module")
 def server():
     args = [

@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 基于 Harmony 格式的 Responses API 集成测试，覆盖基本对话、流式推理、工具调用、MCP 等场景
+
 """Integration tests for the Harmony-based Responses API."""
 
 from __future__ import annotations
@@ -47,6 +50,7 @@ GET_WEATHER_SCHEMA = {
 }
 
 
+# 调用外部天气 API 获取当前温度（失败时返回模拟值）
 def get_weather(latitude, longitude):
     try:
         response = requests.get(
@@ -78,6 +82,7 @@ def get_horoscope(sign):
     return f"{sign}: Next Tuesday you will befriend a baby otter."
 
 
+# 根据函数名分发调用对应的工具函数
 def call_function(name, args):
     logger.info("Calling function %s with args %s", name, args)
     dispatch = {
@@ -92,6 +97,7 @@ def call_function(name, args):
     return result
 
 
+# 启动带 Harmony 配置的远程 vLLM 服务器 fixture
 @pytest.fixture(scope="module")
 def server():
     assert importlib.util.find_spec("gpt_oss") is not None, (
@@ -125,6 +131,7 @@ async def client(server):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试基本的 Responses API 调用返回完成状态
 async def test_basic(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -137,6 +144,7 @@ async def test_basic(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试带 instructions 参数的基本响应
 async def test_basic_with_instructions(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -149,6 +157,7 @@ async def test_basic_with_instructions(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试带推理力度（reasoning effort）参数的响应
 async def test_basic_with_reasoning_effort(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -161,6 +170,7 @@ async def test_basic_with_reasoning_effort(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 max_output_tokens 限制导致响应不完整
 async def test_max_tokens(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -175,6 +185,7 @@ async def test_max_tokens(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试多轮对话格式的输入
 async def test_chat(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -191,6 +202,7 @@ async def test_chat(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试使用 input_text 类型结构化内容的对话
 async def test_chat_with_input_type(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -207,6 +219,7 @@ async def test_chat_with_input_type(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 JSON Schema 结构化输出
 async def test_structured_output(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -245,6 +258,7 @@ async def test_structured_output(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试使用 Pydantic 模型的结构化输出解析
 async def test_structured_output_with_parse(client: OpenAI, model_name: str):
     from pydantic import BaseModel
 
@@ -265,6 +279,7 @@ async def test_structured_output_with_parse(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 store 参数控制响应的存储和检索行为
 async def test_store(client: OpenAI, model_name: str):
     for store in [True, False]:
         response = await client.responses.create(
@@ -287,6 +302,7 @@ async def test_store(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试后台异步生成模式及轮询完成状态
 async def test_background(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -309,6 +325,7 @@ async def test_background(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试后台任务的取消操作
 async def test_background_cancel(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -324,6 +341,7 @@ async def test_background_cancel(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试使用 previous_response_id 的有状态多轮对话
 async def test_stateful_multi_turn(client: OpenAI, model_name: str):
     response1 = await client.responses.create(
         model=model_name, input="What is 123 * 456?"
@@ -347,6 +365,7 @@ async def test_stateful_multi_turn(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试流式响应事件的配对和排序正确性
 async def test_streaming_types(
     pairs_of_event_types: dict[str, str], client: OpenAI, model_name: str
 ):
@@ -367,6 +386,7 @@ async def test_streaming_types(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试函数调用场景下流式事件的嵌套正确性
 async def test_function_calling_with_streaming_types(
     pairs_of_event_types: dict[str, str], client: OpenAI, model_name: str
 ):
@@ -390,6 +410,7 @@ async def test_function_calling_with_streaming_types(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("background", [True, False])
+# 测试流式响应的事件序列、item_id 一致性和后台回放
 async def test_streaming(client: OpenAI, model_name: str, background: bool):
     # TODO: Add back when web search and code interpreter are available in CI
     prompts = [
@@ -493,6 +514,7 @@ async def test_streaming(client: OpenAI, model_name: str, background: bool):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.skip(reason="Web search tool is not available in CI yet.")
+# 测试网页搜索工具调用（CI 中暂跳过）
 async def test_web_search(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -505,6 +527,7 @@ async def test_web_search(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试代码解释器工具调用及输出正确性
 async def test_code_interpreter(client: OpenAI, model_name: str):
     timeout_value = client.timeout * 3
     client_with_timeout = client.with_options(timeout=timeout_value)
@@ -534,6 +557,7 @@ async def test_code_interpreter(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试推理项（reasoning item）作为输入的处理
 async def test_reasoning_item(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -556,6 +580,7 @@ async def test_reasoning_item(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试函数调用的触发、执行和多轮对话
 async def test_function_calling(client: OpenAI, model_name: str):
     tools = [GET_WEATHER_SCHEMA]
 
@@ -608,6 +633,7 @@ async def test_function_calling(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试多工具多轮函数调用（含重试机制）
 async def test_function_calling_multi_turn(client: OpenAI, model_name: str):
     """Multi-tool, multi-turn function calling with retry at API level."""
     tools = [
@@ -695,6 +721,7 @@ async def test_function_calling_multi_turn(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 tool_choice=required 触发 InternalServerError
 async def test_function_calling_required(client: OpenAI, model_name: str):
     tools = [GET_WEATHER_SCHEMA]
 
@@ -709,6 +736,7 @@ async def test_function_calling_required(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试系统消息中 commentary 频道始终存在
 async def test_system_message_with_tools(client: OpenAI, model_name: str):
     from vllm.entrypoints.openai.parser.harmony_utils import get_system_message
 
@@ -724,6 +752,7 @@ async def test_system_message_with_tools(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试使用完整对话历史的函数调用多轮交互
 async def test_function_calling_full_history(client: OpenAI, model_name: str):
     tools = [GET_WEATHER_SCHEMA]
 
@@ -770,6 +799,7 @@ async def test_function_calling_full_history(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试流式模式下的函数调用和工具结果提交
 async def test_function_calling_with_stream(client: OpenAI, model_name: str):
     """Function calling via streaming, with retry for non-determinism."""
     tools = [GET_WEATHER_SCHEMA]
@@ -851,6 +881,7 @@ async def test_function_calling_with_stream(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试函数调用不会误触发 code_interpreter 事件
 async def test_function_calling_no_code_interpreter_events(
     client: OpenAI, model_name: str
 ):
@@ -909,6 +940,7 @@ async def test_function_calling_no_code_interpreter_events(
     reason="This test is flaky in CI, needs investigation and "
     "potential fixes in the code interpreter MCP implementation."
 )
+# 测试代码解释器流式事件的结构和字段正确性（CI 中暂跳过）
 async def test_code_interpreter_streaming(
     client: OpenAI,
     model_name: str,
@@ -973,6 +1005,7 @@ async def test_code_interpreter_streaming(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 MCP 工具跨多轮对话的调用（通过 previous_response_id）
 async def test_mcp_tool_multi_turn(client: OpenAI, model_name: str, server):
     """MCP tools work across multiple turns via previous_response_id."""
     tools = [{"type": "mcp", "server_label": "code_interpreter"}]
@@ -1027,6 +1060,7 @@ async def test_mcp_tool_multi_turn(client: OpenAI, model_name: str, server):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 enable_response_messages 返回输入和输出消息
 async def test_output_messages_enabled(client: OpenAI, model_name: str, server):
     response = await client.responses.create(
         model=model_name,
@@ -1042,6 +1076,7 @@ async def test_output_messages_enabled(client: OpenAI, model_name: str, server):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试使用 previous_input_messages 的多轮函数调用
 async def test_function_call_with_previous_input_messages(
     client: OpenAI, model_name: str
 ):
@@ -1142,6 +1177,7 @@ async def test_function_call_with_previous_input_messages(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 Chat API 截断时 content 字段不为 null
 async def test_chat_truncation_content_not_null(client: OpenAI, model_name: str):
     response = await client.chat.completions.create(
         model=model_name,
@@ -1167,6 +1203,7 @@ async def test_chat_truncation_content_not_null(client: OpenAI, model_name: str)
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试自定义系统消息不被重复添加
 async def test_system_prompt_override_no_duplication(client: OpenAI, model_name: str):
     """Hard check: custom system message must not be duplicated."""
     response = await client.responses.create(
@@ -1200,6 +1237,7 @@ async def test_system_prompt_override_no_duplication(client: OpenAI, model_name:
         "Pirate language detection depends on model weights and is non-deterministic"
     ),
 )
+# 测试模型是否采用系统提示中指定的人格（非确定性，软检查）
 async def test_system_prompt_override_follows_personality(
     client: OpenAI, model_name: str
 ):
@@ -1228,6 +1266,7 @@ async def test_system_prompt_override_follows_personality(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试系统消息使用结构化 input_text 内容格式
 async def test_system_prompt_structured_content(client: OpenAI, model_name: str):
     """System message with structured input_text content format."""
     response = await client.responses.create(

@@ -7,6 +7,8 @@ import pytest
 import torch
 
 
+# 测试 OINK 算子（Blackwell SM100+ 专用）的可用性检测和 2D 视图保护逻辑
+
 def _load_oink_ops_module():
     # Import the module normally (vllm is installed as an editable package in CI).
     from vllm import _oink_ops
@@ -14,6 +16,7 @@ def _load_oink_ops_module():
     return _oink_ops
 
 
+# 测试不同 CUDA 环境下 OINK 算子的可用性检测
 def test_oink_availability_checks(monkeypatch: pytest.MonkeyPatch):
     _oink_ops = _load_oink_ops_module()
 
@@ -52,6 +55,7 @@ def test_oink_availability_checks(monkeypatch: pytest.MonkeyPatch):
     assert _oink_ops.has_fused_add_rms_norm() is True
 
 
+# 测试张量是否能安全地 view 为 2D 的步长检查逻辑
 def test_can_view_as_2d_stride_guard():
     # Import the helper from the layernorm module.
     from vllm.model_executor.layers.layernorm import _can_view_as_2d

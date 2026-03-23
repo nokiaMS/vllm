@@ -27,6 +27,7 @@ def _make_scheduler_output(
     )
 
 
+# [中文注释] 测试恢复的请求ID从Mamba状态索引中正确清除（避免过期索引指向无效块）
 def test_resumed_req_ids_cleared_from_mamba_state_idx():
     """When a request is force-preempted (e.g. reset_prefix_cache),
     it appears in resumed_req_ids but NOT in preempted_req_ids.

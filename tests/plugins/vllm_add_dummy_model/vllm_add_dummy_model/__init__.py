@@ -4,6 +4,7 @@
 from vllm import ModelRegistry
 
 
+# 注册测试用的虚拟模型（MyOPT、MyGemma2Embedding、MyLlava）到 vLLM 模型注册表
 def register():
     # Test directly passing the model
     from .my_opt import MyOPTForCausalLM

@@ -57,6 +57,7 @@ MNK_FACTORS = [
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @pytest.mark.parametrize("activation", [MoEActivation.SILU, MoEActivation.RELU2_NO_MUL])
 @torch.inference_mode()
+# [中文注释] 测试FlashInfer CUTLASS NVFP4 MoE内核在不同维度和激活函数下的计算正确性
 def test_flashinfer_fp4_moe_no_graph(
     m: int,
     n: int,

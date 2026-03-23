@@ -70,6 +70,9 @@ if TYPE_CHECKING:
     from vllm.v1.worker.gpu_model_runner import GPUModelRunner
 
 
+# 支持惰性通信同步的中间张量类，用于流水线并行（PP）。
+# 在访问 .tensors 属性时自动等待异步通信完成，
+# 避免在非必要时阻塞，实现计算与通信的重叠。
 class AsyncIntermediateTensors(IntermediateTensors):
     """IntermediateTensors with lazy comm synchronization"""
 
@@ -102,6 +105,11 @@ class AsyncIntermediateTensors(IntermediateTensors):
         return object.__getattribute__(self, name)
 
 
+# GPU Worker 类，是 vLLM v1 引擎中单个 GPU 设备上的工作进程。
+# 职责包括：设备初始化、模型加载、内存分析与 KV 缓存分配、
+# CUDA Graph 捕获与预热、模型前向执行与采样、LoRA 管理、
+# 权重热更新、性能分析（profiling）以及休眠/唤醒的内存管理。
+# 通过 GPUModelRunner 代理实际的模型推理逻辑。
 class Worker(WorkerBase):
     def __init__(
         self,
@@ -154,6 +162,9 @@ class Worker(WorkerBase):
         # pending non-blocking PP send work from the previous iteration
         self._pp_send_work: list[Handle] = []
 
+    # 休眠模式：释放 GPU 内存以供其他进程使用。
+    # level=1 时仅卸载权重，level=2 时还保存模型 buffer 到 CPU。
+    # 利用 CuMemAllocator 的内存池管理实现按标签的选择性内存释放。
     def sleep(self, level: int = 1) -> None:
         from vllm.device_allocator.cumem import CuMemAllocator
 
@@ -178,6 +189,7 @@ class Worker(WorkerBase):
             format_gib(used_bytes),
         )
 
+    # 唤醒模式：恢复休眠时释放的 GPU 内存，并在需要时重置 FP8 KV 缓存的缩放因子。
     def wake_up(self, tags: list[str] | None = None) -> None:
         from vllm.device_allocator.cumem import CuMemAllocator
 
@@ -215,6 +227,9 @@ class Worker(WorkerBase):
             )
         return allocator.use_memory_pool(tag=tag)
 
+    # 初始化 GPU 设备：设置 CUDA 设备、初始化分布式环境（NCCL）、
+    # 随机种子、内存快照采集，以及构造 GPUModelRunner 实例。
+    # 在数据并行场景下会根据 DP rank 调整 local_rank。
     @instrument(span_name="Init device")
     def init_device(self):
         if self.device_config.device_type == "cuda":
@@ -346,6 +361,9 @@ class Worker(WorkerBase):
     def reload_weights(self, *args, **kwargs) -> None:
         self.model_runner.reload_weights(*args, **kwargs)
 
+    # 分析可用 GPU 内存：通过 profile run 测量模型峰值内存使用量，
+    # 估算 CUDA Graph 内存开销，计算可分配给 KV 缓存的剩余内存。
+    # 支持通过 kv_cache_memory_bytes 手动指定 KV 缓存大小。
     @torch.inference_mode()
     def determine_available_memory(self) -> int:
         """Profiles the peak memory usage of the model to determine how much
@@ -528,6 +546,8 @@ class Worker(WorkerBase):
             self.model_runner.update_max_model_len(max_model_len)
         logger.debug("Updated max_model_len to %d", max_model_len)
 
+    # 根据 KV 缓存配置分配 GPU 内存，初始化 KV 连接器和路由专家捕获器，
+    # 并在需要时构建 KV 缓存零化元数据。
     @instrument(span_name="Allocate KV cache")
     def initialize_from_config(self, kv_cache_config: KVCacheConfig) -> None:
         """Allocate GPU KV cache with the specified kv_cache_config."""
@@ -563,6 +583,8 @@ class Worker(WorkerBase):
         ):
             self.model_runner._init_kv_zero_meta()
 
+    # 编译和预热模型：执行 torch.compile 预热、内核调优、CUDA Graph 捕获，
+    # 以及采样器/池化器的内存预分配，确保推理时无冷启动延迟。
     @instrument(span_name="Warmup (GPU)")
     def compile_or_warm_up_model(self) -> float:
         warmup_sizes: list[int] = []
@@ -755,6 +777,8 @@ class Worker(WorkerBase):
     ) -> ModelRunnerOutput | AsyncModelRunnerOutput:
         return self.model_runner.sample_tokens(grammar_output)
 
+    # 执行一步模型推理。处理流水线并行的中间张量接收/发送，
+    # 通过 model_runner 执行前向传播。非末级 PP rank 返回 None 并异步发送中间结果。
     @torch.inference_mode()
     def execute_model(
         self, scheduler_output: "SchedulerOutput"
@@ -943,6 +967,7 @@ class Worker(WorkerBase):
             model_config=self.model_config,
         )
 
+    # 初始化权重传输引擎，用于在线训练场景下从 trainer 接收模型权重更新。
     def init_weight_transfer_engine(self, init_info: dict) -> None:
         """
         Initialize weight transfer mechanism.
@@ -1024,6 +1049,8 @@ class Worker(WorkerBase):
         return self.elastic_ep_executor.execute(execute_method, *args, **kwargs)
 
 
+# 初始化 Worker 的分布式环境：设置 NCCL 后端、张量/流水线并行组、
+# 批次不变性优化以及弹性专家并行的环境变量。
 def init_worker_distributed_environment(
     vllm_config: VllmConfig,
     rank: int,

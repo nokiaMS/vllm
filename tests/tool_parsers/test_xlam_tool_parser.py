@@ -20,6 +20,7 @@ from vllm.tool_parsers.xlam_tool_parser import xLAMToolParser
 MODEL = "Salesforce/Llama-xLAM-2-8B-fc-r"
 
 
+# [中文注释] 加载xLAM工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def xlam_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL)

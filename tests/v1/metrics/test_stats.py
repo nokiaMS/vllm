@@ -4,11 +4,13 @@ from vllm.v1.engine import FinishReason
 from vllm.v1.metrics.stats import IterationStats, PromptTokenStats, RequestStateStats
 
 
+# [中文注释] 测试用例：验证IterationStats的repr输出格式。
 def test_iteration_stats_repr():
     iteration_stats = IterationStats()
     assert repr(iteration_stats).startswith("IterationStats(")
 
 
+# [中文注释] 测试用例：验证有前缀缓存时prefill KV计算正确排除已缓存token。
 def test_prefill_kv_computed_with_cache():
     """Test that prefill KV compute correctly excludes cached tokens."""
     iteration_stats = IterationStats()
@@ -38,6 +40,7 @@ def test_prefill_kv_computed_with_cache():
     assert prefill_kv_computed == 8800  # 10000 - 1200
 
 
+# [中文注释] 测试用例：验证无前缀缓存时prefill KV计算等于全部prompt token数。
 def test_prefill_kv_computed_no_cache():
     """Test prefill KV compute without prefix caching."""
     iteration_stats = IterationStats()
@@ -67,6 +70,7 @@ def test_prefill_kv_computed_no_cache():
     assert prefill_kv_computed == 2000
 
 
+# [中文注释] 测试用例：验证prefill KV计算的边界情况（负缓存数、全部缓存等）。
 def test_prefill_kv_computed_edge_cases():
     """Test edge cases for prefill KV compute calculation."""
     iteration_stats = IterationStats()
@@ -109,6 +113,7 @@ def test_prefill_kv_computed_edge_cases():
     assert prefill_kv_computed2 == 0  # All cached, nothing computed
 
 
+# [中文注释] 测试用例：验证所有token本地计算、无缓存的PromptTokenStats统计。
 def test_prompt_token_stats_all_computed():
     """Test all tokens computed locally, no caching."""
     stats = PromptTokenStats()
@@ -126,6 +131,7 @@ def test_prompt_token_stats_all_computed():
     assert stats.total == 1000
 
 
+# [中文注释] 测试用例：验证部分本地前缀缓存命中的PromptTokenStats统计。
 def test_prompt_token_stats_partial_local_cache():
     """Test partial local prefix cache hit."""
     stats = PromptTokenStats()
@@ -142,6 +148,7 @@ def test_prompt_token_stats_partial_local_cache():
     assert stats.external_kv_transfer == 0
 
 
+# [中文注释] 测试用例：验证部分外部KV传输的PromptTokenStats统计。
 def test_prompt_token_stats_partial_external_transfer():
     """Test partial external KV transfer."""
     stats = PromptTokenStats()
@@ -158,6 +165,7 @@ def test_prompt_token_stats_partial_external_transfer():
     assert stats.external_kv_transfer == 500
 
 
+# [中文注释] 测试用例：验证混合来源（本地缓存+外部传输）的PromptTokenStats统计。
 def test_prompt_token_stats_mixed_sources():
     """Test mix of local cache and external transfer."""
     stats = PromptTokenStats()
@@ -174,6 +182,7 @@ def test_prompt_token_stats_mixed_sources():
     assert stats.external_kv_transfer == 200
 
 
+# [中文注释] 测试用例：验证全部本地缓存命中时触发最后一个token重新计算的统计。
 def test_prompt_token_stats_full_local_cache_recompute():
     """Test full local cache triggers last token recomputation.
 
@@ -194,6 +203,7 @@ def test_prompt_token_stats_full_local_cache_recompute():
     assert stats.recomputed_tokens == 1
 
 
+# [中文注释] 测试用例：验证全部外部传输时触发最后一个token重新计算的统计。
 def test_prompt_token_stats_full_external_transfer_recompute():
     """Test full external transfer triggers last token recomputation."""
     stats = PromptTokenStats()

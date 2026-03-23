@@ -17,6 +17,7 @@ from .utils import (
 )
 
 
+# [中文注释] 辅助函数：创建匹配token数回调，用于模拟KV加载失败恢复场景。
 def _make_get_num_new_matched_tokens(
     req_num_new_matched_tokens: dict[str, int],
     async_load,
@@ -28,6 +29,7 @@ def _make_get_num_new_matched_tokens(
     return get_num_new_matched_tokens
 
 
+# [中文注释] 测试夹具：创建recompute策略调度器，用于测试KV加载失败恢复。
 @pytest.fixture
 def scheduler():
     vllm_config = create_vllm_config(kv_load_failure_policy="recompute")
@@ -42,6 +44,7 @@ def scheduler():
         (100, 99, {98}),
     ],
 )
+# [中文注释] 测试用例：验证异步加载失败后使用recompute策略进行恢复的正确性。
 def test_async_load_failure(
     scheduler: Scheduler,
     num_prompt_blocks: int,
@@ -119,6 +122,7 @@ def test_async_load_failure(
         (100, 99, {98}),
     ],
 )
+# [中文注释] 测试用例：验证同步加载失败后使用recompute策略进行恢复的正确性。
 def test_sync_load_failure(
     scheduler: Scheduler,
     num_prompt_blocks: int,
@@ -198,6 +202,7 @@ def test_sync_load_failure(
         (100, 99, 50, {49}),
     ],
 )
+# [中文注释] 测试用例：验证共享块场景下同步加载失败恢复的正确性。
 def test_sync_load_failure_with_shared_blocks(
     scheduler: Scheduler,
     num_prompt_blocks: int,
@@ -277,6 +282,7 @@ def test_sync_load_failure_with_shared_blocks(
         (100, 99, {98, 50, 0}),
     ],
 )
+# [中文注释] 测试用例：验证渐进式异步加载失败（多轮失败）恢复的正确性。
 def test_async_progressive_load_failure(
     scheduler: Scheduler,
     num_prompt_blocks: int,

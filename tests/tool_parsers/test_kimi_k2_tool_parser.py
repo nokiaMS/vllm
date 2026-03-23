@@ -14,6 +14,7 @@ from vllm.tool_parsers.kimi_k2_tool_parser import KimiK2ToolParser
 MODEL = "moonshotai/Kimi-K2-Instruct"
 
 
+# [中文注释] 加载Kimi-K2工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def kimi_k2_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL, trust_remote_code=True)

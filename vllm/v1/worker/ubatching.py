@@ -17,6 +17,9 @@ _NUM_UBATCHES: int = 2
 _CURRENT_CONTEXTS: list["UBatchContext | None"] = []
 
 
+# 微批次上下文管理器，实现双批次重叠（DBO）执行中的线程间同步
+# 设计思路：通过 CPU 线程事件和 GPU 流事件实现计算流与通信流的交替调度
+# 关键机制：同一时刻只有一个线程处于活跃状态，通过 yield 操作切换执行权
 class UBatchContext:
     """
     Context manager for micro-batching synchronization using threading events.
@@ -147,16 +150,20 @@ class UBatchContext:
         self._wait_comm_done()
 
 
+# 检查当前是否处于 DBO（双批次重叠）执行模式
 def dbo_enabled() -> bool:
     return len(_THREAD_ID_TO_CONTEXT) > 0
 
 
+# 获取当前线程对应的微批次 ID，非 DBO 模式下返回 0
 def dbo_current_ubatch_id() -> int:
     if len(_THREAD_ID_TO_CONTEXT) == 0:
         return 0
     return _THREAD_ID_TO_CONTEXT[threading.get_ident()]
 
 
+# 注册微批次操作的装饰器工厂，将 UBatchContext 的方法包装为全局可调用函数
+# 仅在 DBO 模式激活时执行，通过线程 ID 查找当前上下文
 def _register_ubatch_function(func):
     def wrapper(*args, **kwargs):
         if len(_THREAD_ID_TO_CONTEXT) > 0:
@@ -183,6 +190,7 @@ dbo_switch_to_compute_sync = _register_ubatch_function(
 )
 
 
+# 注册接收钩子到下一个微批次的上下文中，用于在微批次切换时执行通信操作
 def dbo_register_recv_hook(recv_hook):
     if len(_THREAD_ID_TO_CONTEXT) > 0:
         ctx_idx = _THREAD_ID_TO_CONTEXT[threading.get_ident()]
@@ -190,6 +198,7 @@ def dbo_register_recv_hook(recv_hook):
         next_ctx.recv_hook = recv_hook
 
 
+# 在当前微批次的计算流上执行给定函数，用于记录/等待 GPU 事件
 def dbo_get_previous_event(func, *args, **kwargs):
     if len(_THREAD_ID_TO_CONTEXT) > 0:
         ctx_idx = _THREAD_ID_TO_CONTEXT[threading.get_ident()]
@@ -199,6 +208,8 @@ def dbo_get_previous_event(func, *args, **kwargs):
             return func(*args, **kwargs)
 
 
+# 创建多个微批次上下文实例，配置线程间的环形同步事件链
+# 设计：CPU 事件形成环形链（第 i 个上下文的信号事件是第 i+1 个的等待事件），实现顺序调度
 def make_ubatch_contexts(
     num_micro_batches: int,
     compute_stream: torch.cuda.Stream,

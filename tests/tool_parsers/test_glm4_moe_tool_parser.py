@@ -21,6 +21,7 @@ from vllm.tool_parsers.glm4_moe_tool_parser import (
 MODEL = "zai-org/GLM-4.5"
 
 
+# [中文注释] 加载GLM-4 MOE工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def glm4_moe_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL)

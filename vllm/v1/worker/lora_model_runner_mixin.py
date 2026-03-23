@@ -26,8 +26,13 @@ InputBatch: TypeAlias = TPUInputBatch | GPUInputBatch
 logger = init_logger(__name__)
 
 
+# LoRA 功能混入类，为 GPUModelRunner 和 TPUModelRunner 提供 LoRA 适配器管理能力。
+# 核心设计：通过 LRUCacheWorkerLoRAManager 管理 LoRA 适配器的加载/卸载/LRU 缓存，
+# 在每步推理前根据批次中的请求动态激活对应的 LoRA 权重。
+# 支持 CUDA Graph 预热时的 dummy LoRA 设置，以及视觉编码器/连接器的独立 LoRA 映射。
 # Defined as a mixin for GPUModelRunner
 class LoRAModelRunnerMixin:
+    # 加载 LoRA 模型：创建 LoRA 管理器并将 LoRA 层注入到基础模型中。
     def load_lora_model(
         self,
         model: nn.Module,
@@ -45,6 +50,7 @@ class LoRAModelRunnerMixin:
         )
         return self.lora_manager.create_lora_manager(model, vllm_config)
 
+    # 激活指定的 LoRA 适配器：构建 token→LoRA ID 映射并交给 LoRA 管理器设置。
     def _set_active_loras(
         self,
         prompt_lora_mapping: tuple[int, ...],
@@ -70,6 +76,7 @@ class LoRAModelRunnerMixin:
         if not hasattr(self, "lora_manager"):
             raise RuntimeError("LoRA is not enabled. Use --enable-lora to enable LoRA.")
 
+    # 根据输入批次中的 LoRA 映射关系激活 LoRA 适配器（推理时调用）。
     def set_active_loras(
         self,
         input_batch: InputBatch,
@@ -90,6 +97,8 @@ class LoRAModelRunnerMixin:
             prompt_lora_mapping, token_lora_mapping, lora_requests, mapping_type
         )
 
+    # 用于 CUDA Graph 捕获和预热的上下文管理器：
+    # 创建虚拟 LoRA 适配器并添加到缓存中，退出后可选择移除。
     @contextmanager
     def maybe_setup_dummy_loras(
         self, lora_config: LoRAConfig | None, remove_lora: bool = True
@@ -126,6 +135,8 @@ class LoRAModelRunnerMixin:
             if remove_lora:
                 self.lora_manager.remove_all_adapters()
 
+    # 为 CUDA Graph 捕获/预热选择虚拟 LoRA：按请求数循环分配 LoRA ID，
+    # 模拟最坏情况下的 LoRA 批次配置以确保 graph 覆盖所有场景。
     @contextmanager
     def maybe_select_dummy_loras(
         self,
@@ -230,6 +241,7 @@ class LoRAModelRunnerMixin:
 
             yield
 
+    # 组合上下文管理器：同时设置和选择虚拟 LoRA，用于 dummy run 和 graph 捕获。
     @contextmanager
     def maybe_dummy_run_with_lora(
         self,

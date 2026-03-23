@@ -19,6 +19,9 @@ from vllm.v1.worker.gpu.states import RequestState
 from vllm.v1.worker.utils import AttentionGroup
 
 
+# 默认模型状态管理类，适用于标准decoder-only模型
+# 负责管理多模态编码、M-RoPE位置编码、注意力元数据构建等
+# 支持可选的多模态输入（视觉/音频编码器）和M-RoPE（3D旋转位置编码）
 class DefaultModelState(ModelState):
     def __init__(
         self,
@@ -61,6 +64,7 @@ class DefaultModelState(ModelState):
                 device=self.device,
             )
 
+    # 添加新请求时的初始化：若使用M-RoPE则预计算prefill位置编码
     def add_request(self, req_index: int, new_req_data: NewRequestData) -> None:
         if self.uses_mrope:
             # Pre-compute M-RoPE positions for prefill.
@@ -72,10 +76,12 @@ class DefaultModelState(ModelState):
                 mm_features=new_req_data.mm_features,
             )
 
+    # 将暂存的M-RoPE位置数据写入GPU
     def apply_staged_writes(self) -> None:
         if self.uses_mrope:
             self.mrope_state.apply_staged_writes()
 
+    # 获取多模态嵌入：执行编码器推理、缓存输出、收集嵌入并与文本嵌入合并
     def get_mm_embeddings(
         self,
         scheduled_encoder_inputs: dict[str, list[int]],
@@ -107,6 +113,7 @@ class DefaultModelState(ModelState):
         )
         return inputs_embeds[: input_batch.num_tokens_after_padding]
 
+    # 准备模型额外输入：若使用M-RoPE则生成3D位置编码张量
     def prepare_inputs(
         self, input_batch: InputBatch, req_states: RequestState
     ) -> dict[str, Any]:
@@ -126,6 +133,7 @@ class DefaultModelState(ModelState):
         ]
         return {"positions": mrope_positions}
 
+    # 准备CUDA Graph捕获时的虚拟输入，用于确定图的输入形状
     def prepare_dummy_inputs(self, num_reqs: int, num_tokens: int) -> dict[str, Any]:
         model_inputs = {}
         if self.supports_mm_inputs:
@@ -136,6 +144,8 @@ class DefaultModelState(ModelState):
             model_inputs["positions"] = mrope_positions
         return model_inputs
 
+    # 构建注意力元数据：包括查询位置、序列长度、块表、槽位映射等
+    # 根据CUDA Graph模式决定是否使用填充后的尺寸
     def prepare_attn(
         self,
         input_batch: InputBatch,

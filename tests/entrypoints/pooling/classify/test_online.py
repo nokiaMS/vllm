@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# [在线分类测试模块：通过 HTTP API 验证分类端点的各种请求格式、批量处理、聊天格式、截断及 invocations 端点]
+
 import pytest
 import requests
 import torch
@@ -16,6 +18,7 @@ input_text = "This product was excellent and exceeded my expectations"
 input_tokens = [1986, 1985, 572, 9073, 323, 33808, 847, 16665]
 
 
+# [测试夹具：启动使用 Qwen2.5-1.5B-apeach 分类模型的远程服务器]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -30,6 +33,7 @@ def server():
         yield remote_server
 
 
+# [测试基础功能：验证 /v1/models 和 /tokenize 端点的正确性]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_basic(server: RemoteOpenAIServer, model_name: str):
     # test /v1/models
@@ -45,6 +49,7 @@ def test_basic(server: RemoteOpenAIServer, model_name: str):
     assert response.json()["tokens"] == input_tokens
 
 
+# [测试分类请求：验证字符串输入和 token 列表输入的分类结果格式]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_completion_request(server: RemoteOpenAIServer, model_name: str):
     # test input: str
@@ -78,6 +83,7 @@ def test_completion_request(server: RemoteOpenAIServer, model_name: str):
     assert hasattr(output.data[0], "probs")
 
 
+# [测试批量分类请求：验证多条字符串和 token 列表输入的批量处理]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_completion_request_batched(server: RemoteOpenAIServer, model_name: str):
     N = 10
@@ -113,6 +119,7 @@ def test_completion_request_batched(server: RemoteOpenAIServer, model_name: str)
         assert item.label in ["Default", "Spoiled"]
 
 
+# [测试空输入错误：验证空字符串和空列表输入返回 400 错误]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_empty_input_error(server: RemoteOpenAIServer, model_name: str):
     classification_response = requests.post(
@@ -134,6 +141,7 @@ def test_empty_input_error(server: RemoteOpenAIServer, model_name: str):
     assert "error" in error
 
 
+# [测试提示截断参数：验证有效截断值和超出限制截断值的行为]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_truncate_prompt_tokens(server: RemoteOpenAIServer, model_name: str):
     long_text = "hello " * 600
@@ -163,6 +171,7 @@ def test_truncate_prompt_tokens(server: RemoteOpenAIServer, model_name: str):
     assert "truncate_prompt_tokens" in error["error"]["message"]
 
 
+# [测试特殊 token 参数：验证 add_special_tokens 为 True/False 时请求均能成功]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_add_special_tokens(server: RemoteOpenAIServer, model_name: str):
     # The add_special_tokens parameter doesn't seem to be working with this model.
@@ -182,6 +191,7 @@ def test_add_special_tokens(server: RemoteOpenAIServer, model_name: str):
     ClassificationResponse.model_validate(response.json())
 
 
+# [测试聊天格式请求：验证多轮对话输入的分类、add_generation_prompt、continue_final_message 等参数]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_chat_request(server: RemoteOpenAIServer, model_name: str):
@@ -285,6 +295,7 @@ async def test_chat_request(server: RemoteOpenAIServer, model_name: str):
     )
 
 
+# [测试 invocations 端点（补全请求）：验证 invocations 与 classify 端点结果一致]
 @pytest.mark.asyncio
 async def test_invocations_completion_request(server: RemoteOpenAIServer):
     request_args = {
@@ -315,6 +326,7 @@ async def test_invocations_completion_request(server: RemoteOpenAIServer):
         )
 
 
+# [测试 invocations 端点（聊天请求）：验证聊天格式下 invocations 与 classify 端点结果一致]
 @pytest.mark.asyncio
 async def test_invocations_chat_request(server: RemoteOpenAIServer):
     messages = [
@@ -357,6 +369,7 @@ async def test_invocations_chat_request(server: RemoteOpenAIServer):
         )
 
 
+# [测试激活函数控制：验证在线 API 中 use_activation 参数对分类概率的影响]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_use_activation(server: RemoteOpenAIServer, model_name: str):
@@ -387,6 +400,7 @@ async def test_use_activation(server: RemoteOpenAIServer, model_name: str):
     )
 
 
+# [测试 score 端点不可用：验证 num_labels != 1 的分类模型不注册 score 端点]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_score(server: RemoteOpenAIServer, model_name: str):
@@ -402,6 +416,7 @@ async def test_score(server: RemoteOpenAIServer, model_name: str):
     assert response.json()["detail"] == "Not Found"
 
 
+# [测试 rerank 端点不可用：验证 num_labels != 1 的分类模型不注册 rerank 端点]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_rerank(server: RemoteOpenAIServer, model_name: str):
@@ -417,6 +432,7 @@ async def test_rerank(server: RemoteOpenAIServer, model_name: str):
     assert response.json()["detail"] == "Not Found"
 
 
+# [测试通用 pooling 端点的 classify 任务：验证通过 pooling 端点执行分类]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_pooling_classify(server: RemoteOpenAIServer, model_name: str):
@@ -434,6 +450,7 @@ async def test_pooling_classify(server: RemoteOpenAIServer, model_name: str):
     assert len(poolings.data[0].data) == 2
 
 
+# [测试通用 pooling 端点的 token_classify 任务：验证 token 级别分类的输出维度]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_pooling_token_classify(server: RemoteOpenAIServer, model_name: str):
@@ -453,6 +470,7 @@ async def test_pooling_token_classify(server: RemoteOpenAIServer, model_name: st
     assert len(poolings.data[0].data[0]) == 2
 
 
+# [测试 pooling 端点不支持的任务：验证 embed、token_embed、plugin 任务返回错误]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("task", ["embed", "token_embed", "plugin"])

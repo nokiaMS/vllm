@@ -23,6 +23,7 @@ pytestmark = pytest.mark.cpu_test
         ("native", None, 1, 1, None, None),
     ],
 )
+# [中文注释] 测试用例：验证KV缓存卸载配置的正确性，包括native/lmcache后端和每rank字节数计算。
 def test_kv_connector(
     kv_offloading_backend, kv_offloading_size, tp, pp, expected_backend, expected_bytes
 ):
@@ -65,6 +66,7 @@ def test_kv_connector(
         assert "existing_key" not in kv_connector_extra_config
 
 
+# [中文注释] 测试用例：验证仅设置kv_offloading_size时默认使用native后端。
 def test_kv_offloading_size_only_uses_native_default():
     """Test that setting only kv_offloading_size enables native offloading."""
     vllm_config = VllmConfig(

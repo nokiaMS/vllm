@@ -29,6 +29,7 @@ from .utils import create_vllm_config
 # ---------------------------------------------------------------------------
 
 
+# [中文注释] 辅助函数：创建带FlexKV传输配置的最小化VllmConfig。
 def _make_vllm_config(
     kv_connector: str = "FlexKVConnectorV1",
     kv_role: str = "kv_both",
@@ -42,10 +43,12 @@ def _make_vllm_config(
     return vllm_config
 
 
+# [中文注释] 辅助函数：创建Mock KVCacheConfig。
 def _make_kv_cache_config() -> KVCacheConfig:
     return MagicMock(spec=KVCacheConfig)
 
 
+# [中文注释] 辅助函数：创建模拟的flexkv模块，用于在无真实安装时测试。
 def _make_flexkv_module(
     impl_mock: MagicMock,
 ) -> tuple[types.ModuleType, types.ModuleType]:
@@ -69,6 +72,7 @@ def _make_flexkv_module(
     return flexkv_mod, adapter_mod
 
 
+# [中文注释] 辅助函数：将模拟的flexkv模块安装到sys.modules中。
 def _install_flexkv_mock(impl_mock: MagicMock):
     """Insert fake flexkv modules into sys.modules and return a context that
     cleans them up afterwards."""
@@ -82,6 +86,7 @@ def _install_flexkv_mock(impl_mock: MagicMock):
     return patch.dict(sys.modules, mods)
 
 
+# [中文注释] 辅助函数：构建FlexKVConnectorV1实例，使用模拟的实现。
 def _build_connector(vllm_config: VllmConfig, impl_mock: MagicMock):
     """Instantiate FlexKVConnectorV1 with faked flexkv modules."""
     from vllm.distributed.kv_transfer.kv_connector.v1.flexkv_connector import (
@@ -102,6 +107,7 @@ def _build_connector(vllm_config: VllmConfig, impl_mock: MagicMock):
 # ---------------------------------------------------------------------------
 
 
+# [中文注释] 测试类：验证FlexKV未安装时是否抛出有用的ImportError错误信息。
 class TestFlexKVConnectorImportError:
     """FlexKVConnectorV1 should fail with a helpful message when flexkv is
     absent."""
@@ -126,6 +132,7 @@ class TestFlexKVConnectorImportError:
         assert "https://github.com/taco-project/FlexKV" in str(exc_info.value)
 
 
+# [中文注释] 测试类：验证FlexKVConnectorV1将所有公共方法正确委托给底层实现。
 class TestFlexKVConnectorDelegation:
     """All public API methods should be forwarded to the impl."""
 

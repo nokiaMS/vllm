@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 特定模型的自定义输入构建器，处理多图多宽高比、多视频、窗口注意力等边缘情况
 """Custom input builders for edge-cases in different models."""
 
 from collections.abc import Callable

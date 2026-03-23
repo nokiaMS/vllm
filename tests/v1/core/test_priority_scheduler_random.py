@@ -21,9 +21,12 @@ from vllm.v1.request import Request
 from .test_scheduler import create_scheduler_with_priority
 from .utils import EOS_TOKEN_ID
 
+# 使用随机化策略测试优先级调度器的正确性和鲁棒性
+
 pytestmark = pytest.mark.cpu_test
 
 
+# 创建具有随机参数的测试请求
 def _create_random_request(
     max_tokens_range: tuple[int, int],
     num_tokens_range: tuple[int, int],

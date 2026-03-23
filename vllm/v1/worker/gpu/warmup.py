@@ -19,6 +19,10 @@ from vllm.v1.request import Request
 from vllm.v1.worker.gpu.model_runner import GPUModelRunner
 
 
+# 内核预热函数，通过模拟 prefill 和 decode 两个阶段来触发 Triton 内核的 JIT 编译。
+# 设计思路：构造最小化的虚拟调度输出，执行两轮完整的 execute_model + sample_tokens，
+# 确保所有代码路径（包括 KV 缓存分配、结构化输出位掩码内核等）都被编译和缓存。
+# 预热期间禁用 KV 连接器以避免实际的跨实例通信。
 @torch.inference_mode()
 def warmup_kernels(
     model_runner: GPUModelRunner,

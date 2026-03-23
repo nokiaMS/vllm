@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 vLLM serve 命令行参数解析：配置文件、LoRA 模块、工具调用、推理解析器、聊天模板等]
 
 import json
 
@@ -20,6 +21,7 @@ CHATML_JINJA_PATH = VLLM_PATH / "examples/template_chatml.jinja"
 assert CHATML_JINJA_PATH.exists()
 
 
+# [构建 vLLM 和 serve 子命令的参数解析器]
 def _build_vllm_parsers():
     vllm_parser = FlexibleArgumentParser()
     subparsers = vllm_parser.add_subparsers()
@@ -39,6 +41,7 @@ def serve_parser():
 
 
 ### Test config parsing
+# [测试配置文件参数解析：验证 --config 与 --port 的优先级]
 def test_config_arg_parsing(serve_parser, cli_config_file):
     args = serve_parser.parse_args([])
     assert args.port == 8000
@@ -65,6 +68,7 @@ def test_config_arg_parsing(serve_parser, cli_config_file):
 
 
 ### Tests for LoRA module parsing
+# [测试 LoRA 模块的 key=value 格式解析]
 def test_valid_key_value_format(serve_parser):
     # Test old format: name=path
     args = serve_parser.parse_args(
@@ -77,6 +81,7 @@ def test_valid_key_value_format(serve_parser):
     assert args.lora_modules == expected
 
 
+# [测试 LoRA 模块的 JSON 格式解析]
 def test_valid_json_format(serve_parser):
     # Test valid JSON format input
     args = serve_parser.parse_args(
@@ -91,6 +96,7 @@ def test_valid_json_format(serve_parser):
     assert args.lora_modules == expected
 
 
+# [测试无效 JSON 格式（缺少右括号）应报错退出]
 def test_invalid_json_format(serve_parser):
     # Test invalid JSON format input, missing closing brace
     with pytest.raises(SystemExit):
@@ -99,6 +105,7 @@ def test_invalid_json_format(serve_parser):
         )
 
 
+# [测试非 JSON 且非 key=value 格式的输入应报类型错误]
 def test_invalid_type_error(serve_parser):
     # Test type error when values are not JSON or key=value
     with pytest.raises(SystemExit):
@@ -110,6 +117,7 @@ def test_invalid_type_error(serve_parser):
         )
 
 
+# [测试 JSON 格式正确但缺少必需字段时应报错]
 def test_invalid_json_field(serve_parser):
     # Test valid JSON format but missing required fields
     with pytest.raises(SystemExit):
@@ -121,12 +129,14 @@ def test_invalid_json_field(serve_parser):
         )
 
 
+# [测试空值 LoRA 模块参数应返回空列表]
 def test_empty_values(serve_parser):
     # Test when no LoRA modules are provided
     args = serve_parser.parse_args(["--lora-modules", ""])
     assert args.lora_modules == []
 
 
+# [测试混合使用 key=value 和 JSON 格式的多个 LoRA 模块输入]
 def test_multiple_valid_inputs(serve_parser):
     # Test multiple valid inputs (both old and JSON format)
     args = serve_parser.parse_args(
@@ -146,6 +156,7 @@ def test_multiple_valid_inputs(serve_parser):
 
 
 ### Tests for serve argument validation that run prior to loading
+# [测试启用自动工具选择但未指定工具调用解析器时应报错]
 def test_enable_auto_choice_passes_without_tool_call_parser(serve_parser):
     """Ensure validation fails if tool choice is enabled with no call parser"""
     # If we enable-auto-tool-choice, explode with no tool-call-parser
@@ -154,6 +165,7 @@ def test_enable_auto_choice_passes_without_tool_call_parser(serve_parser):
         validate_parsed_serve_args(args)
 
 
+# [测试启用自动工具选择并指定工具调用解析器时应通过验证]
 def test_enable_auto_choice_passes_with_tool_call_parser(serve_parser):
     """Ensure validation passes with tool choice enabled with a call parser"""
     args = serve_parser.parse_args(
@@ -166,6 +178,7 @@ def test_enable_auto_choice_passes_with_tool_call_parser(serve_parser):
     validate_parsed_serve_args(args)
 
 
+# [测试同时启用自动工具选择和推理解析器时应报错]
 def test_enable_auto_choice_fails_with_enable_reasoning(serve_parser):
     """Ensure validation fails if reasoning is enabled with auto tool choice"""
     args = serve_parser.parse_args(
@@ -179,6 +192,7 @@ def test_enable_auto_choice_fails_with_enable_reasoning(serve_parser):
         validate_parsed_serve_args(args)
 
 
+# [测试仅启用推理解析器时应通过验证]
 def test_passes_with_reasoning_parser(serve_parser):
     """Ensure validation passes if reasoning is enabled
     with a reasoning parser"""
@@ -191,6 +205,7 @@ def test_passes_with_reasoning_parser(serve_parser):
     validate_parsed_serve_args(args)
 
 
+# [测试聊天模板文件存在时应通过验证]
 def test_chat_template_validation_for_happy_paths(serve_parser):
     """Ensure validation passes if the chat template exists"""
     args = serve_parser.parse_args(
@@ -199,6 +214,7 @@ def test_chat_template_validation_for_happy_paths(serve_parser):
     validate_parsed_serve_args(args)
 
 
+# [测试聊天模板文件不存在时应报错]
 def test_chat_template_validation_for_sad_paths(serve_parser):
     """Ensure validation fails if the chat template doesn't exist"""
     args = serve_parser.parse_args(args=["--chat-template", "does/not/exist"])
@@ -216,12 +232,14 @@ def test_chat_template_validation_for_sad_paths(serve_parser):
         ([], []),
     ],
 )
+# [测试多个 --middleware 参数的解析]
 def test_middleware(serve_parser, cli_args, expected_middleware):
     """Ensure multiple middleware args are parsed properly"""
     args = serve_parser.parse_args(args=cli_args)
     assert args.middleware == expected_middleware
 
 
+# [测试 --default-chat-template-kwargs JSON 参数的基本解析]
 def test_default_chat_template_kwargs_parsing(serve_parser):
     """Ensure default_chat_template_kwargs JSON is parsed correctly"""
     args = serve_parser.parse_args(
@@ -230,6 +248,7 @@ def test_default_chat_template_kwargs_parsing(serve_parser):
     assert args.default_chat_template_kwargs == {"enable_thinking": False}
 
 
+# [测试复杂 JSON 格式的聊天模板关键字参数解析]
 def test_default_chat_template_kwargs_complex(serve_parser):
     """Ensure complex default_chat_template_kwargs JSON is parsed correctly"""
     kwargs_json = '{"enable_thinking": false, "custom_param": "value", "num": 42}'
@@ -241,12 +260,14 @@ def test_default_chat_template_kwargs_complex(serve_parser):
     }
 
 
+# [测试聊天模板关键字参数默认值为 None]
 def test_default_chat_template_kwargs_default_none(serve_parser):
     """Ensure default_chat_template_kwargs defaults to None"""
     args = serve_parser.parse_args(args=[])
     assert args.default_chat_template_kwargs is None
 
 
+# [测试无效 JSON 的聊天模板关键字参数应报错]
 def test_default_chat_template_kwargs_invalid_json(serve_parser):
     """Ensure invalid JSON raises an error"""
     with pytest.raises(SystemExit):
@@ -272,6 +293,7 @@ def test_default_chat_template_kwargs_invalid_json(serve_parser):
         "served_model_name_with_no_model_in_config",
     ],
 )
+# [测试 --served-model-name 参数与 model_tag 的交互和验证]
 def test_served_model_name_parsing(tmp_path, vllm_parser, args, raises):
     """Ensure that users don't misuse --served-model-name and end up with the default
     model tag instead of the one they intended to serve."""

@@ -5,6 +5,7 @@
 from typing_extensions import TypedDict
 
 
+# [中文注释] Mistral专用服务器配置类型定义
 class ServerConfig(TypedDict, total=False):
     model: str
     arguments: list[str]

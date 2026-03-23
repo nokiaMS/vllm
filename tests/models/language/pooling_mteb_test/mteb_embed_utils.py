@@ -46,6 +46,7 @@ _empty_model_meta = ModelMeta(
 )
 
 
+# MTEB 嵌入评估的混入类：实现余弦相似度计算接口
 class MtebEmbedMixin(mteb.EncoderProtocol):
     mteb_model_meta = _empty_model_meta
 
@@ -74,6 +75,7 @@ class MtebEmbedMixin(mteb.EncoderProtocol):
         return sim
 
 
+# vLLM MTEB 编码器：将 vLLM 模型封装为 MTEB 评估兼容的编码器，支持随机化输入顺序
 class VllmMtebEncoder(MtebEmbedMixin):
     def __init__(self, vllm_model):
         self.llm = vllm_model
@@ -96,6 +98,7 @@ class VllmMtebEncoder(MtebEmbedMixin):
         return embeds
 
 
+# OpenAI 客户端 MTEB 编码器：通过 OpenAI API 接口进行嵌入编码的 MTEB 评估封装
 class OpenAIClientMtebEncoder(MtebEmbedMixin):
     def __init__(self, model_name: str, client):
         self.model_name = model_name
@@ -123,6 +126,7 @@ class OpenAIClientMtebEncoder(MtebEmbedMixin):
         return embeds
 
 
+# 辅助函数：运行 MTEB 嵌入任务评估并返回主要分数
 def run_mteb_embed_task(encoder: mteb.EncoderProtocol, tasks):
     tasks = mteb.get_tasks(tasks=tasks)
     results = mteb.evaluate(
@@ -136,6 +140,7 @@ def run_mteb_embed_task(encoder: mteb.EncoderProtocol, tasks):
     return main_score
 
 
+# 核心测试函数：对嵌入模型执行完整的 MTEB 评估流程，包括配置验证、嵌入质量检查和分数对比
 def mteb_test_embed_models(
     hf_runner,
     vllm_runner,

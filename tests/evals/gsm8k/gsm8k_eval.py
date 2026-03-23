@@ -22,6 +22,7 @@ from tqdm.asyncio import tqdm
 INVALID = -9999999
 
 
+# [中文注释] 从URL下载文件并缓存到本地，已存在则跳过
 def download_and_cache_file(url: str, filename: str | None = None) -> str:
     """Download and cache a file from a URL."""
     if filename is None:
@@ -41,6 +42,7 @@ def download_and_cache_file(url: str, filename: str | None = None) -> str:
     return filename
 
 
+# [中文注释] 加载GSM8K训练集和测试集数据
 def load_gsm8k_data() -> tuple[list[dict], list[dict]]:
     """Load GSM8K train and test data"""
     train_url = "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/train.jsonl"
@@ -55,6 +57,7 @@ def load_gsm8k_data() -> tuple[list[dict], list[dict]]:
     return train_data, test_data
 
 
+# [中文注释] 逐行读取JSONL格式文件
 def read_jsonl(filename: str) -> Generator[dict, None, None]:
     """Read a JSONL file."""
     with open(filename) as fin:
@@ -63,6 +66,7 @@ def read_jsonl(filename: str) -> Generator[dict, None, None]:
                 yield json.loads(line)
 
 
+# [中文注释] 从回答字符串中提取最后一个数值作为答案
 def get_answer_value(answer_str: str) -> int:
     """Extract the numerical answer from the response."""
     answer_str = answer_str.replace(",", "")
@@ -75,6 +79,7 @@ def get_answer_value(answer_str: str) -> int:
         return INVALID
 
 
+# [中文注释] 异步调用vLLM的OpenAI兼容completions端点，返回响应文本和token数
 async def call_vllm_api(
     session: aiohttp.ClientSession,
     prompt: str,
@@ -110,6 +115,7 @@ async def call_vllm_api(
         return "", 0
 
 
+# [中文注释] 构建GSM8K few-shot提示和真值标签列表
 def _build_gsm8k_prompts(
     num_questions: int = 1319,
     num_shots: int = 5,
@@ -139,6 +145,7 @@ def _build_gsm8k_prompts(
     return prompts, labels
 
 
+# [中文注释] 对GSM8K响应进行评分，返回准确率、无效率、延迟等指标
 def _score_gsm8k(
     states: list[str],
     output_tokens: list[int],
@@ -169,6 +176,7 @@ def _score_gsm8k(
     }
 
 
+# [中文注释] 通过vLLM服务端点异步评估GSM8K准确率
 def evaluate_gsm8k(
     num_questions: int = 1319,
     num_shots: int = 5,
@@ -222,6 +230,7 @@ def evaluate_gsm8k(
     return _score_gsm8k(states, output_tokens, labels, num_shots, max_tokens, latency)
 
 
+# [中文注释] 使用离线vllm.LLM对象评估GSM8K准确率，直接调用llm.generate()
 def evaluate_gsm8k_offline(
     llm,
     num_questions: int = 1319,
@@ -258,6 +267,7 @@ def evaluate_gsm8k_offline(
     return _score_gsm8k(states, output_tokens, labels, num_shots, max_tokens, latency)
 
 
+# [中文注释] GSM8K评估脚本的命令行入口，支持配置问题数、shot数、温度等参数
 def main() -> None:
     parser = argparse.ArgumentParser(description="GSM8K evaluation for vLLM serve")
     parser.add_argument(

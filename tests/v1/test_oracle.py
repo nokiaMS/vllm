@@ -7,6 +7,7 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 MODEL = "meta-llama/Llama-3.2-1B-Instruct"
 
 
+# 测试不支持的引擎配置是否正确抛出异常（如推测解码配置）
 def test_unsupported_configs():
     with pytest.raises(ValueError):
         AsyncEngineArgs(

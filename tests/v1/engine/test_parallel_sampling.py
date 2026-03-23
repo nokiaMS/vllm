@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试ParentRequest并行采样（n>1）在流式和FINAL_ONLY模式下的输出处理
 
 from vllm import SamplingParams
 from vllm.outputs import CompletionOutput

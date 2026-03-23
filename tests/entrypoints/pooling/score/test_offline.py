@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# [离线评分测试模块：验证 vLLM 离线 score API 的激活函数参数行为]
+
 import weakref
 
 import pytest
@@ -14,6 +16,7 @@ from vllm.platforms import current_platform
 MODEL_NAME = "tomaarsen/Qwen3-Reranker-0.6B-seq-cls"
 
 
+# [测试夹具：创建 Qwen3-Reranker 评分模型的 LLM 实例]
 @pytest.fixture(scope="module")
 def llm():
     # ROCm: Use FLEX_ATTENTION backend as it's the only attention backend
@@ -41,6 +44,7 @@ def llm():
     cleanup_dist_env_and_memory()
 
 
+# [测试池化激活函数参数：验证默认启用激活函数、启用与禁用的结果一致性]
 def test_pooling_params(llm: LLM):
     def get_outputs(use_activation):
         queries = "What is the capital of France?"

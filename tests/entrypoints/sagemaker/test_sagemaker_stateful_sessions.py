@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 SageMaker 有状态会话管理：会话创建、关闭、无效请求处理、
+# 会话内推理调用以及会话 ID 头部验证
 
 import openai  # use the official client for correctness check
 import pytest

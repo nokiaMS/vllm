@@ -12,6 +12,8 @@ import pytest
 
 from vllm.platforms import current_platform
 
+# 测试 AutoRound 量化模型的加载和推理
+
 MODELS = [
     "OPEA/Qwen2.5-0.5B-Instruct-int4-sym-inc",  ##auto_round:auto_gptq
     "Intel/Qwen2-0.5B-Instruct-int4-sym-AutoRound",  ##auto_round:auto_awq

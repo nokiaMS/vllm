@@ -22,6 +22,7 @@ MODELS = [
 ]
 
 
+# 测试 ERNIE 嵌入模型（text2vec 中文句向量）在 MTEB 基准上的评估性能
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     mteb_test_embed_models(
@@ -32,6 +33,7 @@ def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -
     )
 
 
+# 测试 ERNIE 嵌入模型的输出正确性：与 HuggingFace 模型的嵌入进行对比
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_correctness(
     hf_runner, vllm_runner, model_info: EmbedModelInfo, example_prompts

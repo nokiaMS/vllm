@@ -4,6 +4,7 @@
 from vllm.v1.metrics.loggers import StatLoggerBase
 
 
+# 测试用的虚拟统计日志器，记录调度和迭代统计数据
 class DummyStatLogger(StatLoggerBase):
     """
     A dummy stat logger for testing purposes.

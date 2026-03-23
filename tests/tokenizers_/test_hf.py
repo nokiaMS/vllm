@@ -11,6 +11,7 @@ from vllm.tokenizers.hf import get_cached_tokenizer
 
 
 @pytest.mark.parametrize("model_id", ["gpt2", "zai-org/chatglm3-6b"])
+# [中文注释] 测试缓存分词器与原始分词器的一致性，包括pickle序列化/反序列化
 def test_cached_tokenizer(model_id: str):
     reference_tokenizer = AutoTokenizer.from_pretrained(
         model_id, trust_remote_code=True
@@ -26,6 +27,7 @@ def test_cached_tokenizer(model_id: str):
     _check_consistency(unpickled_tokenizer, reference_tokenizer)
 
 
+# [中文注释] 验证分词器的缓存属性（特殊ID、词表、编码结果）与预期一致
 def _check_consistency(target: TokenizerLike, expected: TokenizerLike):
     assert isinstance(target, type(expected))
 

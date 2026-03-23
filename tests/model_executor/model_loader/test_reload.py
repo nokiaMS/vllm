@@ -22,6 +22,9 @@ from vllm.platforms import current_platform
 from vllm.utils.torch_utils import cuda_device_count_stateless
 
 
+# 测试模型权重重载机制，包括 meta 张量转换、层生命周期管理和多模型权重热更新
+
+# 测试张量在 meta 设备和实际设备之间的转换正确性
 def test_move_metatensors():
     tensor = torch.empty((1, 2, 3))
     meta_tensor = to_meta_tensor(tensor)
@@ -36,6 +39,7 @@ def test_move_metatensors():
     assert tensor.__dict__ == meta_tensor.__dict__ == materialized_tensor.__dict__
 
 
+# 测试层的 meta 卸载和重新物化的完整生命周期
 def test_reload_lifecycle():
     layer = torch.nn.Linear(2, 3)
     info = LayerReloadingInfo(restore_metadata=capture_layer_to_meta(layer))
@@ -57,6 +61,7 @@ def test_reload_lifecycle():
         assert tensor.__dict__ == materialized_tensor.__dict__
 
 
+# 测试模型层在被垃圾回收后相关的弱引用信息也被正确清理
 def test_model_cleanup(dist_init, default_vllm_config):
     layer = QKVParallelLinear(2, 3, 4)
     assert layer.weight.weight_loader.__self__ is layer
@@ -75,6 +80,7 @@ def test_model_cleanup(dist_init, default_vllm_config):
     assert len(mock_info_dict) == 0
 
 
+# 测试 get_numel_loaded 正确计算实际加载的参数元素数量
 def test_get_numel_loaded():
     param = torch.empty(10, device="meta")
     loaded_weight = torch.empty(10)
@@ -126,6 +132,7 @@ def test_get_numel_loaded():
         ),
     ],
 )
+# 测试运行时热更新模型权重后推理结果的正确性
 def test_reload_weights(base_model, mul_model, add_model, tp_size, vllm_runner):
     if cuda_device_count_stateless() < tp_size:
         pytest.skip(reason="Not enough CUDA devices")

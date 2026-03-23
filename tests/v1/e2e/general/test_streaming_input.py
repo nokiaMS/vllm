@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件端到端测试AsyncLLM的流式输入功能，包括批量/间隔输入、取消、关闭、错误传播和并发会话
 """
 End-to-end tests for the streaming input feature in AsyncLLM.
 
@@ -33,6 +34,7 @@ if not current_platform.is_cuda():
 MODEL = "facebook/opt-125m"
 
 
+# [中文注释] 创建AsyncLLM引擎的模块级fixture
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def engine():
     """Create an AsyncLLM engine for the test.
@@ -55,6 +57,7 @@ async def engine():
         await asyncio.sleep(0.1)
 
 
+# [中文注释] 创建流式输入测试用的确定性采样参数
 def get_sampling_params(max_tokens: int = 20) -> SamplingParams:
     """Create sampling params for streaming input tests."""
     return SamplingParams(
@@ -65,6 +68,7 @@ def get_sampling_params(max_tokens: int = 20) -> SamplingParams:
     )
 
 
+# [中文注释] 收集生成器的所有输出并拼接完整文本
 async def collect_outputs(
     output_gen: AsyncGenerator[RequestOutput, None],
 ) -> tuple[list[RequestOutput], str]:
@@ -78,6 +82,7 @@ async def collect_outputs(
     return outputs, full_text
 
 
+# [中文注释] 测试批量发送流式输入（所有输入一次性排队发送）
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_bunched(engine: AsyncLLM):
     """Test streaming input where all inputs are sent at once (bunched/queued).
@@ -118,6 +123,7 @@ async def test_streaming_input_bunched(engine: AsyncLLM):
     print(f"Bunched test generated: {full_text}")
 
 
+# [中文注释] 测试间隔发送流式输入（每个输入处理完成后再发送下一个）
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_spaced(engine: AsyncLLM):
     """Test streaming input where inputs are spaced out.
@@ -187,6 +193,7 @@ async def test_streaming_input_spaced(engine: AsyncLLM):
     print(f"Outputs per chunk: {outputs_per_chunk}")
 
 
+# [中文注释] 测试批量和间隔输入在确定性采样下产生相同输出
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_output_equivalence(engine: AsyncLLM):
     """Test that bunched and spaced inputs produce equivalent outputs.
@@ -227,6 +234,7 @@ async def test_streaming_input_output_equivalence(engine: AsyncLLM):
     print(f"Equivalence test passed. Generated: {bunched_text}")
 
 
+# [中文注释] 测试取消输出流时整个会话被正确中止
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_cancel_output_stream(engine: AsyncLLM):
     """Test that cancelling the output stream aborts the entire session.
@@ -285,6 +293,7 @@ async def test_streaming_input_cancel_output_stream(engine: AsyncLLM):
     print(f"Cancel test passed. Received {outputs_received} outputs before cancel")
 
 
+# [中文注释] 测试关闭输入流时生成正确完成
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_close_signals_completion(engine: AsyncLLM):
     """Test that closing the input stream signals completion.
@@ -322,6 +331,7 @@ async def test_streaming_input_close_signals_completion(engine: AsyncLLM):
     print("Close completion test passed")
 
 
+# [中文注释] 测试中止会话时所有排队的输入被正确取消
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_abort_queued_inputs(engine: AsyncLLM):
     """Test that aborting the session cancels queued inputs.
@@ -385,6 +395,7 @@ async def test_streaming_input_abort_queued_inputs(engine: AsyncLLM):
     )
 
 
+# [中文注释] 测试输入生成器中的错误被正确传播给调用者
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_error_propagation(engine: AsyncLLM):
     """Test that errors in the input generator are propagated to the caller."""
@@ -416,6 +427,7 @@ async def test_streaming_input_error_propagation(engine: AsyncLLM):
     )
 
 
+# [中文注释] 测试多个并发流式输入会话互不干扰
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_multiple_concurrent_sessions(engine: AsyncLLM):
     """Test multiple concurrent streaming input sessions.
@@ -457,6 +469,7 @@ async def test_streaming_input_multiple_concurrent_sessions(engine: AsyncLLM):
     assert not engine.output_processor.has_unfinished_requests()
 
 
+# [中文注释] 测试每个输入块可使用不同的采样参数
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_per_chunk_sampling_params(engine: AsyncLLM):
     """Test that per-chunk sampling params are respected.
@@ -487,6 +500,7 @@ async def test_streaming_input_per_chunk_sampling_params(engine: AsyncLLM):
     print(f"Per-chunk params test generated: {full_text}")
 
 
+# [中文注释] 测试空输入生成器的行为，应仍产生已完成标记的输出
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_empty_generator(engine: AsyncLLM):
     """Test behavior when the input generator yields nothing.
@@ -510,6 +524,7 @@ async def test_streaming_input_empty_generator(engine: AsyncLLM):
     assert outputs[-1].finished, "Should have a finished output"
 
 
+# [中文注释] 测试单个输入块的流式输入，等同于常规非流式请求
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_single_chunk(engine: AsyncLLM):
     """Test streaming input with a single chunk.
@@ -534,6 +549,7 @@ async def test_streaming_input_single_chunk(engine: AsyncLLM):
     print(f"Single chunk test generated: {full_text}")
 
 
+# [中文注释] 测试会话完成后请求ID可以被重用
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_reuse_request_id(engine: AsyncLLM):
     """Test that request IDs can be reused after a session completes."""
@@ -563,6 +579,7 @@ async def test_streaming_input_reuse_request_id(engine: AsyncLLM):
     print(f"Reuse ID test: session 1: {text1}, session 2: {text2}")
 
 
+# [中文注释] 测试无效配置（n>1、FINAL_ONLY、停止字符串）抛出正确的验证错误
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_validation_errors(engine: AsyncLLM):
     """Test that invalid configurations raise appropriate errors."""
@@ -591,6 +608,7 @@ async def test_streaming_input_validation_errors(engine: AsyncLLM):
             pass
 
 
+# [中文注释] 测试输入生成器在引擎完成后延迟退出时输出生成器能正确结束
 @pytest.mark.asyncio(loop_scope="module")
 async def test_streaming_input_delayed_generator_exit(engine: AsyncLLM):
     """Test that output generator exits when input generator closes after outputs.

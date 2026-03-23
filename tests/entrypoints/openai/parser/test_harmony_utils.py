@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 Harmony 消息格式工具函数：输入解析、输出解析、分析消息丢弃、系统消息和推理项处理]
 
 import pytest
 from openai_harmony import Message, Role
@@ -19,6 +20,7 @@ from vllm.entrypoints.openai.responses.harmony import (
 )
 
 
+# [测试 Chat Completion 和 Responses API 共用的 Harmony 消息输入解析]
 class TestCommonParseInputToHarmonyMessage:
     """
     Tests for scenarios that are common to both Chat Completion
@@ -212,6 +214,7 @@ class TestCommonParseInputToHarmonyMessage:
         assert messages[0].content[1].text == "actual text"
 
 
+# [测试 Chat Completion API 特有的 Harmony 消息解析：空内容、推理、工具调用组合]
 class TestParseChatInputToHarmonyMessage:
     """
     Tests for scenarios that are specific to the Chat Completion API
@@ -583,6 +586,7 @@ class TestParseChatInputToHarmonyMessage:
         )
 
 
+# [测试自动丢弃 final 消息之前的 analysis 消息]
 class TestAutoDropAnalysisMessages:
     def test_no_analysis_messages(self) -> None:
         messages = [
@@ -705,6 +709,7 @@ class TestAutoDropAnalysisMessages:
         assert cleaned_messages == messages[1:]
 
 
+# [测试 Harmony 格式输出解析：中断/完整的推理和内容、前言和工具调用]
 class TestParseChatOutput:
     def test_parse_chat_output_interrupted_first_message(self) -> None:
         harmony_str = "<|channel|>final<|message|>I'm in the middle of answering"
@@ -809,6 +814,7 @@ class TestParseChatOutput:
         assert final_content == "Let me look that up.\nThe answer is 42."
 
 
+# [测试 has_custom_tools 区分内置工具和自定义工具]
 def test_has_custom_tools() -> None:
     assert not has_custom_tools(set())
     assert not has_custom_tools({"web_search_preview", "code_interpreter", "container"})
@@ -818,6 +824,7 @@ def test_has_custom_tools() -> None:
     )
 
 
+# [测试 get_system_message 的通道配置包含所有标准 Harmony 通道]
 class TestGetSystemMessage:
     """Tests for get_system_message channel configuration."""
 
@@ -844,6 +851,7 @@ class TestGetSystemMessage:
                 )
 
 
+# [测试 Responses API 推理项转换为 Harmony analysis 消息]
 class TestResponseInputToHarmonyReasoningItem:
     """Tests for response_input_to_harmony handling of reasoning input items.
 

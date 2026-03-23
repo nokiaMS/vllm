@@ -13,6 +13,7 @@ def include_stop_str_in_output(request):
     return request.param
 
 
+# [中文注释] 用于测试的虚拟去分词器，将token ID映射为ASCII字符
 class _DummyDetokenizer(BaseIncrementalDetokenizer):
     def __init__(self, request: EngineCoreRequest):
         super().__init__(request)
@@ -22,6 +23,7 @@ class _DummyDetokenizer(BaseIncrementalDetokenizer):
         return chr(next_token_id)
 
 
+# [中文注释] 创建带有停止参数的EngineCoreRequest测试请求
 def _make_request(stop, include_stop_str_in_output: bool, min_tokens: int = 0):
     params = SamplingParams(
         stop=stop,
@@ -43,6 +45,7 @@ def _make_request(stop, include_stop_str_in_output: bool, min_tokens: int = 0):
     return req
 
 
+# [中文注释] 测试同时存在停止字符串和EOS token时，去分词器正确处理停止字符串截断
 def test_stop_string_while_stop_token_terminates(include_stop_str_in_output: bool):
     """
     This test verifies that the detokenizer correctly handles the case where

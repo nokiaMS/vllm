@@ -28,6 +28,8 @@ from vllm.model_executor.layers.quantization.base_config import (
 )
 
 
+# 测试自定义量化配置的注册和使用机制
+
 class FakeQuantLinearMethod(UnquantizedLinearMethod):
     """Fake quantization linear method for per-token dynamic quantization."""
 

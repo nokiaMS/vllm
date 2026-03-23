@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Pixtral 和 Mistral Small 视觉模型的聊天推理，使用 Mistral 专有分词器格式
 import json
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Any

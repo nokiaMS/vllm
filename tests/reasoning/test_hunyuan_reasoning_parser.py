@@ -146,6 +146,7 @@ tokenizer = AutoTokenizer.from_pretrained(
 )
 
 
+# [中文注释] 参数化测试Hunyuan A13B推理提取：使用<think>/<answer>标记分隔推理和回答
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,

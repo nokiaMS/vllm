@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 模型测试注册表模块：定义各种模型架构的HuggingFace示例信息，
+# 包括文本生成、嵌入、多模态、推测解码等类别的测试模型配置
+
 from collections.abc import Mapping, Set
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -12,6 +15,7 @@ from transformers import __version__ as TRANSFORMERS_VERSION
 from vllm.config.model import ModelDType, TokenizerMode
 
 
+# 存储HuggingFace示例模型的配置信息，包括模型名称、分词器、版本要求等
 @dataclass(frozen=True)
 class _HfExamplesInfo:
     default: str
@@ -118,6 +122,7 @@ class _HfExamplesInfo:
     instead of minimal layers for testing.
     """
 
+    # 检查当前安装的transformers版本是否满足模型要求
     def check_transformers_version(
         self,
         *,
@@ -173,6 +178,7 @@ class _HfExamplesInfo:
 
         return msg
 
+    # 检查模型是否在线可用
     def check_available_online(
         self,
         *,
@@ -1325,6 +1331,7 @@ _EXAMPLE_MODELS = {
 }
 
 
+# 管理HuggingFace示例模型集合，提供按架构名查询和按模型ID查找的功能
 class HfExampleModels:
     def __init__(self, hf_models: Mapping[str, _HfExamplesInfo]) -> None:
         super().__init__()

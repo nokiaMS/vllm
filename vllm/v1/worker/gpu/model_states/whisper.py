@@ -18,6 +18,10 @@ from vllm.v1.worker.gpu.states import RequestState
 from vllm.v1.worker.utils import AttentionGroup
 
 
+# Whisper模型状态管理类，专为编码器-解码器架构的语音识别模型设计
+# 与DefaultModelState的关键区别：编码器输出通过交叉注意力（cross-attention）
+# 传递给解码器，而非合并到inputs_embeds中；首次prefill时写入KV缓存，
+# 后续decode步骤直接从交叉注意力KV缓存读取
 class WhisperModelState(ModelState):
     def __init__(
         self,
@@ -57,9 +61,12 @@ class WhisperModelState(ModelState):
 
         self.encoder_outputs: list[torch.Tensor] = []
 
+    # Whisper模型仅支持转录（transcription）任务
     def get_supported_generation_tasks(self):
         return ("transcription",)
 
+    # 获取音频编码器输出：与默认实现不同，不生成inputs_embeds
+    # 编码器输出直接通过encoder_outputs传递给解码器的交叉注意力层
     def get_mm_embeddings(
         self,
         scheduled_encoder_inputs: dict[str, list[int]],
@@ -85,6 +92,7 @@ class WhisperModelState(ModelState):
             self.encoder_outputs = []
         return None
 
+    # 准备模型输入：将编码器输出传递给解码器，传递后清空以避免重复使用
     def prepare_inputs(
         self, input_batch: InputBatch, req_states: RequestState
     ) -> dict[str, Any]:
@@ -92,9 +100,11 @@ class WhisperModelState(ModelState):
         self.encoder_outputs = []
         return model_inputs
 
+    # 准备CUDA Graph捕获的虚拟输入，传空的编码器输出列表
     def prepare_dummy_inputs(self, num_reqs: int, num_tokens: int) -> dict[str, Any]:
         return {"encoder_outputs": []}
 
+    # 构建注意力元数据：除标准自注意力外，还需处理交叉注意力的编码器序列长度
     def prepare_attn(
         self,
         input_batch: InputBatch,
@@ -134,6 +144,9 @@ class WhisperModelState(ModelState):
         )
         return attn_metadata
 
+    # 获取编码器序列长度：用于交叉注意力的KV长度计算
+    # 正常推理时使用实际编码长度，CUDA Graph捕获时使用最大编码长度
+    # 返回按注意力组索引的编码器长度映射
     def _get_encoder_seq_lens(
         self,
         req_ids: list[str],

@@ -14,6 +14,7 @@ ASSETS_DIR = Path(__file__).parent.parent / "assets"
 assert ASSETS_DIR.exists()
 
 
+# [中文注释] 测试RGBA到RGB转换的自定义背景色：白色、黑色、蓝色、绿色
 def test_image_media_io_rgba_custom_background(tmp_path):
     """Test RGBA to RGB conversion with custom background colors."""
     # Create a simple RGBA image with transparent and opaque pixels
@@ -80,6 +81,7 @@ def test_image_media_io_rgba_custom_background(tmp_path):
     assert green_numpy[0][0][2] == 0  # B
 
 
+# [中文注释] 测试rgba_background_color参数验证：无效类型、元素数量、范围等
 def test_image_media_io_rgba_background_color_validation():
     """Test that invalid rgba_background_color values are properly rejected."""
 

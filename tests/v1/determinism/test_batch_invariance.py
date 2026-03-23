@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 批次不变性测试：验证相同请求在不同批次大小下产生一致的生成结果和 logprobs
 import contextlib
 import os
 import random
@@ -21,6 +22,7 @@ from vllm import LLM, SamplingParams
 IS_DEVICE_CAPABILITY_BELOW_90 = is_device_capability_below_90()
 
 
+# 测试同一请求（"needle"）在 bs=1 和 bs=N 下生成结果是否一致
 @skip_unsupported
 @pytest.mark.timeout(1000)
 @pytest.mark.parametrize(
@@ -159,6 +161,7 @@ def test_v1_generation_is_deterministic_across_batch_sizes_with_needle(
                 llm_bsN.shutdown()
 
 
+# 测试 BS=1 与 BS=N 运行时逐步 logprobs 是否按位一致
 @skip_unsupported
 @pytest.mark.parametrize(
     "backend",
@@ -385,6 +388,7 @@ def test_logprobs_bitwise_batch_invariance_bs1_vs_bsN(
         pytest.fail(msg)
 
 
+# 简单生成冒烟测试：验证模型能正常输出
 @skip_unsupported
 @pytest.mark.parametrize(
     "backend",
@@ -436,6 +440,7 @@ def test_simple_generation(backend):
             llm.shutdown()
 
 
+# 反向测试：禁用批次不变性模式后，BS=1 与 BS=N 应出现不一致（证明批次不变性有效）
 @skip_unsupported
 @pytest.mark.parametrize(
     "backend",
@@ -654,6 +659,7 @@ def test_logprobs_without_batch_invariance_should_fail(
         pytest.fail(fail_msg)
 
 
+# 测试解码阶段的 logprobs 与预填充阶段的 logprobs 是否按位匹配
 @skip_unsupported
 @pytest.mark.parametrize("backend", ["FLASH_ATTN"])
 def test_decode_logprobs_match_prefill_logprobs(
@@ -922,6 +928,7 @@ def test_decode_logprobs_match_prefill_logprobs(
         print(f"{'=' * 80}\n")
 
 
+# 辅助函数：创建指定最大序列数的 LLM 实例
 def LLM_with_max_seqs(
     model: str,
     max_num_seqs: int,

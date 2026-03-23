@@ -25,6 +25,7 @@ models_config = {
 }
 
 
+# [中文注释] 计算base64编码图像的感知哈希值，用于验证Prithvi MAE地理空间模型的输出
 def _compute_image_hash(base64_data: str) -> str:
     # Decode the base64 output and create image from byte stream
     decoded_image = base64.b64decode(base64_data)
@@ -34,6 +35,7 @@ def _compute_image_hash(base64_data: str) -> str:
     return str(imagehash.phash(image))
 
 
+# [中文注释] fixture：启动带Prithvi地理空间插件的远程pooling服务器
 @pytest.fixture(scope="function")
 def server(model_name, plugin):
     args = [
@@ -62,6 +64,7 @@ def server(model_name, plugin):
         for model_name, config in models_config.items()
     ],
 )
+# [中文注释] 在线测试Prithvi MAE插件：通过API验证TIFF输出的感知哈希
 async def test_prithvi_mae_plugin_online(
     server: RemoteOpenAIServer,
     model_name: str,
@@ -109,6 +112,7 @@ async def test_prithvi_mae_plugin_online(
         for model_name, config in models_config.items()
     ],
 )
+# [中文注释] 离线测试Prithvi MAE插件：验证TIFF输出的感知哈希
 def test_prithvi_mae_plugin_offline(
     vllm_runner, model_name: str, image_url: str | dict, plugin: str, expected_hash: str
 ):

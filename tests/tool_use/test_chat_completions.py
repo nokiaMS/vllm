@@ -16,6 +16,7 @@ from .utils import (
 # are enabled. This makes sure tool call chat templates work, AND that the tool
 # parser stream processing doesn't change the output of the model.
 @pytest.mark.asyncio
+# [中文注释] 测试启用工具但不提供工具时的聊天补全（非流式和流式），验证正常文本输出且无工具调用
 async def test_chat_completion_without_tools(
     client: openai.AsyncOpenAI, server_config: ServerConfig
 ):
@@ -85,6 +86,7 @@ async def test_chat_completion_without_tools(
 # tools, to make sure we can still get normal chat completion responses
 # and that they won't be parsed as tools
 @pytest.mark.asyncio
+# [中文注释] 测试提供工具但对话内容不需要工具调用时的聊天补全，验证不会误触发工具调用
 async def test_chat_completion_with_tools(
     client: openai.AsyncOpenAI, server_config: ServerConfig
 ):
@@ -158,6 +160,7 @@ async def test_chat_completion_with_tools(
 # tool_choice: required
 @pytest.mark.asyncio
 @pytest.mark.timeout(120)
+# [中文注释] 回归测试：response_format=json_object与tool_choice=required同时使用不应导致引擎崩溃
 async def test_response_format_with_tool_choice_required(
     client: openai.AsyncOpenAI, server_config: ServerConfig
 ):

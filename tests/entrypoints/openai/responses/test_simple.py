@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 Qwen3 模型的简单 Responses API 功能（流式、推理 token、采样参数等）
+
 import pytest
 import pytest_asyncio
 from openai import OpenAI
@@ -11,6 +13,7 @@ from .conftest import validate_streaming_event_stack
 MODEL_NAME = "Qwen/Qwen3-8B"
 
 
+# 启动带 Qwen3 推理解析器的远程 vLLM 服务器
 @pytest.fixture(scope="module")
 def server():
     from .conftest import BASE_TEST_ENV
@@ -34,6 +37,7 @@ async def client(server):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试基本 Responses API 调用返回完成状态
 async def test_basic(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -47,6 +51,7 @@ async def test_basic(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 enable_response_messages 返回原始消息格式和 token 信息
 async def test_enable_response_messages(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -65,6 +70,7 @@ async def test_enable_response_messages(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试推理项作为输入时输出中包含推理和消息类型
 async def test_reasoning_item(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -94,6 +100,7 @@ async def test_reasoning_item(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试流式 delta 文本拼接结果与最终响应 output_text 一致
 async def test_streaming_output_consistency(client: OpenAI, model_name: str):
     """Test that streaming delta text matches the final response output_text.
 
@@ -139,6 +146,7 @@ async def test_streaming_output_consistency(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试流式模式下 usage 中包含推理 token 计数
 async def test_streaming_reasoning_tokens_e2e(client: OpenAI, model_name: str):
     """Verify final usage includes reasoning_tokens in streaming mode."""
     response = await client.responses.create(
@@ -165,6 +173,7 @@ async def test_streaming_reasoning_tokens_e2e(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试非流式模式下 usage 中包含推理 token 计数
 async def test_non_streaming_reasoning_tokens_e2e(client: OpenAI, model_name: str):
     """Verify usage includes reasoning_tokens in non-streaming mode."""
     response = await client.responses.create(
@@ -186,6 +195,7 @@ async def test_non_streaming_reasoning_tokens_e2e(client: OpenAI, model_name: st
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试 max_output_tokens 限制导致响应不完整
 async def test_max_tokens(client: OpenAI, model_name: str):
     response = await client.responses.create(
         model=model_name,
@@ -200,6 +210,7 @@ async def test_max_tokens(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试额外采样参数（top_k/repetition_penalty/seed）被正确接受
 async def test_extra_sampling_params(client: OpenAI, model_name: str):
     """Test that extra sampling parameters are accepted and work."""
     # Test with multiple sampling parameters - just verify they're accepted
@@ -224,6 +235,7 @@ async def test_extra_sampling_params(client: OpenAI, model_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# 测试流式响应事件的配对和排序正确性
 async def test_streaming_types(
     pairs_of_event_types: dict[str, str], client: OpenAI, model_name: str
 ):

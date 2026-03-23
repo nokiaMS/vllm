@@ -10,6 +10,8 @@ from vllm.config import LoadConfig, ModelConfig, SpeculativeConfig, VllmConfig
 from vllm.model_executor.models.utils import get_draft_quant_config
 from vllm.platforms import current_platform
 
+# 测试 EAGLE 推测解码中草稿模型的量化配置获取和 KV 缓存缩放名称处理
+
 DEVICES = (
     [f"cuda:{i}" for i in range(1 if torch.accelerator.device_count() == 1 else 2)]
     if current_platform.is_cuda_alike()
@@ -17,6 +19,7 @@ DEVICES = (
 )
 
 
+# 测试当存在草稿模型配置时能正确获取量化配置
 def test_get_draft_quant_config_with_draft_model():
     mock_draft_model_config = Mock(spec=ModelConfig)
     mock_load_config = Mock(spec=LoadConfig)
@@ -40,6 +43,7 @@ def test_get_draft_quant_config_with_draft_model():
         assert result == mock_quant_config
 
 
+# 测试当不存在草稿模型配置时返回 None
 def test_get_draft_quant_config_without_draft_model():
     mock_speculative_config = Mock(spec=SpeculativeConfig)
     mock_speculative_config.draft_model_config = None
@@ -55,6 +59,7 @@ def test_get_draft_quant_config_without_draft_model():
 
 @torch.inference_mode()
 @pytest.mark.parametrize("device", DEVICES)
+# 测试全连接层在有/无量化配置下的正确创建和前向传播
 def test_fc_layer_quant_config_usage(default_vllm_config, dist_init, device) -> None:
     import torch
 
@@ -99,6 +104,7 @@ def test_fc_layer_quant_config_usage(default_vllm_config, dist_init, device) -> 
     assert output.shape == (2, output_size)
 
 
+# 测试 KV 缓存缩放名称的获取逻辑
 def test_kv_cache_scale_name_handling():
     # Mock a quant config that supports cache scales
     mock_quant_config = Mock()
@@ -113,6 +119,7 @@ def test_kv_cache_scale_name_handling():
     assert scale_name == "layers.0.self_attn.kv_scale"
 
 
+# 测试非缓存缩放权重返回 None
 def test_kv_cache_scale_name_no_scale():
     # Mock a quant config that returns None for get_cache_scale
     mock_quant_config = Mock()
@@ -125,6 +132,7 @@ def test_kv_cache_scale_name_no_scale():
     assert scale_name is None
 
 
+# 测试 KV 缩放名称的重映射逻辑
 def test_maybe_remap_kv_scale_name():
     from vllm.model_executor.model_loader.weight_utils import maybe_remap_kv_scale_name
 
@@ -139,6 +147,7 @@ def test_maybe_remap_kv_scale_name():
     assert remapped in params_dict or remapped == name or remapped is None
 
 
+# 测试加载权重时 KV 缓存缩放的完整处理流程
 def test_load_weights_kv_scale_handling():
     kv_scale_param = Mock()
     kv_scale_param.weight_loader = Mock()

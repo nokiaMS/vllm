@@ -35,6 +35,7 @@ def device():
 @pytest.mark.parametrize("hidden_size", [64, 1024])
 @pytest.mark.parametrize("num_experts", [16, 128])
 @pytest.mark.parametrize("top_k", [1, 4])
+# [中文注释] 测试路由模拟器基本功能：验证所有路由策略在不同配置下输出形状和专家ID的正确性
 def test_basic_functionality(
     num_tokens: int,
     hidden_size: int,
@@ -75,6 +76,7 @@ def test_basic_functionality(
         )
 
 
+# [中文注释] 集成测试：验证路由策略环境变量与FusedMoE层的协同工作
 def test_routing_strategy_integration(monkeypatch, device):
     """Test that the routing strategy environment variable works with
     FusedMoE."""
@@ -149,6 +151,7 @@ def test_routing_strategy_integration(monkeypatch, device):
             )
 
 
+# [中文注释] 测试自定义分布路由策略的注册和使用
 def test_distribution_based_routing_with_custom_strategy():
     """Test registering and using DistributionBasedRouting with custom
     parameters."""
@@ -184,6 +187,7 @@ def test_distribution_based_routing_with_custom_strategy():
     assert topk_ids.max() < num_experts
 
 
+# [中文注释] 测试RoutingSimulator静态方法的兼容性和正确性
 def test_instance_compatibility():
     """Test that static methods work correctly."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

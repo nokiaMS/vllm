@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试外部模型（Out-Of-Tree）注册机制，验证自定义模型的文本生成、嵌入和多模态功能
+
 import pytest
 
 from vllm import LLM, SamplingParams
@@ -11,6 +13,7 @@ from ..utils import create_new_process_for_each_test
 
 
 @create_new_process_for_each_test()
+# 测试未注册插件时模型加载应失败
 def test_plugin(
     monkeypatch: pytest.MonkeyPatch,
     dummy_opt_path: str,
@@ -23,6 +26,7 @@ def test_plugin(
 
 
 @create_new_process_for_each_test()
+# 测试注册自定义模型后的文本生成功能
 def test_oot_registration_text_generation(
     monkeypatch: pytest.MonkeyPatch,
     dummy_opt_path: str,
@@ -43,6 +47,7 @@ def test_oot_registration_text_generation(
 
 
 @create_new_process_for_each_test()
+# 测试注册自定义模型后的嵌入功能
 def test_oot_registration_embedding(
     monkeypatch: pytest.MonkeyPatch,
     dummy_gemma2_embedding_path: str,
@@ -63,6 +68,7 @@ image = convert_image_mode(ImageAsset("cherry_blossom").pil_image, "RGB")
 
 
 @create_new_process_for_each_test()
+# 测试注册自定义模型后的多模态生成功能
 def test_oot_registration_multimodal(
     monkeypatch: pytest.MonkeyPatch,
     dummy_llava_path: str,

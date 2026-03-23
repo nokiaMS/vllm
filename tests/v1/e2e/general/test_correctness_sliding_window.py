@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试滑动窗口注意力的正确性，验证前缀缓存下的检索准确性
 from dataclasses import dataclass
 
 import pytest
@@ -10,6 +11,7 @@ from vllm.platforms import current_platform
 from ....utils import check_answers, prep_prompts
 
 
+# [中文注释] 滑动窗口测试配置，包含窗口大小和提示长度范围
 @dataclass
 class TestConfig:
     sliding_window: int
@@ -22,6 +24,7 @@ model_config = {
 }
 
 
+# [中文注释] 测试滑动窗口检索：生成变量赋值后检索窗口外变量值，验证前缀缓存的正确性
 @pytest.mark.parametrize(
     "model",
     [
@@ -78,6 +81,7 @@ def test_sliding_window_retrieval(
     )
 
 
+# [中文注释] 检查提示长度是否有效：需超过滑动窗口大小且不超过模型最大长度
 def check_length(prompts: list[str], llm: LLM, sliding_window: int):
     """
     Check if the prompt length is valid, i.e., longer than the sliding window

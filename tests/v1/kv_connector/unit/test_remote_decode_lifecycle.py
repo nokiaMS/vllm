@@ -18,6 +18,7 @@ from .utils import (
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 测试用例：验证远程decode请求的基本生命周期（调度、KV传输、生成、完成）。
 def test_basic_lifecycle():
     """Test lifecycle of a Remote Decode request."""
 
@@ -115,6 +116,7 @@ def test_basic_lifecycle():
     assert_scheduler_empty(scheduler)
 
 
+# [中文注释] 测试用例：验证短提示词（不足一个块）场景下远程decode的生命周期。
 def test_short_prompt_lifecycle():
     """Test lifecycle of a Remote Decode request with short prompt."""
 
@@ -162,6 +164,7 @@ def test_short_prompt_lifecycle():
     assert_scheduler_empty(scheduler)
 
 
+# [中文注释] 测试用例：验证带前缀缓存的远程decode生命周期。
 def test_prefix_cache_lifecycle():
     """Test that remote decode params still work with a prefix cache hit."""
 
@@ -222,6 +225,7 @@ def test_prefix_cache_lifecycle():
     assert_scheduler_empty(scheduler)
 
 
+# [中文注释] 测试用例：验证KV传输过程中请求被中止的处理逻辑。
 def test_abort_during_kv_transfer():
     """Test aborting request does not release blocks for remote decode."""
 

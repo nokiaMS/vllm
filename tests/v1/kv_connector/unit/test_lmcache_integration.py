@@ -15,6 +15,7 @@ import pytest
 from vllm.platforms import current_platform
 
 
+# [中文注释] 辅助函数：断言对象具有指定属性，验证LMCache对vLLM接口的假设是否稳定。
 def assumes(obj, attr, is_callable=False, is_instance_of=None):
     import inspect
     from dataclasses import is_dataclass
@@ -57,6 +58,7 @@ def assumes(obj, attr, is_callable=False, is_instance_of=None):
 @pytest.mark.skipif(
     current_platform.is_rocm(), reason="Requires libcudart.so, not available on ROCm"
 )
+# [中文注释] 测试用例：验证LMCache假设的多模态接口属性是否存在。
 def test_multimodal_interface():
     # protect against interface changes
     from vllm.multimodal.inputs import PlaceholderRange
@@ -68,6 +70,7 @@ def test_multimodal_interface():
 @pytest.mark.skipif(
     current_platform.is_rocm(), reason="Requires libcudart.so, not available on ROCm"
 )
+# [中文注释] 测试用例：验证LMCache假设的配置接口属性是否存在。
 def test_config_interface():
     # protect against interface changes
     from vllm.config import VllmConfig
@@ -135,6 +138,7 @@ def test_config_interface():
 @pytest.mark.skipif(
     current_platform.is_rocm(), reason="Requires libcudart.so, not available on ROCm"
 )
+# [中文注释] 测试用例：验证LMCache假设的Request接口属性是否存在。
 def test_request_interface():
     # protect against interface changes
     from types import NoneType
@@ -166,6 +170,7 @@ def test_request_interface():
     assumes(MultiModalFeatureSpec, "mm_position")
 
 
+# [中文注释] 测试用例：验证LMCache假设的新请求接口属性是否存在。
 def test_new_request_interface():
     # protect against interface changes
     from vllm.v1.core.sched.output import NewRequestData
@@ -176,6 +181,7 @@ def test_new_request_interface():
     assumes(NewRequestData, "sampling_params")
 
 
+# [中文注释] 测试用例：验证LMCache假设的SamplingParams接口属性是否存在。
 def test_sampling_params_interface():
     # protect against interface changes
     from vllm.sampling_params import SamplingParams
@@ -193,6 +199,7 @@ def test_sampling_params_interface():
     assert sampling_params.extra_args["kv_transfer_params"] == kv_transfer_params
 
 
+# [中文注释] 测试用例：验证LMCache假设的张量并行接口属性是否存在。
 def test_tp_interface():
     # protect against interface changes
     import inspect
@@ -206,6 +213,7 @@ def test_tp_interface():
     assumes(GroupCoordinator, "broadcast_object", is_callable=True)
 
 
+# [中文注释] 测试用例：验证LMCache假设的ForwardContext接口属性是否存在。
 def test_forward_context_interface():
     # protect against interface changes
     from vllm.forward_context import ForwardContext
@@ -215,6 +223,7 @@ def test_forward_context_interface():
     assumes(ForwardContext, "attn_metadata")
 
 
+# [中文注释] 测试用例：验证LMCache假设的SchedulerOutput接口属性是否存在。
 def test_scheduler_output_interface():
     # protect against interface changes
     from vllm.v1.core.sched.output import SchedulerOutput

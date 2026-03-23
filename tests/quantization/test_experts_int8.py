@@ -12,6 +12,8 @@ from tests.quantization.utils import is_quant_method_supported
 
 from ..models.registry import HF_EXAMPLE_MODELS
 
+# 测试 experts_int8 MoE 专家量化的模型启动和推理
+
 MODELS = ["ai21labs/Jamba-tiny-random", "pfnet/plamo-2-1b"]
 
 

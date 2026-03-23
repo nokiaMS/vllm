@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 ColPali 迟交互多模态检索模型的逐标记嵌入、MaxSim 评分及多模态查询/文档评分
 """Tests for ColPali late interaction model for multi-modal retrieval.
 
 ColPali is a multi-vector retrieval model based on PaliGemma backbone

@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 Responses API 工具函数：工具格式转换、聊天消息构建、推理项优先级、
+# 部分消息续写判断以及 MCP 工具调用与推理合并逻辑
+
 from unittest.mock import patch
 
 import pytest
@@ -27,6 +30,7 @@ from vllm.entrypoints.openai.responses.utils import (
 )
 
 
+# 测试工具响应格式转换和聊天消息构建功能
 class TestResponsesUtils:
     """Tests for convert_tool_responses_to_completions_format function."""
 
@@ -168,6 +172,7 @@ class TestResponsesUtils:
         assert formatted_item["content"] == "dongyi"
 
 
+# 测试推理项中 content 优先于 summary 的选择逻辑
 class TestReasoningItemContentPriority:
     """Tests that content is prioritized over summary for reasoning items."""
 
@@ -346,6 +351,7 @@ class TestReasoningItemContentPriority:
         mock_logger.warning.assert_not_called()
 
 
+# 测试部分消息续写判断函数，支持 Anthropic 风格的未完成助手消息补全
 class TestShouldContinueFinalMessage:
     """Tests for should_continue_final_message function.
 
@@ -625,6 +631,7 @@ class TestShouldContinueFinalMessage:
         assert should_continue_final_message([dict_item]) is False
 
 
+# 测试推理消息与 MCP 工具调用的合并逻辑，包括 None ID 等边界情况
 class TestMaybeCombineReasoningAndToolCall:
     """Tests for _maybe_combine_reasoning_and_tool_call function."""
 

@@ -12,7 +12,10 @@ from vllm.v1.core.encoder_cache_manager import (
 pytestmark = pytest.mark.cpu_test
 
 
+# 测试编码器缓存管理器的分配、释放、驱逐、重置等核心操作
+
 # ------------------ Mock Classes ------------------ #
+# 模拟包含多模态特征的请求对象
 class MockRequest:
     def __init__(self, request_id, mm_hashes, token_counts):
         self.request_id = request_id

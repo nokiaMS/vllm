@@ -51,12 +51,14 @@ CASES = [
 ]
 
 
+# [中文注释] 将任意dtype张量以uint8视图返回，用于逐字节比较
 def as_uint8(x) -> torch.Tensor:
     return (
         torch.empty(x.shape, dtype=x.dtype, device=x.device).copy_(x).view(torch.uint8)
     )
 
 
+# [中文注释] SiLU激活函数参考实现（使用float32精度）
 def silu(x: torch.Tensor) -> torch.Tensor:
     one_f32 = torch.tensor([1.0], device=x.device, dtype=torch.float32)
     x_f32 = x.to(torch.float32)
@@ -65,6 +67,7 @@ def silu(x: torch.Tensor) -> torch.Tensor:
     return act_f32.to(torch.bfloat16)
 
 
+# [中文注释] FP8量化参考实现：按组计算缩放因子并量化到FP8
 def do_quant(x: torch.Tensor, group_size: int, ceil_ue8m0: bool):
     eps_bf16 = torch.tensor([1e-10], device=x.device, dtype=torch.bfloat16)
     one_bf16 = torch.tensor([1.0], device=x.device, dtype=torch.bfloat16)
@@ -103,6 +106,7 @@ def do_quant(x: torch.Tensor, group_size: int, ceil_ue8m0: bool):
     return xq, xs
 
 
+# [中文注释] SiLU*Mul+FP8量化参考实现：计算激活后量化结果
 def silu_mul_quant(
     gate: torch.Tensor, up: torch.Tensor, group_size: int, ceil_ue8m0: bool
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -123,6 +127,7 @@ def silu_mul_quant(
     return q, s
 
 
+# [中文注释] 将float32缩放因子打包为int32张量（DeepGEMM UE8M0格式）
 def pack_scales(x: torch.Tensor, tokens_per_expert: torch.Tensor) -> torch.Tensor:
     """
     pack float32 scales into a int32 tensor
@@ -142,6 +147,7 @@ def pack_scales(x: torch.Tensor, tokens_per_expert: torch.Tensor) -> torch.Tenso
     return ref_s_i32
 
 
+# [中文注释] 根据缩放格式（FLOAT32/UE8M0）生成SiLU*Mul+量化的参考输出
 def ref_with_scale_fmt(
     E: int,
     T: int,
@@ -185,6 +191,7 @@ def ref_with_scale_fmt(
     return ref_q, pack_scales(ref_s_f32, tokens_per_expert)
 
 
+# [中文注释] 生成随机token数据：每个token使用不同范围的随机值，覆盖多种缩放值
 def token_random(E, T, H2, tokens_per_expert):
     """
     Initialize each token in a random range so we test a range of
@@ -200,6 +207,7 @@ def token_random(E, T, H2, tokens_per_expert):
 
 @pytest.mark.parametrize("E,T,H,fp8_type", CASES)
 @torch.inference_mode()
+# [中文注释] 测试DeepGEMM的SiLU*Mul+FP8量化内核在多种缩放格式下与参考实现的数值一致性
 def test_silu_mul_fp8_quant_deep_gemm(E: int, T: int, H: int, fp8_type: torch.dtype):
     group_size = 128
     set_random_seed(42)

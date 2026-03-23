@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试自定义执行器：类型检查、同步/异步自定义MultiprocExecutor的注册和使用
 
 import asyncio
 import os
@@ -17,9 +18,11 @@ from vllm.v1.engine.llm_engine import LLMEngine
 from vllm.v1.executor.multiproc_executor import MultiprocExecutor
 
 
+# [中文注释] 空Mock类，用于测试无效执行器类型检查
 class Mock: ...
 
 
+# [中文注释] 自定义多进程执行器：在collective_rpc中写入标记文件以验证执行
 class CustomMultiprocExecutor(MultiprocExecutor):
     def collective_rpc(
         self,
@@ -49,6 +52,7 @@ CustomMultiprocExecutorAsync = CustomMultiprocExecutor
 MODEL = "Qwen/Qwen3-0.6B"
 
 
+# [中文注释] 测试传入无效执行器类型时引发ValueError
 def test_custom_executor_type_checking():
     with pytest.raises(ValueError):
         engine_args = EngineArgs(
@@ -75,6 +79,7 @@ def test_custom_executor_type_checking():
         "tests.v1.executor.test_executor.CustomMultiprocExecutor",
     ],
 )
+# [中文注释] 测试同步自定义执行器通过类引用或字符串路径注册和运行
 def test_custom_executor(distributed_executor_backend, tmp_path):
     cwd = os.path.abspath(".")
     os.chdir(tmp_path)
@@ -106,6 +111,7 @@ def test_custom_executor(distributed_executor_backend, tmp_path):
         "tests.v1.executor.test_executor.CustomMultiprocExecutorAsync",
     ],
 )
+# [中文注释] 测试异步自定义执行器通过类引用或字符串路径注册和运行
 def test_custom_executor_async(distributed_executor_backend, tmp_path):
     cwd = os.path.abspath(".")
     os.chdir(tmp_path)

@@ -13,6 +13,7 @@ from vllm.tokenizers.mistral import (
 )
 
 
+# [中文注释] 测试OpenAI格式工具消息转换为Mistral格式：参数填充和不支持字段过滤
 @pytest.mark.parametrize(
     "openai_request,expected_mistral_output",
     [
@@ -214,6 +215,7 @@ def test_prepare_apply_chat_template_tools_and_messages(
     assert actual_request == expected_mistral_output
 
 
+# [中文注释] 测试包含列表内容和reasoning字段的工具调用消息转换
 # Tool use with list content and reasoning
 @pytest.mark.parametrize(
     "openai_request,expected_mistral_output",
@@ -326,6 +328,7 @@ def test_prepare_apply_chat_template_tools_and_messages_list_content(
     assert actual_request == expected_mistral_output
 
 
+# [中文注释] 测试add_generation_prompt和continue_final_message参数的互斥逻辑
 def test_prepare_apply_chat_template_generation_prompt_and_continue():
     messages = [{"role": "assistant", "content": "Hello"}]
     tools: list[dict[str, Any]] = []
@@ -358,6 +361,7 @@ def test_prepare_apply_chat_template_generation_prompt_and_continue():
         )
 
 
+# [中文注释] 模块级fixture：加载指定Mistral分词器供测试类使用
 @pytest.fixture(scope="module")
 def mistral_tokenizer(request) -> MistralTokenizer:
     return MistralTokenizer.from_pretrained(request.param)
@@ -368,6 +372,7 @@ def mistral_tokenizer(request) -> MistralTokenizer:
     ["mistralai/Mistral-7B-Instruct-v0.3", "mistralai/Magistral-Small-2509"],
     indirect=True,
 )
+# [中文注释] Mistral分词器综合测试：编码、解码、聊天模板、特殊token和token转换
 class TestMistralTokenizer:
     def test_all_special_tokens(self, mistral_tokenizer: MistralTokenizer):
         if mistral_tokenizer.is_tekken:

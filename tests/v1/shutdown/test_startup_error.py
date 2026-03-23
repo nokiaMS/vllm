@@ -21,6 +21,7 @@ from vllm.v1.engine.async_llm import AsyncLLM
 MODELS = ["hmellor/tiny-random-LlamaForCausalLM"]
 
 
+# [中文注释] 辅助函数：模拟启动过程中的异常，在Rank 0上抛出错误
 def evil_method(self, *args, **kwargs):
     """Evil method that raises an exception."""
 
@@ -46,6 +47,7 @@ def rocm_evil_method(rocm_sitecustomize_factory, request):
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tensor_parallel_size", [2, 1])
 @pytest.mark.parametrize("failing_method", ["forward", "load_weights"])
+# [中文注释] 测试AsyncLLM在初始化错误（前向传播或权重加载失败）后能正确传播异常并释放内存
 def test_async_llm_startup_error(
     monkeypatch,
     rocm_evil_method,
@@ -83,6 +85,7 @@ def test_async_llm_startup_error(
 @pytest.mark.parametrize("tensor_parallel_size", [2, 1])
 @pytest.mark.parametrize("enable_multiprocessing", [True])
 @pytest.mark.parametrize("failing_method", ["forward", "load_weights"])
+# [中文注释] 测试LLM在初始化错误后能正确传播异常并释放GPU内存
 def test_llm_startup_error(
     monkeypatch,
     rocm_evil_method,

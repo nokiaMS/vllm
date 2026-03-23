@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 构建不同测试类型的输入数据（单图、多图、嵌入、视频、音频），处理提示替换和尺寸缩放
 """Helpers for building inputs that can be leveraged for different test types."""
 
 from collections.abc import Callable, Iterable

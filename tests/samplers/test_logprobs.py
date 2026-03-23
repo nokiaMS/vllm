@@ -13,6 +13,7 @@ NUM_PROMPT_LOGPROBS = 7
 MAX_LOGPROBS = max(NUM_TOP_LOGPROBS, NUM_PROMPT_LOGPROBS)
 
 
+# [中文注释] 测试prompt和sample的logprobs排名正确性及FlatLogprobs返回类型
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("dtype", ["half"])
 @pytest.mark.parametrize("greedy", [True, False])

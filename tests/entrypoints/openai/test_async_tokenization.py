@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试异步分词功能：验证带截断和不带截断的并发请求不会导致服务器内部错误]
 
 import asyncio
 import random
@@ -51,6 +52,7 @@ async def client(server):
         ),
     ],
 )
+# [测试混合截断和非截断请求并发执行时不会产生 500 错误]
 async def test_with_and_without_truncate(
     server: RemoteOpenAIServer,
     client: openai.AsyncOpenAI,

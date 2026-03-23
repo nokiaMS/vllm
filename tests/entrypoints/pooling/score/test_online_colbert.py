@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Online API tests for ColBERT late interaction scoring."""
 
+# [ColBERT 迟交互评分在线测试模块：验证 ColBERT 模型的 rerank、score、token_embed 端点及不支持的任务]
+
 import pytest
 import requests
 
@@ -13,6 +15,7 @@ COLBERT_DIM = 96
 MAX_MODEL_LEN = 512
 
 
+# [测试夹具：启动 ColBERT 模型的远程服务器]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -24,6 +27,7 @@ def server():
         yield remote_server
 
 
+# [ColBERT 在线 API 测试类：包含 rerank、score、token_embed 等端点的测试]
 class TestColBERTOnline:
     def test_rerank(self, server: RemoteOpenAIServer):
         """Test ColBERT rerank endpoint."""

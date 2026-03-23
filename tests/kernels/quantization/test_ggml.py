@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试GGML反量化操作的opcheck验证
 
 import gguf
 import pytest
@@ -9,6 +10,7 @@ from tests.kernels.utils import opcheck
 from vllm import _custom_ops as ops  # noqa: F401
 
 
+# 验证GGML反量化和矩阵乘法操作（含MoE）的opcheck一致性
 @pytest.mark.parametrize("quant_type", [12])
 def test_ggml_opcheck(quant_type):
     block_size, type_size = gguf.GGML_QUANT_SIZES[quant_type]

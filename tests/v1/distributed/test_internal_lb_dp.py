@@ -27,6 +27,7 @@ TP_SIZE = int(os.getenv("TP_SIZE", "1"))
 NUM_NODES = 2
 
 
+# [中文注释] 管理类：为多节点内部负载均衡器测试管理headless模式的vLLM服务器实例
 class MultinodeInternalLBServerManager:
     """Manages multi-node data parallel vLLM server instances for internal
     load balancer testing using --headless mode."""
@@ -158,6 +159,7 @@ class MultinodeInternalLBServerManager:
                     traceback.print_exc()
 
 
+# [中文注释] 管理类：为纯API模式的内部负载均衡器测试管理vLLM服务器实例
 class APIOnlyServerManager:
     """Manages API-only server (Node 0) and headless engines server (Node 1)
     for testing separated API server and engine configuration."""
@@ -369,6 +371,7 @@ def _get_parallel_config(server: RemoteOpenAIServer):
     return vllm_config["parallel_config"]
 
 
+# [中文注释] 测试多节点内部负载均衡器模式下服务器信息和DP配置的正确性
 def test_multinode_dp_server_info(server_manager):
     head_server = server_manager.servers[0][0]
     api_server_count = server_manager.api_server_count

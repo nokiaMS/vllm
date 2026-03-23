@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试日志模块：验证 vLLM 日志配置、自定义日志文件、函数调用追踪、请求日志记录等功能]
 import enum
 import json
 import logging
@@ -35,6 +36,7 @@ def f2(x):
     return x
 
 
+# [测试函数调用追踪功能：启用追踪后调用函数，验证追踪文件包含函数名]
 def test_trace_function_call():
     fd, path = tempfile.mkstemp()
     cur_dir = os.path.dirname(__file__)
@@ -49,6 +51,7 @@ def test_trace_function_call():
     os.remove(path)
 
 
+# [测试默认 vllm 根日志器配置：级别为 INFO，输出到 stdout，使用 NewLineFormatter]
 def test_default_vllm_root_logger_configuration(monkeypatch):
     """This test presumes that VLLM_CONFIGURE_LOGGING (default: True) and
     VLLM_LOGGING_CONFIG_PATH (default: None) are not configured and default
@@ -73,6 +76,7 @@ def test_default_vllm_root_logger_configuration(monkeypatch):
     assert formatter.datefmt == _DATE_FORMAT
 
 
+# [测试子日志器将日志传播到根日志器的处理器]
 def test_descendent_loggers_depend_on_and_propagate_logs_to_root_logger(monkeypatch):
     """This test presumes that VLLM_CONFIGURE_LOGGING (default: True) and
     VLLM_LOGGING_CONFIG_PATH (default: None) are not configured and default
@@ -103,6 +107,7 @@ def test_descendent_loggers_depend_on_and_propagate_logs_to_root_logger(monkeypa
     assert log_record.levelno == logging.INFO
 
 
+# [测试设置 VLLM_CONFIGURE_LOGGING=0 时日志配置被跳过]
 def test_logger_configuring_can_be_disabled(monkeypatch):
     """This test calls _configure_vllm_root_logger again to test custom logging
     config behavior, however mocks are used to ensure no changes in behavior or
@@ -115,6 +120,7 @@ def test_logger_configuring_can_be_disabled(monkeypatch):
     dict_config_mock.assert_not_called()
 
 
+# [测试自定义日志配置文件不存在时抛出 RuntimeError]
 def test_an_error_is_raised_when_custom_logging_config_file_does_not_exist(monkeypatch):
     """This test calls _configure_vllm_root_logger again to test custom logging
     config behavior, however it fails before any change in behavior or
@@ -131,6 +137,7 @@ def test_an_error_is_raised_when_custom_logging_config_file_does_not_exist(monke
     assert "File does not exist" in str(ex_info)
 
 
+# [测试自定义日志配置文件为无效 JSON 时抛出 JSONDecodeError]
 def test_an_error_is_raised_when_custom_logging_config_is_invalid_json(monkeypatch):
     """This test calls _configure_vllm_root_logger again to test custom logging
     config behavior, however it fails before any change in behavior or
@@ -155,6 +162,7 @@ def test_an_error_is_raised_when_custom_logging_config_is_invalid_json(monkeypat
         0,
     ),
 )
+# [测试自定义日志配置文件内容为非字典类型时抛出 ValueError]
 def test_an_error_is_raised_when_custom_logging_config_is_unexpected_json(
     monkeypatch,
     unexpected_config: Any,
@@ -174,6 +182,7 @@ def test_an_error_is_raised_when_custom_logging_config_is_unexpected_json(
         assert "Invalid logging config. Expected dict, got" in str(ex_info)
 
 
+# [测试有效的自定义日志配置文件被正确解析并应用]
 def test_custom_logging_config_is_parsed_and_used_when_provided(monkeypatch):
     """This test calls _configure_vllm_root_logger again to test custom logging
     config behavior, however mocks are used to ensure no changes in behavior or
@@ -198,6 +207,7 @@ def test_custom_logging_config_is_parsed_and_used_when_provided(monkeypatch):
             dict_config_mock.assert_called_with(valid_logging_config)
 
 
+# [测试当 VLLM_CONFIGURE_LOGGING=0 但指定了配置文件路径时抛出 RuntimeError]
 def test_custom_logging_config_causes_an_error_if_configure_logging_is_off(monkeypatch):
     """This test calls _configure_vllm_root_logger again to test custom logging
     config behavior, however mocks are used to ensure no changes in behavior or
@@ -235,6 +245,7 @@ def test_custom_logging_config_causes_an_error_if_configure_logging_is_off(monke
         assert other_logger.propagate
 
 
+# [测试 prepare_object_to_dump 函数对不同类型对象的序列化格式]
 def test_prepare_object_to_dump():
     str_obj = "str"
     assert prepare_object_to_dump(str_obj) == "'str'"
@@ -269,6 +280,7 @@ def test_prepare_object_to_dump():
     assert prepare_object_to_dump(CustomClass(1, "b")) == "CustomClass(a=1, b='b')"
 
 
+# [测试 RequestLogger.log_outputs 基本功能：记录非流式响应]
 def test_request_logger_log_outputs():
     """Test the new log_outputs functionality."""
     # Create a mock logger to capture log calls
@@ -296,6 +308,7 @@ def test_request_logger_log_outputs():
         assert call_args[5] == "stop"
 
 
+# [测试 RequestLogger.log_outputs 流式增量模式的日志记录]
 def test_request_logger_log_outputs_streaming_delta():
     """Test log_outputs with streaming delta mode."""
     mock_logger = MagicMock()
@@ -323,6 +336,7 @@ def test_request_logger_log_outputs_streaming_delta():
         assert call_args[5] is None
 
 
+# [测试 RequestLogger.log_outputs 流式完成模式的日志记录]
 def test_request_logger_log_outputs_streaming_complete():
     """Test log_outputs with streaming complete mode."""
     mock_logger = MagicMock()
@@ -350,6 +364,7 @@ def test_request_logger_log_outputs_streaming_complete():
         assert call_args[5] == "length"
 
 
+# [测试 RequestLogger.log_outputs 的输出截断功能（max_log_len）]
 def test_request_logger_log_outputs_with_truncation():
     """Test log_outputs respects max_log_len setting."""
     mock_logger = MagicMock()
@@ -385,6 +400,7 @@ def test_request_logger_log_outputs_with_truncation():
         assert len(logged_token_ids) == 10
 
 
+# [测试 RequestLogger.log_outputs 对 None 值的处理]
 def test_request_logger_log_outputs_none_values():
     """Test log_outputs handles None values correctly."""
     mock_logger = MagicMock()
@@ -411,6 +427,7 @@ def test_request_logger_log_outputs_none_values():
         assert call_args[5] == "stop"
 
 
+# [测试 RequestLogger.log_outputs 对空输出的处理]
 def test_request_logger_log_outputs_empty_output():
     """Test log_outputs handles empty output correctly."""
     mock_logger = MagicMock()
@@ -437,6 +454,7 @@ def test_request_logger_log_outputs_empty_output():
         assert call_args[5] == "stop"
 
 
+# [集成测试：验证 log_inputs 和 log_outputs 可以独立调用互不干扰]
 def test_request_logger_log_outputs_integration():
     """Test that log_outputs can be called alongside log_inputs."""
     mock_logger = MagicMock()
@@ -477,6 +495,7 @@ def test_request_logger_log_outputs_integration():
         assert output_call[1] == "test-integration"
 
 
+# [测试流式完成日志记录包含完整的文本内容而非 token 计数]
 def test_streaming_complete_logs_full_text_content():
     """Test that streaming complete logging includes
     full accumulated text, not just token count."""
@@ -523,6 +542,7 @@ def mp_function(**kwargs):
     test_logger.debug("This is a subprocess debug message: %s.", kwargs.get("b"))
 
 
+# [测试通过 fork 方式创建的子进程日志能被父进程捕获]
 def test_caplog_mp_fork(caplog_vllm, caplog_mp_fork):
     with caplog_vllm.at_level(logging.DEBUG, logger="vllm"), caplog_mp_fork():
         import multiprocessing
@@ -540,6 +560,7 @@ def test_caplog_mp_fork(caplog_vllm, caplog_mp_fork):
     assert "BBBBB" in caplog_vllm.text
 
 
+# [测试通过 spawn 方式创建的子进程日志能被写入临时文件并读取]
 def test_caplog_mp_spawn(caplog_mp_spawn):
     with caplog_mp_spawn(logging.DEBUG) as log_holder:
         import multiprocessing

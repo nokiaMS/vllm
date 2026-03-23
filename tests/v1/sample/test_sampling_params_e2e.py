@@ -14,6 +14,7 @@ def llm() -> LLM:
     return LLM(MODEL, enforce_eager=True)
 
 
+# [中文注释] 端到端测试：验证n>1的并行采样功能
 def test_n_gt_1(llm):
     """ParallelSampling is supported."""
 
@@ -22,6 +23,7 @@ def test_n_gt_1(llm):
     assert len(outputs[0].outputs) == 3
 
 
+# [中文注释] 端到端测试：验证各种采样惩罚参数不会导致错误
 def test_penalties(llm):
     """Check that we do not get errors if applied."""
 
@@ -37,6 +39,7 @@ def test_penalties(llm):
     _ = llm.generate(PROMPT, params)
 
 
+# [中文注释] 端到端测试：验证停止词功能是否正确终止生成
 def test_stop(llm):
     """Check that we respect the stop words."""
 
@@ -61,6 +64,7 @@ def test_stop(llm):
     assert len(new_split_text) == STOP_IDX + 1
 
 
+# [中文注释] 端到端测试：验证停止token ID功能是否正确终止生成
 def test_stop_token_ids(llm):
     """Check that we respect the stop token ids."""
 
@@ -80,6 +84,7 @@ def test_stop_token_ids(llm):
     assert output[0].outputs[0].token_ids[-1] == stop_token_id_0
 
 
+# [中文注释] 端到端测试：验证detokenize=False时输出不包含文本
 def test_detokenize_false(llm):
     """Check that detokenize=False option works."""
 
@@ -103,6 +108,7 @@ def test_detokenize_false(llm):
             assert all(lp.decoded_token is None for lp in logprobs.values())
 
 
+# [中文注释] 端到端测试：验证禁止词在实际生成中不会出现
 def test_bad_words(llm):
     """Check that we respect bad words."""
 
@@ -144,6 +150,7 @@ def test_bad_words(llm):
     assert not contains_bad_word(new_text, new_tokens, bad_words_2)
 
 
+# [中文注释] 端到端测试：验证允许token ID约束在实际生成中生效
 def test_allowed_token_ids(llm):
     """Check that we can use allowed_token_ids."""
 
@@ -165,6 +172,7 @@ def test_allowed_token_ids(llm):
         _ = llm.generate(PROMPT, SamplingParams(allowed_token_ids=[10000000]))
 
 
+# [中文注释] 端到端测试：验证随机种子确保生成结果的可重复性
 def test_seed(llm):
     """Check that seed impacts randomness."""
 

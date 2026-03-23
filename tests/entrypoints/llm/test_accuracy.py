@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 通过 LMEval 基准测试验证 vLLM 引擎的端到端推理准确性，
+# 使用 GSM8K 任务测试 V1 引擎及 FP8 KV 缓存的精度
+
 """
 This file test accuracy of the vLLM server via LMEval.
 It uses local-completions, which interacts with vLLM
@@ -31,6 +35,7 @@ EXPECTED_VALUES = {
 }
 
 
+# 执行 LMEval 准确性测试，比较测量值与期望值是否在容差范围内
 def run_test(model_name, more_args=None):
     """Run the end to end accuracy test."""
 

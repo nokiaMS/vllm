@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试注意力后端选择器在不同设备、MLA模式和块大小配置下的后端选择逻辑
 
 from unittest.mock import patch
 
@@ -20,6 +21,7 @@ from vllm.v1.attention.backends.registry import AttentionBackendEnum
 from vllm.v1.attention.selector import _cached_get_attn_backend, get_attn_backend
 
 
+# 每个测试前清除LRU缓存以确保独立性
 @pytest.fixture(autouse=True)
 def clear_cache():
     """Clear lru cache to ensure each test case runs without caching."""
@@ -53,6 +55,7 @@ DEVICE_MLA_BLOCK_SIZES = {
 }
 
 
+# 生成设备-后端-MLA-块大小的参数组合用于参数化测试
 def generate_params():
     is_rocm = current_platform.is_rocm()
     params = []
@@ -79,6 +82,7 @@ def generate_params():
     return params
 
 
+# 测试指定设备-后端组合下的注意力后端选择是否正确
 @pytest.mark.parametrize("device, name, use_mla, block_size", generate_params())
 def test_backend_selection(
     device: str,
@@ -214,6 +218,7 @@ def test_backend_selection(
                     assert backend.get_name() == expected
 
 
+# 测试FP32输入时的后端回退行为
 @pytest.mark.parametrize("device", ["cpu", "cuda"])
 def test_fp32_fallback(device: str):
     """Test attention backend selection with fp32."""
@@ -232,6 +237,7 @@ def test_fp32_fallback(device: str):
             assert backend.get_name() == "FLEX_ATTENTION"
 
 
+# 测试FlashAttn后端的各种验证条件（已跳过）
 def test_flash_attn(monkeypatch: pytest.MonkeyPatch):
     """Test FlashAttn validation."""
     pytest.skip(
@@ -287,6 +293,7 @@ def test_flash_attn(monkeypatch: pytest.MonkeyPatch):
         assert backend.get_name() != "FLASH_ATTN"
 
 
+# 测试无效后端名称是否正确抛出ValueError
 def test_invalid_backend():
     """Test that invalid attention backend names raise ValueError."""
     with (
@@ -296,6 +303,7 @@ def test_invalid_backend():
         AttentionConfig(backend=AttentionBackendEnum["INVALID"])
 
 
+# 测试"auto"字符串值触发自动后端选择
 @pytest.mark.parametrize("auto_value", ["auto", "AUTO", "Auto"])
 def test_auto_backend_string(auto_value: str):
     """Test that 'auto' string value triggers automatic backend selection."""
@@ -304,6 +312,7 @@ def test_auto_backend_string(auto_value: str):
     assert attention_config.backend is None
 
 
+# 测试"auto"后端与None（默认）行为的一致性
 def test_auto_backend_selection_behavior():
     """Test that 'auto' backend behaves same as None (automatic selection)."""
     # Create config with explicit "auto"
@@ -338,6 +347,7 @@ def test_auto_backend_selection_behavior():
     assert backend_auto.get_name() == backend_none.get_name()
 
 
+# 测试per-head量化缩放因子场景下的后端选择（仅FA3支持）
 @pytest.mark.parametrize(
     "backend_name,flash_attn_version,should_succeed",
     [

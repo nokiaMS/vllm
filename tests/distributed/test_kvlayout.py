@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 KV 连接器缓存布局（NHD/HND），验证不同连接器类型的布局选择
 
 from vllm.config import (
     DeviceConfig,

@@ -17,6 +17,7 @@ MODELS = [
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("dtype", ["half"])
 @pytest.mark.parametrize("max_tokens", [16])
+# [中文注释] 测试用例：简单冒烟测试，验证Ray环境下引擎日志指标功能无异常。
 def test_engine_log_metrics_ray(
     example_prompts,
     model: str,
@@ -52,6 +53,7 @@ def test_engine_log_metrics_ray(
     ray.get(actor.run.remote())
 
 
+# [中文注释] 测试用例：验证Ray指标名称中特殊字符被正确替换为下划线以兼容OpenTelemetry。
 def test_sanitized_opentelemetry_name():
     """Test the metric name sanitization logic for Ray."""
 

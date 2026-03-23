@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试音频转录 API：多种 ASR 模型、LoRA 适配器和意大利语转录]
 
 # imports for structured outputs tests
 import json
@@ -19,6 +20,7 @@ MISTRAL_FORMAT_ARGS = [
 ]
 
 
+# [执行转录请求并验证输出文本和音频时长]
 async def transcribe_and_check(
     client,
     model_name: str,
@@ -66,6 +68,7 @@ async def transcribe_and_check(
 @pytest.mark.parametrize(
     "model_name", ["mistralai/Voxtral-Mini-3B-2507", "Qwen/Qwen3-ASR-0.6B"]
 )
+# [测试基本英语音频转录：验证转录文本和音频时长]
 async def test_basic_audio(mary_had_lamb, model_name, rocm_aiter_fa_attention):
     server_args = ["--enforce-eager", *ROCM_EXTRA_ARGS]
 
@@ -90,6 +93,7 @@ async def test_basic_audio(mary_had_lamb, model_name, rocm_aiter_fa_attention):
 
 
 @pytest.mark.asyncio
+# [测试使用 LoRA 适配器的音频转录]
 async def test_basic_audio_with_lora(mary_had_lamb, rocm_aiter_fa_attention):
     """Ensure STT (transcribe) requests can pass LoRA through to generate."""
     # ROCm SPECIFIC CONFIGURATION:
@@ -133,6 +137,7 @@ async def test_basic_audio_with_lora(mary_had_lamb, rocm_aiter_fa_attention):
 @pytest.mark.parametrize(
     "model_name", ["google/gemma-3n-E2B-it", "Qwen/Qwen3-ASR-0.6B"]
 )
+# [测试意大利语音频转录：使用 Gemma 和 Qwen3-ASR 模型]
 async def test_basic_audio_foscolo(foscolo, rocm_aiter_fa_attention, model_name):
     # Gemma accuracy on some of the audio samples we use is particularly bad,
     # hence we use a different one here. WER is evaluated separately.

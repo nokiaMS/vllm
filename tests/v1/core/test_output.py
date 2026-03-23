@@ -5,6 +5,9 @@ import torch
 from vllm.v1.core.sched.output import NewRequestData
 
 
+# 测试 NewRequestData 的 repr 输出，验证 prompt_embeds 形状显示正确
+
+# 创建用于测试的 NewRequestData 实例
 def _create_new_requests_data(prompt_embeds: torch.Tensor | None) -> NewRequestData:
     return NewRequestData(
         req_id="test_req",

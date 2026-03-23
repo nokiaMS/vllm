@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件提供引擎测试的fixture，生成包含logprobs的输出处理器测试向量
 
 import pytest
 import torch
@@ -23,6 +24,7 @@ EngineCoreSampleLogprobsType = list[tuple[torch.Tensor, torch.Tensor]]
 EngineCorePromptLogprobsType = tuple[torch.Tensor, torch.Tensor]
 
 
+# [中文注释] 构建不含logprobs的输出处理器测试向量
 def _build_test_vectors_no_logprobs() -> DummyOutputProcessorTestVectors:
     """Generate output processor dummy test vectors, without logprobs
 

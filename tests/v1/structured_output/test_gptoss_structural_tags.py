@@ -17,6 +17,7 @@ from vllm.reasoning.gptoss_reasoning_parser import (
 )
 
 
+# [中文注释] 测试类：验证GPT-OSS推理解析器的结构化标签生成功能
 class TestGptOssReasoningParser:
     """Test cases for GptOssReasoningParser structural tag functionality."""
 

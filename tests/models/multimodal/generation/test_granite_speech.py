@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Granite Speech 语音模型的推理结果，对比 vLLM 与 HF 的 logprobs 输出
 
 from collections.abc import Sequence
 
@@ -17,6 +18,7 @@ from ...utils import check_logprobs_close
 HF_AUDIO_PROMPT = "<|start_of_role|>system<|end_of_role|>Knowledge Cutoff Date: April 2024.\nToday's Date: December 19, 2024.\nYou are Granite, developed by IBM. You are a helpful AI assistant<|end_of_text|>\n<|start_of_role|>user<|end_of_role|><|audio|>can you transcribe the speech into a written format?<|end_of_text|>\n<|start_of_role|>assistant<|end_of_role|>"  # noqa: E501
 
 
+# 将 vLLM 输出格式转换为 HF 可比较的输出格式
 def vllm_to_hf_output(
     vllm_output: tuple[list[int], str, SampleLogprobs | None],
 ) -> tuple[list[int], str, SampleLogprobs | None]:
@@ -130,6 +132,7 @@ def run_test(
 )
 @pytest.mark.parametrize("max_tokens", [128])
 @pytest.mark.parametrize("num_logprobs", [10])
+# 测试 Granite Speech 模型的音频转录功能，验证 vLLM 与 HF 输出一致性
 def test_models(
     hf_runner,
     vllm_runner,

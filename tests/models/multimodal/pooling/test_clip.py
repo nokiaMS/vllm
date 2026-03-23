@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 CLIP 模型的文本和图像嵌入功能，对比 vLLM 与 HF 的嵌入输出
 
 import pytest
 from transformers import CLIPModel

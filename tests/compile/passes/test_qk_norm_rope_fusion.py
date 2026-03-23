@@ -35,6 +35,7 @@ RSQRT_OP = torch.ops.aten.rsqrt.default
 INDEX_SELECT_OP = torch.ops.aten.index.Tensor
 
 
+# QK Norm + RoPE 融合测试模型，包含 RMSNorm 和旋转位置编码
 class QKNormRoPETestModel(torch.nn.Module):
     def __init__(
         self,
@@ -130,6 +131,7 @@ class QKNormRoPETestModel(torch.nn.Module):
     not current_platform.is_cuda_alike(),
     reason="Only test on cuda and rocm platform",
 )
+# 测试 QKNormRoPEFusionPass 将 QK Norm 和 RoPE 融合为单一操作的正确性
 def test_qk_norm_rope_fusion(
     eps,
     is_neox,

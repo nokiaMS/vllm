@@ -7,6 +7,8 @@ import torch
 from vllm.distributed.parallel_state import get_pp_group
 
 
+# 流水线并行广播函数：由最后一个 PP rank 调用，将采样结果广播给所有其他 rank。
+# 广播内容包括采样的 token ID、每个请求的采样数和拒绝数（用于投机解码场景）。
 def pp_broadcast(
     sampled_token_ids: torch.Tensor,
     num_sampled: torch.Tensor,
@@ -24,6 +26,8 @@ def pp_broadcast(
     torch.distributed.broadcast(combined, src=pp.last_rank, group=pp.device_group)
 
 
+# 流水线并行接收函数：由非最后一个 PP rank 调用，接收最后一个 rank 广播的采样结果。
+# 返回采样 token ID、采样数和拒绝数三个张量。
 def pp_receive(
     num_reqs: int, max_sample_len: int = 1
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

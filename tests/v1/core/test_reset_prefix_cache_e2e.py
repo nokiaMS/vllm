@@ -3,6 +3,7 @@
 
 from vllm import EngineArgs, LLMEngine, SamplingParams
 
+# 端到端测试：验证重置前缀缓存后引擎仍能正确生成输出
 PROMPTS = [
     "A robot may not injure a human being ",
     "To be or not to be,",

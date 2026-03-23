@@ -11,6 +11,11 @@ else:
     AttentionLayerBase = object
 
 
+# 检查注意力层实现是否兼容上下文并行（Context Parallelism）配置
+# 验证三项约束：
+#   1. MTP（多 token 预测）+ 非平凡交错大小时，注意力实现必须声明支持
+#   2. DCP（解码上下文并行）要求注意力实现返回 softmax LSE（log-sum-exp）
+#   3. PCP（预填充上下文并行）要求注意力实现显式声明支持
 def check_attention_cp_compatibility(vllm_config: VllmConfig) -> None:
     pcp_size = vllm_config.parallel_config.prefill_context_parallel_size
     dcp_size = vllm_config.parallel_config.decode_context_parallel_size
@@ -43,6 +48,8 @@ def check_attention_cp_compatibility(vllm_config: VllmConfig) -> None:
                 )
 
 
+# 获取上下文并行的总并行度（PCP 并行度 * DCP 并行度）
+# 容错处理：当 PCP/DCP 进程组未初始化时（如测试环境），默认返回 1
 def get_total_cp_world_size():
     try:
         pcp_world_size = get_pcp_group().world_size

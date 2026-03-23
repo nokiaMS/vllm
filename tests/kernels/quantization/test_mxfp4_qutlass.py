@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试MXFP4（Microscaling FP4）CUTLASS量化矩阵乘法的正确性
 #
 # Copyright (C) 2025 Roberto L. Castro (Roberto.LopezCastro@ist.ac.at).
 # All Rights Reserved.
@@ -40,6 +41,7 @@ if not (
 
 
 # ----- Helpers -----
+# 生成归一化的Hadamard矩阵用于权重预变换
 def get_hadamard_matrix(group_size: int, dtype: torch.dtype, device: torch.device):
     return (
         deterministic_hadamard_matrix(group_size, dtype=dtype, device=device)

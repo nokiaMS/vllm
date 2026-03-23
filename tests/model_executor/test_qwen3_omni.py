@@ -9,6 +9,8 @@ from transformers import PretrainedConfig
 from vllm.multimodal.processing import InputProcessingContext
 
 
+# 测试 Qwen3-Omni 多模态模型中视频内嵌音频的 token 更新逻辑
+
 # Helper function to print input IDs with coalesced audio/video tokens.
 def print_input_ids(input_ids):
     """

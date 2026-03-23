@@ -30,6 +30,9 @@ from vllm.v1.kv_cache_interface import (
 from vllm.v1.request import Request
 from vllm.v1.utils import tensor_data
 
+# [中文注释] BlockHash — 单个 KV cache block 的哈希值（bytes 类型），用于前缀缓存匹配。
+# [中文注释] BlockHashWithGroupId — BlockHash + 4 字节 group ID 的组合键，用于区分不同 group 的相同 hash。
+# [中文注释] ExternalBlockHash — 外部可见的 block hash（bytes 或 int），用于 KV cache event。
 # BlockHash represents the hash of a single KV-cache block used for
 # prefix caching.  Treating it as a distinct type from `bytes` helps
 # catch accidental misuse when passing around raw byte strings.
@@ -106,6 +109,12 @@ def init_none_hash(hash_fn: Callable[[Any], bytes]):
         NONE_HASH = BlockHash(hash_fn(hash_seed))
 
 
+# [中文注释] KVCacheBlock — 单个 KV cache block 的元数据。
+#   block_id: 物理 block 编号（0 到 num_gpu_blocks-1）
+#   ref_cnt: 引用计数（被多少请求使用）
+#   _block_hash: 缓存 hash（仅满 block 有值）
+#   prev_free_block / next_free_block: 双向链表指针（仅由 FreeKVCacheBlockQueue 操作）
+#   is_null: 标记为占位 block（用于 sliding window / mamba 等需要跳过的位置）
 @dataclass(slots=True)
 class KVCacheBlock:
     """KV-cache block metadata."""
@@ -155,6 +164,12 @@ class KVCacheBlock:
         )
 
 
+# [中文注释] 空闲 KV cache block 的双向链表队列。
+#   为什么不用 Python deque？因为需要 O(1) 时间从链表中间移除 block（当 block 被 touch 时）。
+#   为避免与 C++ 实现的 deque 的性能差距，不分配任何 Python 对象来操作链表，
+#   直接修改 KVCacheBlock 的 prev_free_block / next_free_block 属性。
+#   使用 fake_head 和 fake_tail 哨兵节点减少分支判断。
+#   驱逐顺序：LRU（最久未使用的 block 在队列头部）。
 class FreeKVCacheBlockQueue:
     """This class organizes a list of KVCacheBlock objects to a doubly linked
     list of free blocks. We implement this class instead of using Python
@@ -529,6 +544,10 @@ def generate_block_hash_extra_keys(
     return tuple(extra_keys), new_start_mm_idx
 
 
+# [中文注释] 计算单个 block 的哈希值（用于前缀缓存匹配）。
+#   采用链式哈希：hash(parent_hash, token_ids, extra_keys)。
+#   parent_hash 为前一个 block 的 hash（首个 block 用 NONE_HASH）。
+#   extra_keys 可包含多模态 hash、LoRA 名称、cache_salt 等。
 def hash_block_tokens(
     hash_function: Callable[[Any], bytes],
     parent_block_hash: BlockHash | None,
@@ -559,6 +578,8 @@ def hash_block_tokens(
     )
 
 
+# [中文注释] 返回一个闭包函数，用于计算请求中尚未计算 hash 的满 block 的 hash 列表。
+#   该闭包在请求每次追加新 token 后调用，增量计算新满 block 的 hash。
 def get_request_block_hasher(
     block_size: int,
     caching_hash_fn: Callable[[Any], bytes],
@@ -741,6 +762,8 @@ def check_enough_kv_cache_memory(
         )
 
 
+# [中文注释] 根据分组后的 layer name 列表创建 KVCacheGroupSpec 对象。
+#   同一组内的 layer 共享相同的 KVCacheSpec（通过 merge 合并验证）。
 def create_kv_cache_group_specs(
     kv_cache_spec: dict[str, KVCacheSpec], grouped_layer_names: list[list[str]]
 ) -> list[KVCacheGroupSpec]:
@@ -1500,6 +1523,15 @@ def _project_kv_cache_groups_to_worker(
     return projected_groups
 
 
+# [中文注释] 为所有 worker 生成 KV cache 配置（核心配置生成函数）。
+#   流程：
+#     1. 合并所有 worker 的 KVCacheSpec → 全局 merged_kv_cache_specs
+#     2. 生成全局 KV cache group（处理混合注意力类型的 spec 统一）
+#     3. 将 group 投影到每个 worker（PP 分片）
+#     4. 自动拟合 max_model_len（若设为 -1）
+#     5. 检查各 worker 内存是否足够
+#     6. 为每个 worker 生成 KVCacheConfig
+#     7. 统一 num_blocks 为所有 worker 中的最小值
 def get_kv_cache_configs(
     vllm_config: VllmConfig,
     kv_cache_specs: list[dict[str, KVCacheSpec]],
@@ -1612,6 +1644,9 @@ def get_kv_cache_configs(
     return kv_cache_configs
 
 
+# [中文注释] block hash 粒度转换器：将 hash_block_size 粒度的 hash 列表转换为 target_block_size 粒度。
+#   用于混合注意力模型中不同 group 有不同 block size 的场景。
+#   延迟计算：仅在访问时通过拼接连续 hash 来生成目标粒度的 hash。
 class BlockHashListWithBlockSize:
     """
     Convert block-hash granularity from `hash_block_size` to `target_block_size`.

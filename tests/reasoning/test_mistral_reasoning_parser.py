@@ -10,6 +10,7 @@ from vllm.tokenizers.mistral import MistralTokenizer
 parser_name = "mistral"
 
 
+# [中文注释] 加载Mistral分词器夹具：使用MistralTokenizer处理特殊token
 @pytest.fixture(scope="module")
 def mistral_tokenizer():
     mistral_tokenizer = MistralTokenizer.from_pretrained(
@@ -256,6 +257,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试Mistral推理解析：使用特殊token [THINK]/[/THINK]而非文本标记
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_mistral_reasoning(
     streaming: bool,

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试NVIDIA Model Optimizer FP8量化模型的生成结果，与预期黄金字符串进行精确匹配
 # flake8: noqa
 """Tests Model Optimizer fp8 models against ground truth generation
 Note: these tests will only pass on H100

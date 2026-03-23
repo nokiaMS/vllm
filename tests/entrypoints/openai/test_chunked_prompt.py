@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试分块预填充场景下的流式补全和聊天补全：验证长提示的 stream_options 和 logprobs 正确性]
 
 import openai  # use the official client for correctness check
 import pytest
@@ -38,6 +39,7 @@ async def client(server):
 
 
 @pytest.mark.asyncio
+# [测试长提示下补全接口的流式使用统计和 logprobs 正确性]
 async def test_completion_stream_options_and_logprobs_with_long_prompts(
     client: openai.AsyncOpenAI,
 ):
@@ -80,6 +82,7 @@ async def test_completion_stream_options_and_logprobs_with_long_prompts(
 
 
 @pytest.mark.asyncio
+# [测试长提示下聊天补全接口的流式使用统计和 logprobs 正确性]
 async def test_chat_completion_stream_options_and_logprobs_with_long_prompts(
     client: openai.AsyncOpenAI,
 ):

@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试Gemma系列模型（gemma-2b/gemma-2/gemma-3）的dummy加载器，
+# 验证嵌入层normalizer的初始化值是否正确
+
 import numpy as np
 import pytest
 

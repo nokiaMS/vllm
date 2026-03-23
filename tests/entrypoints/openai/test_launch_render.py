@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试通过 vllm launch 启动的 render 端点：聊天/补全渲染、健康检查和模型列表（无 GPU）]
 """E2E tests for render endpoints via `vllm launch` (GPU-less serving)."""
 
 import httpx
@@ -30,6 +31,7 @@ async def client(server):
 
 
 @pytest.mark.asyncio
+# [测试基本聊天补全渲染：验证返回对话和 token_ids]
 async def test_chat_render_basic(client):
     response = await client.post(
         "/v1/chat/completions/render",
@@ -60,6 +62,7 @@ async def test_chat_render_basic(client):
 
 
 @pytest.mark.asyncio
+# [测试多轮对话的聊天渲染]
 async def test_chat_render_multi_turn(client):
     response = await client.post(
         "/v1/chat/completions/render",
@@ -85,6 +88,7 @@ async def test_chat_render_multi_turn(client):
 
 
 @pytest.mark.asyncio
+# [测试不存在的模型名称应返回 404]
 async def test_chat_render_invalid_model(client):
     response = await client.post(
         "/v1/chat/completions/render",
@@ -102,6 +106,7 @@ async def test_chat_render_invalid_model(client):
 
 
 @pytest.mark.asyncio
+# [测试基本补全渲染：验证 prompt 和 token_ids 的正确返回]
 async def test_completion_render_basic(client):
     response = await client.post(
         "/v1/completions/render",
@@ -126,6 +131,7 @@ async def test_completion_render_basic(client):
 
 
 @pytest.mark.asyncio
+# [测试多条提示的补全渲染]
 async def test_completion_render_multiple_prompts(client):
     response = await client.post(
         "/v1/completions/render",
@@ -148,6 +154,7 @@ async def test_completion_render_multiple_prompts(client):
 
 
 @pytest.mark.asyncio
+# [测试补全渲染端点对不存在模型返回 404]
 async def test_completion_render_invalid_model(client):
     response = await client.post(
         "/v1/completions/render",
@@ -162,6 +169,7 @@ async def test_completion_render_invalid_model(client):
 
 
 @pytest.mark.asyncio
+# [测试渲染端点响应速度：无推理应在 2 秒内完成]
 async def test_render_is_fast(client):
     """Render should complete quickly since there is no inference."""
     import time
@@ -184,12 +192,14 @@ async def test_render_is_fast(client):
 
 
 @pytest.mark.asyncio
+# [测试健康检查端点返回 200]
 async def test_health_endpoint(client):
     response = await client.get("/health")
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
+# [测试模型列表端点返回已加载的模型]
 async def test_models_endpoint(client):
     response = await client.get("/v1/models")
     assert response.status_code == 200

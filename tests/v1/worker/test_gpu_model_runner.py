@@ -45,6 +45,7 @@ NUM_BLOCKS = 10
 DEVICE = current_platform.device_type
 
 
+# [中文注释] 辅助函数：执行GPUModelRunner KV缓存初始化的必要步骤
 def initialize_kv_cache(runner: GPUModelRunner):
     """
     Only perform necessary steps in GPUModelRunner.initialize_kv_cache()
@@ -81,6 +82,7 @@ def initialize_kv_cache(runner: GPUModelRunner):
     runner.initialize_attn_backend(kv_cache_config)
 
 
+# [中文注释] 辅助函数：创建测试用的VllmConfig配置
 def get_vllm_config():
     model_config = ModelConfig(
         model="facebook/opt-125m",
@@ -200,6 +202,7 @@ def _make_kv_cache_spec() -> FullAttentionSpec:
     return FullAttentionSpec(block_size=1, num_kv_heads=1, head_size=1, dtype="float16")
 
 
+# [中文注释] 测试公共块大小选择优先使用管理器的块大小
 def test_select_common_block_size_prefers_manager_block_size():
     backend_a = _make_mock_backend_for_kernel_block_size([MultipleOf(32)])
     backend_b = _make_mock_backend_for_kernel_block_size([64, MultipleOf(16)])
@@ -208,6 +211,7 @@ def test_select_common_block_size_prefers_manager_block_size():
     assert selected_size == 128
 
 
+# [中文注释] 测试公共块大小选择使用最大的共享整数块大小
 def test_select_common_block_size_uses_largest_shared_int():
     backend_a = _make_mock_backend_for_kernel_block_size([128, 64])
     backend_b = _make_mock_backend_for_kernel_block_size([64, 32])
@@ -216,6 +220,7 @@ def test_select_common_block_size_uses_largest_shared_int():
     assert selected_size == 64
 
 
+# [中文注释] 测试没有有效公共块大小时抛出ValueError
 def test_select_common_block_size_no_valid_option():
     backend_a = _make_mock_backend_for_kernel_block_size([64])
     backend_b = _make_mock_backend_for_kernel_block_size([MultipleOf(16)])
@@ -224,6 +229,7 @@ def test_select_common_block_size_no_valid_option():
         select_common_block_size(48, [backend_a, backend_b])
 
 
+# [中文注释] 测试GPUModelRunner处理新请求时的状态更新
 def test_update_states_new_request(model_runner, dist_init):
     req_id = "req_0"
 
@@ -238,6 +244,7 @@ def test_update_states_new_request(model_runner, dist_init):
     assert _is_req_state_block_table_match(model_runner, req_id)
 
 
+# [中文注释] 测试GPUModelRunner处理请求完成时的状态更新和清理
 def test_update_states_request_finished(model_runner, dist_init):
     req_id = "req_0"
 
@@ -268,6 +275,7 @@ def test_update_states_request_finished(model_runner, dist_init):
     assert not _is_req_scheduled(model_runner, req_id)
 
 
+# [中文注释] 测试GPUModelRunner处理请求恢复时的状态更新
 def test_update_states_request_resumed(model_runner, dist_init):
     req_id = "req_0"
 
@@ -326,6 +334,7 @@ def test_update_states_request_resumed(model_runner, dist_init):
     assert _is_req_state_block_table_match(model_runner, req_id)
 
 
+# [中文注释] 测试logits中NaN值的检测功能
 def test_get_nans_in_logits(model_runner, dist_init):
     req_ids = ("req_0", "req_1")
 
@@ -386,6 +395,7 @@ def test_get_nans_in_logits(model_runner, dist_init):
     assert result == {"req_0": 2, "req_1": 0}
 
 
+# [中文注释] 测试无变化调度输出时采样元数据不会被重新创建
 def test_update_states_no_changes(model_runner, dist_init):
     req_id = "req_0"
 
@@ -417,6 +427,7 @@ def test_update_states_no_changes(model_runner, dist_init):
     assert _is_req_state_block_table_match(model_runner, req_id)
 
 
+# [中文注释] 测试GPUModelRunner处理请求取消调度时的状态更新
 def test_update_states_request_unscheduled(model_runner, dist_init):
     req_ids = ("req_0", "req_1")
 
@@ -454,6 +465,7 @@ def test_update_states_request_unscheduled(model_runner, dist_init):
     assert not _is_req_scheduled(model_runner, req_ids[1])
 
 
+# [中文注释] 测试注意力后端强制非默认KV缓存步长顺序时的初始化正确性
 def test_kv_cache_stride_order(monkeypatch, model_runner):
     # This test checks if GPUModelRunner initializes correctly when an attention
     # backend enforces a non-default KV cache stride order.
@@ -503,6 +515,7 @@ def test_kv_cache_stride_order(monkeypatch, model_runner):
             assert all(not kv.is_contiguous() for kv in model_runner.kv_caches)
 
 
+# [中文注释] 测试GPUModelRunner的配置动态更新功能
 def test_update_config(model_runner):
     # Simple update
     model_runner.update_config({"load_config": {"load_format": "dummy"}})
@@ -512,6 +525,7 @@ def test_update_config(model_runner):
         model_runner.update_config({"do_not_exist_config": "dummy"})
 
 
+# [中文注释] 测试模型权重的原地重新加载功能（先加载虚拟权重再替换为真实权重）
 def test_load_model_weights_inplace(dist_init, model_runner, model_runner_2):
     # In this test, model_runner loads model + weights in one go, while
     # model_runner_2 loads dummy weights first then load real weights inplace
@@ -529,11 +543,13 @@ def test_load_model_weights_inplace(dist_init, model_runner, model_runner_2):
     )
 
 
+# [中文注释] 测试在模型加载前调用reload_weights时抛出ValueError
 def test_reload_weights_before_load_model(model_runner):
     with pytest.raises(ValueError):
         model_runner.reload_weights()
 
 
+# [中文注释] 测试KV缓存共享目标层顺序无效时的错误处理
 def test_init_kv_cache_with_kv_sharing_invalid_target_layer_order(default_vllm_config):
     torch.set_default_dtype(torch.float16)
     layer_0 = "model.layers.0.self_attn.attn"
@@ -561,6 +577,7 @@ def test_init_kv_cache_with_kv_sharing_invalid_target_layer_order(default_vllm_c
         assert fwd_context is not None
 
 
+# [中文注释] 测试KV缓存共享目标层不存在时的错误处理
 def test_init_kv_cache_with_kv_sharing_target_layer_not_exist(default_vllm_config):
     torch.set_default_dtype(torch.float16)
     layer_0 = "model.layers.0.self_attn.attn"
@@ -588,6 +605,7 @@ def test_init_kv_cache_with_kv_sharing_target_layer_not_exist(default_vllm_confi
         assert fwd_context is not None
 
 
+# [中文注释] 测试KV缓存共享目标层与当前层相同时的错误处理
 def test_init_kv_cache_with_kv_sharing_target_same_as_current(default_vllm_config):
     torch.set_default_dtype(torch.float16)
     layer_0 = "model.layers.0.self_attn.attn"
@@ -615,6 +633,7 @@ def test_init_kv_cache_with_kv_sharing_target_same_as_current(default_vllm_confi
         assert fwd_context is not None
 
 
+# [中文注释] 测试无KV缓存共享时的初始化和内存分配正确性
 def test_init_kv_cache_without_kv_sharing(default_vllm_config):
     torch.set_default_dtype(torch.float16)
     layer_0 = "model.layers.0.self_attn.attn"
@@ -682,6 +701,7 @@ def test_init_kv_cache_without_kv_sharing(default_vllm_config):
     assert kv_cache_config.kv_cache_groups[0].layer_names[1] == layer_1
 
 
+# [中文注释] 测试有效KV缓存共享配置下的初始化和内存共享正确性
 def test_init_kv_cache_with_kv_sharing_valid(default_vllm_config):
     torch.set_default_dtype(torch.float16)
     layer_0 = "model.layers.0.self_attn.attn"
@@ -756,6 +776,7 @@ def test_init_kv_cache_with_kv_sharing_valid(default_vllm_config):
     current_platform.is_rocm(),
     reason="Attention backend FLASHINFER is not supported on ROCm.",
 )
+# [中文注释] 测试混合注意力-Mamba模型的KV缓存张量视图兼容性（写入不互相污染）
 def test_hybrid_attention_mamba_tensor_shapes():
     """
     The GPU model runner creates different views into the
@@ -946,6 +967,7 @@ def test_hybrid_attention_mamba_tensor_shapes():
             assert torch.equal(actual_ssm, expected_ssm)
 
 
+# [中文注释] 测试混合块表在不同内核和KV缓存管理器块大小下的初始化
 def test_hybrid_block_table_initialization():
     """Test hybrid block table with different kernel and kvcache_manager block
     sizes."""
@@ -1000,6 +1022,7 @@ def test_hybrid_block_table_initialization():
     )
 
 
+# [中文注释] 测试InputBatch使用不同内核块大小参数的初始化正确性
 def test_input_batch_with_kernel_block_sizes():
     """Test InputBatch initialization with kernel_block_sizes parameter."""
     max_num_reqs = 10
@@ -1037,6 +1060,7 @@ def test_input_batch_with_kernel_block_sizes():
             assert block_table.block_size == kernel_size
 
 
+# [中文注释] 测试混合缓存架构与GPUModelRunner的集成（混合块表请求处理）
 def test_hybrid_cache_integration(default_vllm_config, dist_init):
     """Test hybrid cache architecture integration with GPUModelRunner."""
     # Create a new model runner with hybrid cache configuration
@@ -1103,6 +1127,7 @@ def test_hybrid_cache_integration(default_vllm_config, dist_init):
     assert _is_req_state_block_table_match(runner, req_id)
 
 
+# [中文注释] 测试GPUModelRunner的统一解码判断逻辑（正常/推测解码/强制模式）
 def test_is_uniform_decode() -> None:
     # Normal
     assert GPUModelRunner._is_uniform_decode(
@@ -1191,6 +1216,7 @@ def test_is_uniform_decode() -> None:
     current_platform.is_rocm(),
     reason="Attention backend FLASHINFER is not supported on ROCm.",
 )
+# [中文注释] 测试混合Mamba模型中CUDAGraph捕获大小被正确限制为不超过块数
 def test_cudagraph_sizes_capped_for_mamba_cache():
     """Test that cudagraph capture sizes are capped to num_blocks for
     hybrid models with Mamba layers.

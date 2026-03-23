@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试各种激活函数内核的正确性，
+# 包括SiLU*Mul、MulAndSilu、GELU、FatReLU、SwigluOAI、SwigluStep以及FastGELU/NewGELU/QuickGELU
 import random
 
 import pytest
@@ -49,6 +51,7 @@ CUDA_DEVICES = [
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @torch.inference_mode()
+# 测试门控激活函数（SiLU*Mul、GELU、FatReLU等）的CUDA内核与原生实现的一致性
 def test_act_and_mul(
     default_vllm_config,
     activation: str,
@@ -130,6 +133,7 @@ def test_act_and_mul(
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @torch.inference_mode()
+# 测试非门控激活函数（FastGELU、NewGELU、QuickGELU）的CUDA内核与原生实现的一致性
 def test_activation(
     default_vllm_config,
     activation: type[torch.nn.Module],

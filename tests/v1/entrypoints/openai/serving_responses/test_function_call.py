@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试Responses API函数调用：工具使用、命名工具、流式函数调用和事件类型验证
 
 import json
 

@@ -18,6 +18,9 @@ from vllm.v1.worker.gpu_input_batch import CachedRequestState
 _SAMPLING_EPS = 1e-5
 
 
+# TPU 输入批次管理类，负责管理 TPU 设备上的请求批次数据结构
+# 维护 token ID、采样参数、块表等 CPU/GPU 双端缓冲区，支持请求的动态添加、移除和压缩
+# 设计思路：预分配 max_num_reqs 大小的固定缓冲区，通过索引映射实现 O(1) 的请求查找
 class InputBatch:
     def __init__(
         self,
@@ -170,6 +173,8 @@ class InputBatch:
         # while performing state updates to the batch.
         return cast(list[str], self._req_ids)
 
+    # 将新请求添加到批次中，初始化其 token、采样参数、LoRA 等所有相关状态
+    # 如果未指定 req_index 则追加到末尾，否则放入指定位置
     def add_request(
         self,
         request: "CachedRequestState",
@@ -288,6 +293,8 @@ class InputBatch:
             # No LoRA
             self.request_lora_mapping[req_index] = 0
 
+    # 从批次中移除指定请求，清理其所有关联状态（采样参数、LoRA、logit bias 等）
+    # 移除后必须调用 condense() 来压缩批次中的空洞
     def remove_request(self, req_id: str) -> int | None:
         """This method must always be followed by a call to condense()."""
 
@@ -327,6 +334,8 @@ class InputBatch:
         self.bad_words_token_ids.pop(req_index, None)
         return req_index
 
+    # 交换两个请求槽位的所有状态数据，包括 token、采样参数、块表等
+    # 注意：numpy 数组的就地交换不安全，需使用临时变量
     def swap_states(self, i1: int, i2: int) -> None:
         old_id_i1 = self._req_ids[i1]
         old_id_i2 = self._req_ids[i2]
@@ -404,6 +413,8 @@ class InputBatch:
             )
         self.block_table.swap_row(i1, i2)
 
+    # 压缩批次：将非空请求移动到较低索引位置以填补空洞
+    # empty_req_indices 必须按降序排列；通过尾部非空请求与头部空洞交换实现紧凑排列
     def condense(self, empty_req_indices: list[int]) -> None:
         """Move non-empty requests down into lower, empty indices.
 
@@ -494,6 +505,8 @@ class InputBatch:
         del self._req_ids[self.num_reqs :]
         del self.req_output_token_ids[self.num_reqs :]
 
+    # 构建提示 token ID 张量，用 vocab_size 作为填充值
+    # 将 CPU 端数据异步传输到 TPU 设备
     def _make_prompt_token_ids_tensor(self) -> torch.Tensor:
         max_prompt_len = self.num_prompt_tokens[: self.num_reqs].max()
         prompt_token_ids_cpu_tensor = torch.empty(
@@ -510,6 +523,8 @@ class InputBatch:
             prompt_token_ids[i, self.num_prompt_tokens[i] :] = self.vocab_size
         return prompt_token_ids_cpu_tensor.to(device=self.device, non_blocking=True)
 
+    # 构建 LoRA 相关输入：生成每个请求和每个 token 对应的 LoRA ID 映射
+    # 用于在推理时激活正确的 LoRA 适配器
     def make_lora_inputs(
         self, num_scheduled_tokens: np.ndarray, num_sampled_tokens: np.ndarray
     ) -> tuple[tuple[int, ...], tuple[int, ...], set[LoRARequest]]:

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 Responses API 服务逻辑：工具类型提取、工具会话初始化、输入验证、推理 token 统计和流式推理事件]
 
 from contextlib import AsyncExitStack
 from unittest.mock import MagicMock
@@ -42,6 +43,7 @@ from vllm.outputs import CompletionOutput, RequestOutput
 from vllm.sampling_params import SamplingParams
 
 
+# [用于测试的模拟会话上下文]
 class MockConversationContext(ConversationContext):
     """Mock conversation context for testing"""
 
@@ -93,6 +95,7 @@ def mock_exit_stack():
     return MagicMock(spec=AsyncExitStack)
 
 
+# [测试从工具列表中提取工具类型：含 MCP 标签过滤逻辑]
 def test_extract_tool_types(monkeypatch: pytest.MonkeyPatch) -> None:
     tools: list[Tool] = []
     assert extract_tool_types(tools) == set()
@@ -132,6 +135,7 @@ def test_extract_tool_types(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
 
+# [测试工具会话初始化方法]
 class TestInitializeToolSessions:
     """Test class for _initialize_tool_sessions method"""
 
@@ -220,6 +224,7 @@ class TestInitializeToolSessions:
         assert error.error.type == "invalid_request_error"
 
 
+# [测试生成器输入验证：超出最大模型长度应返回错误]
 class TestValidateGeneratorInput:
     """Test class for _validate_generator_input method"""
 
@@ -277,6 +282,7 @@ class TestValidateGeneratorInput:
 
 
 @pytest.mark.asyncio
+# [测试推理 token 计数：thinking 标签之间的 token 计入 reasoning_tokens]
 async def test_reasoning_tokens_counted_for_text_reasoning_model(monkeypatch):
     """Ensure reasoning_tokens usage is derived from thinking token spans."""
 
@@ -357,6 +363,7 @@ async def test_reasoning_tokens_counted_for_text_reasoning_model(monkeypatch):
     assert response.usage.output_tokens_details.reasoning_tokens == 1
 
 
+# [测试从 MCP 请求中提取允许的工具列表：含通配符 "*" 归一化]
 class TestExtractAllowedToolsFromMcpRequests:
     """Test class for _extract_allowed_tools_from_mcp_requests function"""
 
@@ -452,6 +459,7 @@ class TestExtractAllowedToolsFromMcpRequests:
         }
 
 
+# [测试 Harmony 前言（commentary 无接收者）的流式事件发射]
 class TestHarmonyPreambleStreaming:
     """Tests for preamble (commentary with no recipient) streaming events."""
 
@@ -564,6 +572,7 @@ class TestHarmonyPreambleStreaming:
         assert "response.output_text.done" not in type_names
 
 
+# [创建带指定文本输出的 SimpleContext 辅助函数]
 def _make_simple_context_with_output(text, token_ids):
     """Create a SimpleContext with a RequestOutput containing the given text."""
     ctx = SimpleContext()
@@ -589,6 +598,7 @@ def _make_simple_context_with_output(text, token_ids):
     return ctx
 
 
+# [创建带推理解析器的 OpenAIServingResponses 实例辅助函数]
 def _make_serving_instance_with_reasoning():
     """Create an OpenAIServingResponses with a mocked reasoning parser."""
     engine_client = MagicMock()
@@ -624,6 +634,7 @@ def _identity_increment(event):
     return event
 
 
+# [测试流式推理到内容的过渡：混合 delta、纯过渡和仅推理场景]
 class TestStreamingReasoningToContentTransition:
     """Tests for _process_simple_streaming_events reasoning-to-content
     transition, specifically the fix for mixed deltas that carry both

@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# Responses API 测试的共享配置文件，提供事件验证、重试、诊断等公共工具函数
+
 from __future__ import annotations
 
 import json
@@ -18,6 +21,7 @@ BASE_TEST_ENV = {
 DEFAULT_MAX_RETRIES = 3
 
 
+# 提供流式事件类型的完成-开始配对映射 fixture
 @pytest.fixture
 def pairs_of_event_types() -> dict[str, str]:
     """Links the 'done' event type with the corresponding 'start' event type.
@@ -46,6 +50,7 @@ def pairs_of_event_types() -> dict[str, str]:
     return event_pairs
 
 
+# 重试调用 responses.create 直到获得指定类型的工具调用输出
 async def retry_for_tool_call(
     client,
     *,
@@ -73,6 +78,7 @@ async def retry_for_tool_call(
     return last_response
 
 
+# 重试流式调用直到事件列表满足验证条件
 async def retry_streaming_for(
     client,
     *,
@@ -99,16 +105,19 @@ async def retry_streaming_for(
     return last_events
 
 
+# 检查响应是否包含指定类型的输出项
 def has_output_type(response, type_name: str) -> bool:
     """Return True if *response* has at least one output item of *type_name*."""
     return any(getattr(item, "type", None) == type_name for item in response.output)
 
 
+# 检查事件列表中是否存在包含指定子串的事件类型
 def events_contain_type(events: list, type_substring: str) -> bool:
     """Return True if any event's type contains *type_substring*."""
     return any(type_substring in getattr(e, "type", "") for e in events)
 
 
+# 基于栈匹配验证流式事件的开始/结束配对是否正确嵌套
 def _validate_event_pairing(events: list, pairs_of_event_types: dict[str, str]) -> None:
     """Validate that streaming events are properly nested/paired.
 
@@ -139,6 +148,7 @@ def _validate_event_pairing(events: list, pairs_of_event_types: dict[str, str]) 
     assert len(stack) == 0, f"Unclosed events on stack: {stack}"
 
 
+# 验证信封事件（created/in_progress/completed）出现在正确位置
 def _validate_event_ordering(events: list) -> None:
     """Validate that envelope events appear in the correct positions."""
     assert len(events) >= 2, f"Expected at least 2 events, got {len(events)}"
@@ -173,6 +183,7 @@ def _validate_event_ordering(events: list) -> None:
     )
 
 
+# 验证事件间 item_id、output_index、content_index 的一致性
 def _validate_field_consistency(events: list) -> None:
     """Validate item_id, output_index, and content_index consistency.
 
@@ -263,6 +274,7 @@ def _validate_field_consistency(events: list) -> None:
             )
 
 
+# 检查事件的 item_id 和 output_index 是否与当前活跃项匹配
 def _assert_item_fields(
     event,
     etype: str,
@@ -284,6 +296,7 @@ def _assert_item_fields(
         )
 
 
+# 综合验证流式事件的配对、排序和字段一致性
 def validate_streaming_event_stack(
     events: list, pairs_of_event_types: dict[str, str]
 ) -> None:
@@ -303,6 +316,7 @@ def validate_streaming_event_stack(
     _validate_field_consistency(events)
 
 
+# 提取并记录响应的诊断信息（推理内容、工具调用、MCP 项等）
 def log_response_diagnostics(
     response,
     *,

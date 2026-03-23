@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 RADIO 视觉基础模型的图像嵌入输出，对比 vLLM 与 HF 的嵌入结果
 import pytest
 import torch
 import torch.nn as nn

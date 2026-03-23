@@ -63,6 +63,7 @@ from .models import (
 @pytest.mark.parametrize("n_layers", [6])
 @pytest.mark.parametrize("custom_ops", custom_ops_combos("quant_fp8", "rms_norm"))
 @pytest.mark.parametrize("inductor_graph_partition", INDUCTOR_GRAPH_PARTITION)
+# TP=1 下 FP8 量化融合 E2E 测试（RMS+Quant、Act+Quant、Attn+Quant）
 def test_tp1_fp8_fusions(
     model_name: str,
     matches_fn: Callable[[int], Matches],
@@ -149,6 +150,7 @@ def test_tp1_fp8_fusions(
 @pytest.mark.parametrize("custom_ops", custom_ops_combos("rms_norm"))
 @pytest.mark.parametrize("inductor_graph_partition", INDUCTOR_GRAPH_PARTITION)
 @pytest.mark.skipif(not is_blackwell(), reason="Blackwell required for fp4")
+# TP=1 下 FP4 量化融合 E2E 测试（需 Blackwell GPU）
 def test_tp1_fp4_fusions(
     model_name: str,
     matches_fn: Callable[[int], Matches],

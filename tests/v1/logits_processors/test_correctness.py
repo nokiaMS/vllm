@@ -51,6 +51,7 @@ STR_NO_LOGITPROC = "none"
 LogitprocType: TypeAlias = type[LogitsProcessor] | str
 
 
+# [中文注释] 请求参数封装类：为批次中每个请求存储logit处理器类型相关的参数。
 class LogitsProcsRequestParams:
     """Encapsulates key params for a single request in a batch.
 
@@ -79,6 +80,7 @@ class LogitsProcsRequestParams:
         return f"MyClass({summ})"
 
 
+# [中文注释] 辅助函数：生成模拟的采样元数据，用于测试logit处理器的apply和update_state。
 def _generate_fake_sampling_metadata(
     num_output_tokens: int,
     batch_size: int,
@@ -126,6 +128,7 @@ def _generate_fake_sampling_metadata(
     return fake_sampling_metadata
 
 
+# [中文注释] 辅助函数：生成测试所需的假数据（logits、penalty等）。
 def _generate_test_fakes(batch_size: int, device: str) -> LogitsprocsTestFakes:
     """Generate fake logits and sampling metadata"""
     fake_logits = create_fake_logits(batch_size, VOCAB_SIZE)
@@ -142,6 +145,7 @@ def _generate_test_fakes(batch_size: int, device: str) -> LogitsprocsTestFakes:
     )
 
 
+# [中文注释] 辅助函数：根据logit处理器类型创建对应的SamplingParams。
 def _sampling_params_from_logitproc(logitproc_type: LogitprocType) -> SamplingParams:
     """Customize request SamplingParams for a specified logitproc"""
     # SamplingParams for req with no logitproc
@@ -151,6 +155,7 @@ def _sampling_params_from_logitproc(logitproc_type: LogitprocType) -> SamplingPa
     return SamplingParams(**kwargs)
 
 
+# [中文注释] 辅助函数：生成包含不同logit处理器类型的混合批次参数。
 def _generate_mixed_logitsprocs_batch_params(
     reqs_per_logitproc: int,
     logitsprocs_types: list[str],
@@ -186,6 +191,7 @@ def _generate_mixed_logitsprocs_batch_params(
     ]
 
 
+# [中文注释] 辅助函数：对无效logit处理器类型抛出错误。
 def _raise_error_invalid(
     msg_suffix: str,
     batch_index: int,
@@ -201,6 +207,7 @@ def _raise_error_invalid(
     )
 
 
+# [中文注释] 辅助函数：为LogitBias处理器设置采样参数。
 def _logit_bias_params(kwargs: dict) -> None:
     """Logit bias config"""
     kwargs["logit_bias"] = {
@@ -208,6 +215,7 @@ def _logit_bias_params(kwargs: dict) -> None:
     }
 
 
+# [中文注释] 辅助函数：验证LogitBias处理器输出的正确性。
 def _logit_bias_validate(
     test_fakes: LogitsprocsTestFakes,
     persistent_batch: list[LogitsProcsRequestParams],
@@ -251,11 +259,13 @@ def _logit_bias_validate(
                 )
 
 
+# [中文注释] 辅助函数：为MinP处理器设置采样参数。
 def _min_p_params(kwargs: dict) -> None:
     """Min-p logitproc config"""
     kwargs["min_p"] = 0.1
 
 
+# [中文注释] 辅助函数：验证MinP处理器输出的正确性。
 def _min_p_validate(
     test_fakes: LogitsprocsTestFakes,
     persistent_batch: list[LogitsProcsRequestParams],
@@ -297,6 +307,7 @@ def _min_p_validate(
                     )
 
 
+# [中文注释] 辅助函数：为MinTokens处理器设置采样参数。
 def _min_tokens_params(kwargs: dict) -> None:
     """Min-tokens logitproc config"""
     kwargs["min_tokens"] = MIN_TOKENS_LEN_THRESHOLD
@@ -306,6 +317,7 @@ def _min_tokens_params(kwargs: dict) -> None:
     ]
 
 
+# [中文注释] 辅助函数：验证MinTokens处理器输出的正确性。
 def _min_tokens_validate(
     test_fakes: LogitsprocsTestFakes,
     persistent_batch: list[LogitsProcsRequestParams],
@@ -403,6 +415,7 @@ def _min_tokens_validate(
                 )
 
 
+# [中文注释] 辅助函数：验证无logit处理器时输出保持不变。
 def _none_validate(
     test_fakes: LogitsprocsTestFakes,
     persistent_batch: list[LogitsProcsRequestParams],
@@ -431,6 +444,7 @@ def _none_validate(
         )
 
 
+# [中文注释] 测试辅助命名元组：封装各logit处理器类型的参数设置和验证函数。
 class LogitsprocTestHelpers(NamedTuple):
     """Supports setting up and validating logitsprocs unit tests."""
 
@@ -452,6 +466,7 @@ logitsprocs_test_mapping = {
 }
 
 
+# [中文注释] 辅助函数：生成测试用例的logit处理器组合列表。
 def _get_test_cases() -> list[list[str]]:
     """Each test case is a set of logitsprocs"""
     logitsprocs_types = list(logitsprocs_test_mapping.keys())
@@ -466,6 +481,7 @@ def _get_test_cases() -> list[list[str]]:
     )
 
 
+# [中文注释] 辅助函数：生成模拟的step更新数据，用于测试批次动态变化。
 def _generate_fake_step_update(
     persistent_batch: list[LogitsProcsRequestParams],
     workload_params: list[LogitsProcsRequestParams],
@@ -603,6 +619,7 @@ def _generate_fake_step_update(
     )
 
 
+# [中文注释] 辅助函数：断言logit处理器的输出是否有效。
 def _assert_valid(
     batch_size: int,
     persistent_batch: list[LogitsProcsRequestParams],
@@ -641,6 +658,7 @@ def _assert_valid(
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("reqs_per_logitproc", [REQS_PER_LOGITPROC])
 @pytest.mark.parametrize("logitsprocs_under_test", _get_test_cases())
+# [中文注释] 测试用例：验证混合批次中多种logit处理器（LogitBias、MinP、MinTokens、None）的正确性。
 def test_logitsprocs(
     device: str, reqs_per_logitproc: int, logitsprocs_under_test: list[str]
 ):

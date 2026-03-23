@@ -129,11 +129,13 @@ RERANK_MODELS = [
 ]
 
 
+# 测试 GTE 系列嵌入模型（含 Bert、NewModel、Qwen2、ModernBert、Qwen3 架构）在 MTEB 基准上的评分
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     mteb_test_embed_models(hf_runner, vllm_runner, model_info)
 
 
+# 测试 GTE 系列嵌入模型的输出正确性：与 HuggingFace 模型的嵌入进行对比
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_correctness(
     hf_runner, vllm_runner, model_info: EmbedModelInfo, example_prompts
@@ -141,6 +143,7 @@ def test_embed_models_correctness(
     correctness_test_embed_models(hf_runner, vllm_runner, model_info, example_prompts)
 
 
+# 测试 GTE 重排序模型（ModernBert、GteNew 架构）在 MTEB 重排序基准上的性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
     vllm_extra_kwargs = {}

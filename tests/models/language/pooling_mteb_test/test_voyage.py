@@ -34,6 +34,7 @@ MODELS = [
 ]
 
 
+# 测试 Voyage 嵌入模型（Qwen3 双向架构）在 MTEB 基准上的评分，使用 eager 模式避免 CUDA 图捕获问题
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     # Encoder-only attention models need enforce_eager=True to avoid
@@ -43,6 +44,7 @@ def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -
     )
 
 
+# 测试 Voyage 嵌入模型的输出正确性：与 HuggingFace 模型的嵌入进行对比
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_correctness(
     hf_runner, vllm_runner, model_info: EmbedModelInfo, example_prompts

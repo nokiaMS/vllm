@@ -33,6 +33,7 @@ HIDDEN_SIZE = 1024
 RANDOM_SEED = 0
 
 
+# 支持 torch.compile 的父模型基类
 @support_torch_compile
 class ParentModel(nn.Module):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = "", **kwargs) -> None:
@@ -42,6 +43,7 @@ class ParentModel(nn.Module):
         return x
 
 
+# 包含 RMS Norm 和 silly attention 的注意力模块
 class Attention(nn.Module):
     def __init__(self, mlp_size: int, hidden_size: int) -> None:
         super().__init__()
@@ -80,6 +82,7 @@ class Attention(nn.Module):
         return x
 
 
+# 第一个可编译的注意力子模块
 @support_torch_compile
 class CompiledAttention(nn.Module):
     def __init__(
@@ -98,12 +101,14 @@ class CompiledAttention(nn.Module):
         return self.attn(x)
 
 
+# 第二个可编译的注意力子模块（带残差连接，与第一个实现不同）
 @support_torch_compile
 class CompiledAttentionTwo(CompiledAttention):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.attn(x) + x
 
 
+# 包含两个独立编译子图的模型，用于测试多图分段编译
 @ignore_torch_compile
 class SimpleModelWithTwoGraphs(ParentModel):
     def __init__(
@@ -197,6 +202,7 @@ def run_model(
 @pytest.mark.parametrize("use_inductor_graph_partition", [False, True])
 @pytest.mark.parametrize("use_bytecode_hook", [True, False])
 @create_new_process_for_each_test("spawn")
+# 测试多子图的 piecewise 编译和 CUDA graph 捕获/回放
 def test_multi_graph_piecewise_compile(
     use_inductor_graph_partition: bool, use_bytecode_hook: bool, monkeypatch
 ):

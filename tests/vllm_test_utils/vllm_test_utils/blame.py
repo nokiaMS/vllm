@@ -8,6 +8,7 @@ import traceback
 from collections.abc import Callable, Generator
 
 
+# [中文注释] 追踪结果数据类，存储是否找到满足条件的函数调用及其调用栈
 @dataclasses.dataclass
 class BlameResult:
     found: bool = False
@@ -15,6 +16,7 @@ class BlameResult:
 
 
 @contextlib.contextmanager
+# [中文注释] 上下文管理器：追踪函数调用以找到第一个满足条件的调用并记录调用栈
 def blame(func: Callable) -> Generator[BlameResult, None, None]:
     """
     Trace the function calls to find the first function that satisfies the

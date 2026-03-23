@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试视觉模型相关功能，包括视觉编码器输出解析、数据并行分片、
+# 负载均衡分配和MRope视觉模型的空间合并
+
 import math
 
 import pytest
@@ -53,6 +57,7 @@ def test_resolve_visual_encoder_outputs(
     assert torch.equal(torch.tensor(expected_features), output_tensor)
 
 
+# 用于测试数据并行分片的简单线性视觉模型
 class SimpleLinearModel(torch.nn.Module):
     """A simple linear vision model for testing."""
 
@@ -205,6 +210,7 @@ def test_get_load_balance_assignment_cases(
     assert grouped_sizes_per_gpu == expected_grouped_sizes_per_gpu
 
 
+# 用于测试MRope数据并行分片的简单视觉模型，支持空间合并
 class SimpleMRopeVisionModel(torch.nn.Module):
     """A simple vision model for testing mrope functionality."""
 

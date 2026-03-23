@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FlashInfer MLA（Multi-head Latent Attention）解码内核（需要SM100+ Blackwell架构）
 import pytest
 import torch
 import torch.nn.functional as F
@@ -18,6 +19,7 @@ else:
     from flashinfer.decode import trtllm_batch_decode_with_kv_cache_mla
 
 
+# MLA解码的PyTorch参考实现（使用scaled_dot_product_attention和GQA）
 def ref_mla(
     out: Tensor,  # (bs, num_heads, v_head_dim)
     query: Tensor,  # (bs, num_heads, head_dim)
@@ -42,6 +44,7 @@ def ref_mla(
     return out
 
 
+# 测试FlashInfer MLA解码内核（DeepSeek R1配置）与参考实现的数值一致性
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @pytest.mark.parametrize("bs", [1, 2, 4, 16])
 @pytest.mark.parametrize("block_size", [32, 64])

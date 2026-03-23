@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试CUTLASS 2:4稀疏量化内核在FP8和INT8数据类型下的正确性
 """Tests for sparse cutlass kernels
 
 Run `pytest tests/kernels/quantization/test_cutlass_2of4_sparse.py`.
@@ -23,14 +24,17 @@ capability = current_platform.get_device_capability()
 capability = capability[0] * 10 + capability[1]
 
 
+# 将张量转换为bfloat16类型
 def to_bf16(tensor: torch.Tensor) -> torch.Tensor:
     return tensor.to(dtype=torch.bfloat16)
 
 
+# 将张量转换为float16类型
 def to_fp16(tensor: torch.Tensor) -> torch.Tensor:
     return tensor.to(dtype=torch.float16)
 
 
+# 对张量执行2:4稀疏剪枝，每4个元素保留绝对值最大的2个
 def prune_to_2_4(tensor):
     # Reshape tensor to [N, 4] where N is number of groups of 4
     original_shape = tensor.shape
@@ -52,6 +56,7 @@ def prune_to_2_4(tensor):
     return pruned.reshape(original_shape)
 
 
+# 验证稀疏压缩和解压缩的不变性：用单位矩阵乘以压缩权重应得到原始权重
 # This function checks that applying an identity matrix multiplication
 # to the compressed weights yields the original uncompressed weights.
 def check_compress_decompress_invariance(
@@ -74,6 +79,7 @@ def check_compress_decompress_invariance(
     torch.testing.assert_close(b.to(dtype=out_dtype), b_decomp)
 
 
+# 生成随机的2:4稀疏张量并进行CUTLASS压缩
 def make_rand_sparse_tensors(
     dtype: torch.dtype, m: int, n: int, k: int
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -105,6 +111,7 @@ def make_rand_sparse_tensors(
     return b_compressed, e, a, b
 
 
+# 测试稀疏矩阵乘法在使用A和B子集时的正确性
 @pytest.mark.skipif(
     not sparse_cutlass_supported(),
     reason="Sparse CUTLASS is not supported on this GPU type.",
@@ -151,6 +158,7 @@ MNK_FACTORS = [
 ]
 
 
+# 测试2:4稀疏CUTLASS GEMM在BF16/FP16类型下含偏置的正确性
 # Test working with a subset of A and B for sparse matmul
 @pytest.mark.skipif(
     not sparse_cutlass_supported(),
@@ -178,6 +186,7 @@ def test_cutlass_sparse_gemm(
     torch.testing.assert_close(out, baseline, rtol=1e-2, atol=3e-1)
 
 
+# 测试2:4稀疏CUTLASS FP8 GEMM的正确性（需要SM89+）
 @pytest.mark.skipif(
     not sparse_cutlass_supported(),
     reason="Sparse CUTLASS is not supported on this GPU type.",
@@ -208,6 +217,7 @@ def test_cutlass_sparse_fp8_gemm(m: int, n: int, k: int, use_bias: bool):
     torch.testing.assert_close(out, baseline, rtol=1e-2, atol=3e-1)
 
 
+# 测试2:4稀疏CUTLASS INT8 GEMM在逐token/逐通道量化配置下的正确性
 @pytest.mark.skipif(
     not sparse_cutlass_supported(),
     reason="Sparse CUTLASS is not supported on this GPU type.",

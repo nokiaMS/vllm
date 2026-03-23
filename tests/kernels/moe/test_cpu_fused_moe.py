@@ -26,6 +26,7 @@ ISA = ["amx", "vec"] if torch._C._cpu._is_amx_tile_supported() else ["vec"]
 DTYPE = [torch.bfloat16]
 
 
+# [中文注释] CPU融合MoE参考实现：使用Python循环逐专家计算，支持SiLU和SwiGLU激活函数
 def ref_fused_moe(
     input: torch.Tensor,
     w13: torch.Tensor,
@@ -96,6 +97,7 @@ def ref_fused_moe(
 @pytest.mark.parametrize("dtype", DTYPE)
 @pytest.mark.parametrize("act", ACT)
 @pytest.mark.parametrize("isa", ISA)
+# [中文注释] 测试CPU融合MoE内核（AMX/VEC ISA），验证预打包权重和不同激活函数下与参考实现一致
 def test_cpu_fused_moe(
     default_vllm_config,
     batch_size: int,

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试模型注册表功能，包括模型导入、属性检查、流水线并行支持和注册表覆盖率验证
+
 import warnings
 
 import pytest
@@ -28,6 +30,7 @@ from .registry import HF_EXAMPLE_MODELS
 
 
 @pytest.mark.parametrize("model_arch", ModelRegistry.get_supported_archs())
+# 测试所有注册的模型架构能否正确导入并满足类型约束
 def test_registry_imports(model_arch):
     # Skip if transformers version is incompatible
     model_info = HF_EXAMPLE_MODELS.get_hf_info(model_arch)
@@ -68,6 +71,7 @@ def test_registry_imports(model_arch):
         ("HF_ColBERT", False, False, "late-interaction"),
     ],
 )
+# 测试模型注册表中的多模态支持和评分类型等属性是否正确
 def test_registry_model_property(model_arch, is_mm, init_cuda, score_type):
     model_info = ModelRegistry._try_inspect_model_cls(model_arch)
     assert model_info is not None
@@ -98,6 +102,7 @@ def test_registry_model_property(model_arch, is_mm, init_cuda, score_type):
         ("Qwen2VLForConditionalGeneration", True, True),
     ],
 )
+# 测试模型是否正确报告流水线并行（Pipeline Parallel）支持
 def test_registry_is_pp(model_arch, is_pp, init_cuda):
     model_info = ModelRegistry._try_inspect_model_cls(model_arch)
     assert model_info is not None
@@ -116,6 +121,7 @@ def test_registry_is_pp(model_arch, is_pp, init_cuda):
             )
 
 
+# 测试HuggingFace注册表是否覆盖了所有支持的模型架构
 def test_hf_registry_coverage():
     untested_archs = (
         ModelRegistry.get_supported_archs() - HF_EXAMPLE_MODELS.get_supported_archs()

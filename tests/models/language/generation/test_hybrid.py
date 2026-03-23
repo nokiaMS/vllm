@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试SSM和混合SSM-Attention模型（Mamba/Jamba/Plamo2/Zamba2/Bamba/FalconH1等），
+# 包括生成正确性、批处理、分块预填充、CUDA图、状态清理、分布式推理和前缀缓存
+
 from collections.abc import Callable
 
 import pytest

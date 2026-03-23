@@ -25,6 +25,7 @@ FAKE_OUTPUT_1 = np.random.rand(NUM_FRAMES, 1280, 720, 3)
 FAKE_OUTPUT_2 = np.random.rand(NUM_FRAMES, 1280, 720, 3)
 
 
+# [中文注释] 测试视频加载器1：返回预定义的假视频数据
 @VIDEO_LOADER_REGISTRY.register("test_video_loader_1")
 class TestVideoLoader1(VideoLoader):
     @classmethod
@@ -39,6 +40,7 @@ class TestVideoLoader2(VideoLoader):
         return FAKE_OUTPUT_2
 
 
+# [中文注释] 测试视频加载器注册表：验证注册和加载自定义加载器
 def test_video_loader_registry():
     custom_loader_1 = VIDEO_LOADER_REGISTRY.load("test_video_loader_1")
     output_1 = custom_loader_1.load_bytes(b"test")
@@ -49,11 +51,13 @@ def test_video_loader_registry():
     np.testing.assert_array_equal(output_2, FAKE_OUTPUT_2)
 
 
+# [中文注释] 测试加载不存在的视频加载器类型引发AssertionError
 def test_video_loader_type_doesnt_exist():
     with pytest.raises(AssertionError):
         VIDEO_LOADER_REGISTRY.load("non_existing_video_loader")
 
 
+# [中文注释] 回归测试：视频后端处理包含损坏帧的视频
 def test_video_backend_handles_broken_frames(monkeypatch: pytest.MonkeyPatch):
     """
     Regression test for handling videos with broken frames.
@@ -95,6 +99,7 @@ def test_video_backend_handles_broken_frames(monkeypatch: pytest.MonkeyPatch):
 # ============================================================================
 
 
+# [中文注释] 测试模拟帧加载失败时的帧恢复机制
 def test_video_recovery_simulated_failures(monkeypatch: pytest.MonkeyPatch):
     """
     Test that frame recovery correctly uses the next valid frame when
@@ -183,6 +188,7 @@ def test_video_recovery_simulated_failures(monkeypatch: pytest.MonkeyPatch):
         assert meta_yes["frames_indices"] == sorted(meta_yes["frames_indices"])
 
 
+# [中文注释] 测试使用真实损坏视频文件的帧恢复
 def test_video_recovery_with_corrupted_file(monkeypatch: pytest.MonkeyPatch):
     """
     Test frame recovery with an actual corrupted video file using sparse sampling.
@@ -252,6 +258,7 @@ def test_video_recovery_with_corrupted_file(monkeypatch: pytest.MonkeyPatch):
         )
 
 
+# [中文注释] 测试动态视频后端的帧恢复功能
 def test_video_recovery_dynamic_backend(monkeypatch: pytest.MonkeyPatch):
     """
     Test that frame_recovery works with the dynamic video backend.
@@ -351,6 +358,7 @@ def dummy_video_path(tmp_path):
         ),
     ],
 )
+# [中文注释] 测试不同后端和采样模式下的视频帧采样数量
 def test_video_loader_frames_sampling(
     dummy_video_path,
     monkeypatch: pytest.MonkeyPatch,

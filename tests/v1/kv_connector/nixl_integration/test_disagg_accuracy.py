@@ -24,6 +24,7 @@ SAMPLE_PROMPTS = (
 )
 
 
+# [中文注释] 辅助函数：通过/health端点检查vLLM服务器是否就绪。
 def check_vllm_server(url: str, timeout=5, retries=3) -> bool:
     """
     Checks if the vLLM server is ready by sending a GET request to the
@@ -53,6 +54,7 @@ def check_vllm_server(url: str, timeout=5, retries=3) -> bool:
     return False
 
 
+# [中文注释] 辅助函数：向指定服务器发送提示词并返回生成结果，用于对比基线与P/D分离输出。
 def run_simple_prompt(
     base_url: str, model_name: str, input_prompt: str, use_chat_endpoint: bool
 ) -> str:
@@ -80,6 +82,7 @@ def run_simple_prompt(
         return completion.choices[0].text
 
 
+# [中文注释] 主函数：P/D分离精度测试，比较基线服务器和分离代理的输出是否一致。
 def main():
     """
     This script demonstrates how to accept two optional string arguments

@@ -32,6 +32,7 @@ MODELS = [
 TARGET_TEST_SUITE = os.environ.get("TARGET_TEST_SUITE", "L4")
 
 
+# [中文注释] 测试vllm实例在删除后能被正确垃圾回收，无循环引用
 def test_vllm_gc_ed():
     """Verify vllm instance is GC'ed when it is deleted"""
     llm = LLM("hmellor/tiny-random-LlamaForCausalLM")
@@ -42,6 +43,7 @@ def test_vllm_gc_ed():
     assert weak_llm() is None
 
 
+# [中文注释] 修复prompt embedding输出，将HF的输入token ID与vLLM的输出对齐
 def _fix_prompt_embed_outputs(
     vllm_outputs: list[tuple[list[int], str]],
     hf_model: HfRunner,
@@ -68,6 +70,7 @@ def _fix_prompt_embed_outputs(
 @pytest.mark.parametrize("async_scheduling", [True, False])
 @pytest.mark.parametrize("model_executor", ["uni", "mp"])
 @pytest.mark.parametrize("enable_prompt_embeds", [True, False])
+# [中文注释] 参数化测试HF与vLLM贪心采样输出的一致性，覆盖多种注意力后端、调度模式和prompt embed
 def test_models(
     hf_runner,
     model: str,
@@ -142,6 +145,7 @@ def test_models(
     ],
 )
 @pytest.mark.parametrize("enable_prompt_embeds", [True, False])
+# [中文注释] 多GPU分布式测试HF与vLLM输出一致性，支持ray和mp后端
 def test_models_distributed(
     monkeypatch: pytest.MonkeyPatch,
     hf_runner,
@@ -210,6 +214,7 @@ def test_models_distributed(
     )
 
 
+# [中文注释] 测试模型执行失败时能正确抛出RuntimeError
 def test_failed_model_execution(vllm_runner, monkeypatch) -> None:
     # Needed to mock an error in the same process
     monkeypatch.setenv("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
@@ -219,6 +224,7 @@ def test_failed_model_execution(vllm_runner, monkeypatch) -> None:
             v1_test_failed_model_execution(vllm_model)
 
 
+# [中文注释] V1引擎模型执行失败的测试逻辑，通过Mock注入RuntimeError
 def v1_test_failed_model_execution(vllm_model):
     engine = vllm_model.llm.llm_engine
     mocked_execute_model = Mock(side_effect=RuntimeError("Mocked Critical Error"))

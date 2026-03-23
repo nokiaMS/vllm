@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试INT8动态量化内核（逐token量化、静态量化和带零点偏移量化）的正确性
 
 import pytest
 import torch
@@ -16,6 +17,7 @@ SEEDS = [0]
 SCALE = [0.1, 2.1]
 
 
+# 对静态INT8量化操作执行opcheck验证
 def opcheck_int8_quant_static(output, input, scale, azp=None):
     if azp is None:
         opcheck(torch.ops._C.static_scaled_int8_quant, (output, input, scale, None))
@@ -23,6 +25,7 @@ def opcheck_int8_quant_static(output, input, scale, azp=None):
         opcheck(torch.ops._C.static_scaled_int8_quant, (output, input, scale, azp))
 
 
+# 对动态INT8量化操作（对称/非对称）执行opcheck验证
 def opcheck_int8_quant_dynamic(output, input, symmetric=True):
     scale = torch.empty(
         (input.numel() // input.shape[-1], 1), device=input.device, dtype=torch.float32
@@ -38,6 +41,7 @@ def opcheck_int8_quant_dynamic(output, input, symmetric=True):
         opcheck(torch.ops._C.dynamic_scaled_int8_quant, (output, input, scale, azp))
 
 
+# 测试动态对称INT8逐token量化的正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -62,6 +66,7 @@ def test_dynamic_scaled_int8_quant(
     opcheck_int8_quant_dynamic(ops_out, x)
 
 
+# 测试动态非对称INT8量化（含零点偏移AZP）的正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -102,6 +107,7 @@ def test_dynamic_scaled_int8_azp_quant(
     opcheck_int8_quant_dynamic(ops_out, x, False)
 
 
+# 测试静态缩放INT8量化的正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -129,6 +135,7 @@ def test_static_scaled_int8_quant(
     opcheck_int8_quant_static(out2, x, scale_arg)
 
 
+# 测试静态缩放INT8非对称量化（含零点偏移AZP）的正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -167,6 +174,7 @@ def test_static_scaled_int8_azp_quant(
     opcheck_int8_quant_static(out2, x, scale_arg, azp_arg)
 
 
+# 测试INT8 AZP量化在int32最大/最小值附近的饱和截断行为
 @pytest.mark.parametrize("is_max", [True, False])
 @torch.inference_mode()
 def test_static_scaled_int8_azp_quant_saturating_cast(is_max: bool) -> None:

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FlexAttention后端与默认注意力后端的集成对比，
+# 覆盖生成任务、编码器模型、BlockMask直接/慢速路径一致性以及物理到逻辑块映射的回归测试
 """Integration tests for FlexAttention backend vs default backend"""
 
 import pytest
@@ -29,6 +31,7 @@ DIRECT_BUILD_VERSION = version.parse("2.9.dev0")
     not torch.cuda.is_available() or TORCH_VERSION < MINIMUM_TORCH_VERSION,
     reason="CUDA not available or PyTorch version < 2.7",
 )
+# 测试FlexAttention后端与默认后端在生成任务中的输出一致性
 def test_flex_attention_vs_default_backend(vllm_runner):
     """Test that FlexAttention produces the same outputs as the default backend.
 
@@ -85,6 +88,7 @@ def test_flex_attention_vs_default_backend(vllm_runner):
     not torch.cuda.is_available() or TORCH_VERSION < MINIMUM_TORCH_VERSION,
     reason="CUDA not available or PyTorch version < 2.7",
 )
+# 测试FlexAttention后端与默认后端在编码器（池化）模型中的嵌入输出一致性
 def test_encoder_flex_attention_vs_default_backend(vllm_runner):
     """Test that FlexAttention produces the same outputs as the default backend.
 
@@ -134,6 +138,7 @@ def test_encoder_flex_attention_vs_default_backend(vllm_runner):
     not torch.cuda.is_available() or TORCH_VERSION < DIRECT_BUILD_VERSION,
     reason="CUDA not available or PyTorch version < 2.7",
 )
+# 测试BlockMask的直接构建路径是慢速路径的超集，确保不遗漏必要的KV块
 def test_block_mask_direct_vs_slow_path():
     """Test that direct path block mask is a superset of slow path.
 
@@ -197,6 +202,7 @@ def test_block_mask_direct_vs_slow_path():
     )
 
 
+# 回归测试：验证物理块复用时逆映射指向最新的逻辑块索引
 def test_physical_to_logical_mapping_handles_reused_blocks():
     """Regression test: reused physical blocks map to the latest logical block.
 

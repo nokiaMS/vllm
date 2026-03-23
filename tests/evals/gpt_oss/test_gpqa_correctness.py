@@ -32,6 +32,7 @@ TIKTOKEN_FILES = {
 }
 
 
+# [中文注释] 确保tiktoken编码文件已下载到本地缓存目录
 def ensure_tiktoken_files():
     """Download tiktoken encoding files if they don't exist."""
     TIKTOKEN_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -46,6 +47,7 @@ def ensure_tiktoken_files():
             print(f"  {filename} already exists.")
 
 
+# [中文注释] 调用gpt-oss评估包运行GPQA评估，返回准确率分数
 def run_gpqa_eval(model_name: str, base_url: str, reasoning_effort: str) -> float:
     """Run GPQA evaluation using the gpt-oss evaluation package."""
 
@@ -105,6 +107,7 @@ def run_gpqa_eval(model_name: str, base_url: str, reasoning_effort: str) -> floa
         raise RuntimeError("Evaluation timed out") from e
 
 
+# [中文注释] 测试GPQA正确性：启动vLLM服务器，运行评估，验证准确率达到配置阈值
 def test_gpqa_correctness(config_filename):
     """Test GPQA correctness for a given model configuration."""
     # Ensure tiktoken files are downloaded

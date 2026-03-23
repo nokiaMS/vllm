@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试AWQ量化模型的推理正确性，对比源模型和AWQ量化模型的logprobs输出
 
 import pytest
 import torch
@@ -18,6 +19,7 @@ HF_IMAGE_PROMPTS = IMAGE_ASSETS.prompts(
 )
 
 
+# 执行AWQ量化测试：对比源模型与AWQ量化模型在多尺度图像上的生成结果
 def run_awq_test(
     vllm_runner: type[VllmRunner],
     image_assets: ImageTestAssets,
@@ -112,6 +114,7 @@ def run_awq_test(
 @pytest.mark.parametrize("max_tokens", [128])
 @pytest.mark.parametrize("num_logprobs", [5])
 @torch.inference_mode()
+# 测试InternVL2 AWQ量化模型在不同缩放因子下的推理正确性
 def test_awq_models(
     vllm_runner,
     image_assets,

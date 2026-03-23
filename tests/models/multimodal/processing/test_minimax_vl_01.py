@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 MiniMax-VL-01 视觉语言模型的多模态预处理，验证图像 token 数量计算
 
 import pytest
 from PIL import Image

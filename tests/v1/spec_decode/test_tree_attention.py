@@ -169,6 +169,7 @@ def _get_available_reference_backends() -> list[AttentionBackendEnum]:
     return [AttentionBackendEnum.FLASH_ATTN]
 
 
+# [中文注释] 模拟注意力层：用于树注意力测试的简单注意力前向传播实现
 class MockAttentionLayer(torch.nn.Module):
     _q_scale = torch.tensor(1.0, dtype=torch.float32, device="cuda")
     _k_scale = torch.tensor(1.0, dtype=torch.float32, device="cuda")
@@ -182,6 +183,7 @@ class MockAttentionLayer(torch.nn.Module):
         return x
 
 
+# [中文注释] 辅助函数：执行注意力前向传播，支持树注意力和标准注意力模式
 def forward_attention(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -318,6 +320,7 @@ def forward_attention(
     _get_available_reference_backends(),
     ids=lambda b: b.name,
 )
+# [中文注释] 测试树注意力计算结果与参考后端实现的一致性
 def test_tree_attn_correctness(
     reference_backend: AttentionBackendEnum,
 ) -> None:

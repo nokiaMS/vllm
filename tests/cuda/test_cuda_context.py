@@ -10,6 +10,7 @@ import torch
 from vllm.platforms import current_platform
 
 
+# [中文注释] 通过CUDA驱动API检查当前线程的CUDA上下文状态
 def check_cuda_context():
     """Check CUDA driver context status"""
     try:
@@ -21,6 +22,7 @@ def check_cuda_context():
         return False, None
 
 
+# [中文注释] 在独立线程中运行CUDA上下文测试，验证set_device对不同输入类型的处理
 def run_cuda_test_in_thread(device_input, expected_device_id):
     """Run CUDA context test in separate thread for isolation"""
     try:
@@ -48,6 +50,7 @@ def run_cuda_test_in_thread(device_input, expected_device_id):
         return False, f"Exception in thread: {str(e)}"
 
 
+# [中文注释] 测试set_cuda_context函数，验证整数、torch.device和字符串三种设备输入类型
 class TestSetCudaContext:
     """Test suite for the set_cuda_context function."""
 

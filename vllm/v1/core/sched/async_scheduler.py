@@ -9,6 +9,14 @@ from vllm.v1.request import Request, RequestStatus
 logger = init_logger(__name__)
 
 
+# [中文注释] 异步调度器（继承自 Scheduler），用于异步调度模式。
+#   与同步 Scheduler 的主要区别：
+#     1. _update_after_schedule(): 在调度后立即为每个请求预留 1 + num_spec_tokens 个
+#        output placeholder，使用占位 spec_token_ids（-1），实际值在 worker 中更新。
+#     2. _update_request_with_output(): 处理模型输出时减少 placeholder 计数，
+#        并在此时（而非调度时）执行 cache_blocks，因为异步模式下调度和执行是解耦的。
+#     3. 支持 discard_latest_async_tokens: 当 reset_prefix_cache 强制抢占时，
+#        丢弃最近的异步 token 以避免重复输出。
 class AsyncScheduler(Scheduler):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

@@ -5,6 +5,7 @@ from vllm.model_executor.layers.quantization import get_quantization_config
 from vllm.platforms import current_platform
 
 
+# 检查当前 GPU 平台是否支持指定的量化方法
 def is_quant_method_supported(quant_method: str) -> bool:
     # Currently, all quantization methods require Nvidia or AMD GPUs
     if not (current_platform.is_cuda() or current_platform.is_rocm()):

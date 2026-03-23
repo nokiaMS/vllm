@@ -31,6 +31,7 @@ from vllm.utils.math_utils import round_up
 from .utils import shuffle_weight
 
 
+# [中文注释] 将交错排列的权重恢复为原始顺序（反shuffle操作）
 def deshuffle(w: torch.Tensor):
     first = w[..., ::2]
     second = w[..., 1::2]
@@ -39,6 +40,7 @@ def deshuffle(w: torch.Tensor):
     return deshuffled
 
 
+# [中文注释] 初始化GPT OSS Triton MoE测试数据：创建MXFP4量化权重和激活
 def init_compute_data(M, K, N, E, a_dtype: str, w_dtype: str, num_warps: int):
     randbits = [torch.randperm(E) for _ in range(M)]
     x_list = [
@@ -189,6 +191,7 @@ def init_compute_data(M, K, N, E, a_dtype: str, w_dtype: str, num_warps: int):
 
 
 @dataclass
+# [中文注释] GPT OSS模型配置类，定义MoE层的维度参数（K、N、专家数、TopK等）
 class ModelConfig:
     num_hidden_layers: int = 36
     num_experts: int = 128
@@ -207,6 +210,7 @@ class ModelConfig:
     rope_ntk_beta: float = 32.0
 
 
+# [中文注释] SwiGLU激活函数参考实现
 def swiglu(x, alpha: float = 1.702, limit: float = 1.0):
     # Note we add an extra bias of 1 to the linear layer
     x_glu, x_linear = torch.chunk(x, 2, dim=-1)
@@ -218,6 +222,7 @@ def swiglu(x, alpha: float = 1.702, limit: float = 1.0):
     return out_glu * (x_linear + 1)
 
 
+# [中文注释] OAI MoE前向推理参考实现：使用MXFP4量化进行逐专家计算
 def oai_moe_forward(
     hidden_states: torch.Tensor,  # (M, K)
     w1: torch.Tensor,  # (E, 2N)
@@ -252,6 +257,7 @@ def oai_moe_forward(
 
 
 @dataclass
+# [中文注释] 测试用例数据类，封装MoE计算的输入和配置参数
 class Case:
     a_dtype: str
     w_dtype: str
@@ -270,6 +276,7 @@ class Case:
 )
 @pytest.mark.parametrize("num_token", [2])
 @pytest.mark.parametrize("tp", [1, 2, 4, 8])
+# [中文注释] 测试GPT OSS Triton内核MoE与参考实现的等价性（支持MXFP4量化和张量并行）
 def test_equiv(num_token, a_dtype, w_dtype, tp, workspace_init):
     from triton_kernels.tensor_details import layout
 
@@ -335,6 +342,7 @@ def test_equiv(num_token, a_dtype, w_dtype, tp, workspace_init):
     assert_close(ref=out_ref, tri=out_triton_monolithic, maxtol=0.025, rmstol=0.005)
 
 
+# [中文注释] 测试权重shuffle/deshuffle操作的正确性（验证往返一致性）
 def test_unit_shuffle():
     N = ModelConfig.intermediate_size
     K = ModelConfig.hidden_size

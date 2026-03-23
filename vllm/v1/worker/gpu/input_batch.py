@@ -9,6 +9,8 @@ from vllm.triton_utils import tl, triton
 from vllm.utils import random_uuid
 
 
+# 输入缓冲区类，预分配 GPU 张量用于存储 input_ids、positions、query_start_loc、seq_lens 等。
+# 通过预分配固定大小的缓冲区避免每次推理时重复申请显存，提升性能。
 class InputBuffers:
     def __init__(
         self,
@@ -32,6 +34,9 @@ class InputBuffers:
         )
 
 
+# 输入批次数据类，封装一次推理所需的全部输入信息。
+# 包括请求 ID 映射、调度 token 数量、位置信息、序列长度、logits 索引等。
+# 支持投机解码（speculative decoding）和结构化输出（structured output）场景。
 @dataclass
 class InputBatch:
     # batch_idx -> req_id
@@ -77,6 +82,8 @@ class InputBatch:
     # Whether any requests in batch use structured output.
     has_structured_output_reqs: bool
 
+    # 创建用于预热（warmup）或性能分析（profiling）的虚拟批次。
+    # 生成均匀分布的假请求数据，使得 CUDA 图捕获和 Triton 内核编译能够正常执行。
     @classmethod
     def make_dummy(
         cls,
@@ -146,6 +153,9 @@ class InputBatch:
         )
 
 
+# Triton 内核：为 prefill 阶段准备输入 token ID。
+# 每个线程块处理一个请求，将 all_token_ids 中对应区间的 token 拷贝到 input_ids 缓冲区。
+# 如果 prefill 尚未完成，还会预加载下一轮的 prefill token。
 @triton.jit
 def _prepare_prefill_inputs_kernel(
     input_ids_ptr,
@@ -183,6 +193,7 @@ def _prepare_prefill_inputs_kernel(
         tl.store(next_prefill_tokens_ptr + req_state_idx, next_token)
 
 
+# 调用 Triton 内核来准备 prefill 输入，将各请求的 token ID 填入 input_ids 缓冲区。
 def prepare_prefill_inputs(
     input_ids: torch.Tensor,
     next_prefill_tokens: torch.Tensor,
@@ -206,6 +217,9 @@ def prepare_prefill_inputs(
     )
 
 
+# Triton 内核：计算每个请求的位置编码（positions）和序列长度（seq_lens）。
+# 位置从 num_computed_tokens 开始递增填充，seq_len = num_computed_tokens + query_len。
+# 额外启动一个线程块将未使用的 seq_lens 填零，以兼容完整 CUDA 图模式。
 @triton.jit
 def _prepare_pos_seq_lens_kernel(
     pos_ptr,
@@ -243,6 +257,7 @@ def _prepare_pos_seq_lens_kernel(
         tl.store(pos_ptr + start + block, pos, mask=mask)
 
 
+# 调用 Triton 内核计算位置编码和序列长度，并将未使用的 seq_lens 填零。
 def prepare_pos_seq_lens(
     idx_mapping: torch.Tensor,
     query_start_loc: torch.Tensor,
@@ -264,6 +279,9 @@ def prepare_pos_seq_lens(
     )
 
 
+# Triton 内核：将上一步采样的 token 和投机解码的草稿 token 组合写入 input_ids。
+# 同时计算每个请求的 logits 索引，用于后续从模型输出中提取对应位置的 logits。
+# 对于仍在 prefill 阶段的请求，跳过处理（无采样/草稿 token）。
 @triton.jit
 def _combine_sampled_and_draft_tokens_kernel(
     input_ids_ptr,
@@ -321,6 +339,8 @@ def _combine_sampled_and_draft_tokens_kernel(
         )
 
 
+# 组合采样 token 和草稿 token，生成 logits 索引。
+# BLOCK_SIZE 取投机步数+1 的下一个 2 的幂，确保能覆盖所有草稿 token 加上一个采样 token。
 def combine_sampled_and_draft_tokens(
     input_ids: torch.Tensor,
     idx_mapping: torch.Tensor,
@@ -359,6 +379,9 @@ def combine_sampled_and_draft_tokens(
     return logits_indices
 
 
+# Triton 内核：计算每个请求的已采样 token 数和被拒绝 token 数。
+# 对于正在进行分块 prefill 的请求，将两者都置零（因为 prefill 不涉及采样）。
+# num_rejected = num_logits - num_sampled，用于投机解码的拒绝采样统计。
 @triton.jit
 def _get_num_sampled_and_rejected_kernel(
     num_sampled_ptr,
@@ -388,6 +411,7 @@ def _get_num_sampled_and_rejected_kernel(
     tl.store(num_rejected_ptr + batch_idx, num_rejected)
 
 
+# 获取每个请求的采样数和拒绝数，返回两个张量。
 def get_num_sampled_and_rejected(
     num_sampled: torch.Tensor,
     seq_lens: torch.Tensor,
@@ -408,6 +432,9 @@ def get_num_sampled_and_rejected(
     return num_sampled, num_rejected
 
 
+# Triton 内核：模型推理后更新请求状态。
+# 主要操作：1) 记录最后采样的 token；2) 将采样 token 追加到 all_token_ids；
+# 3) 更新 output_bin_counts 用于频率/重复惩罚；4) 更新 num_computed_tokens。
 @triton.jit
 def _post_update_kernel(
     idx_mapping_ptr,
@@ -462,6 +489,7 @@ def _post_update_kernel(
     tl.store(num_computed_tokens_ptr + req_state_idx, num_computed)
 
 
+# 调用 Triton 内核执行推理后的状态更新，包括采样 token 记录、计数更新等。
 def post_update(
     # [num_reqs]
     idx_mapping: torch.Tensor,
@@ -503,6 +531,8 @@ def post_update(
     )
 
 
+# Triton 内核：池化模型（embedding 模型）推理后更新 num_computed_tokens。
+# 池化模型不需要采样，因此只需更新已计算 token 数。
 @triton.jit
 def _post_update_pool_kernel(
     idx_mapping_ptr,
@@ -519,6 +549,7 @@ def _post_update_pool_kernel(
     tl.store(num_computed_tokens_ptr + req_state_idx, num_computed + query_len)
 
 
+# 池化模型推理后调用 Triton 内核更新已计算 token 数。
 def post_update_pool(
     # [num_reqs]
     idx_mapping: torch.Tensor,
@@ -535,6 +566,9 @@ def post_update_pool(
     )
 
 
+# Triton 内核：将 idx_mapping 按投机解码的 logits 数量展开。
+# 在投机解码中，每个请求可能产生多个 logits，需要将请求索引映射展开为与 logits 对齐的形式。
+# 同时记录每个 logit 在请求内的局部位置（expanded_local_pos）。
 @triton.jit
 def _expand_idx_mapping_kernel(
     idx_mapping_ptr,
@@ -555,6 +589,8 @@ def _expand_idx_mapping_kernel(
     tl.store(expanded_local_pos_ptr + start_idx + block, block, mask=mask)
 
 
+# 展开请求索引映射，使其与投机解码产生的 logits 数量对齐。
+# 返回展开后的索引映射和局部位置张量。
 def expand_idx_mapping(
     idx_mapping: torch.Tensor,
     total_num_logits: int,

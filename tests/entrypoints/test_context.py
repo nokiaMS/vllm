@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 Responses API 上下文对象（HarmonyContext、StreamingHarmonyContext、SimpleContext）
+# 的 token 计数、多轮对话追踪、推理 token 统计以及消息同步逻辑
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,6 +18,7 @@ from vllm.entrypoints.openai.responses.context import (
 from vllm.outputs import CompletionOutput, RequestOutput
 
 
+# 辅助函数：创建模拟的 RequestOutput 对象用于测试
 def create_mock_request_output(
     prompt_token_ids=None,
     output_token_ids=None,
@@ -47,6 +51,7 @@ def create_mock_request_output(
     )
 
 
+# 辅助函数：异步生成多轮模拟输出序列
 async def generate_mock_outputs(
     num_turns, prompt_token_counts, output_token_counts, cached_token_counts=None
 ):
@@ -68,6 +73,7 @@ async def generate_mock_outputs(
         )
 
 
+# 提供模拟的流式解析器 fixture，用于测试推理 token 通道判断
 @pytest.fixture
 def mock_parser():
     """Set up a mock parser for tests."""
@@ -83,6 +89,7 @@ def mock_parser():
         yield parser
 
 
+# 测试单轮对话的 token 计数（prompt、output、cached、tool）
 def test_single_turn_token_counting():
     """Test token counting behavior for a single turn."""
     # Create a context
@@ -114,6 +121,7 @@ def test_single_turn_token_counting():
     assert previous_turn.tool_output_tokens == 0
 
 
+# 测试多轮对话中跨 turn 的 token 累计计数及工具输出 token 推算
 @pytest.mark.asyncio
 async def test_multi_turn_token_counting():
     """Test token counting behavior across multiple turns with tool output."""
@@ -175,6 +183,7 @@ async def test_multi_turn_token_counting():
     assert context.all_turn_metrics[2].tool_output_tokens == 1
 
 
+# 测试输出 token 为空列表时的边界处理
 def test_empty_output_tokens():
     """Test behavior when RequestOutput has empty output tokens."""
     context = HarmonyContext(messages=[], available_tools=[])
@@ -195,6 +204,7 @@ def test_empty_output_tokens():
     assert context.num_tool_output_tokens == 0
 
 
+# 测试 prompt_token_ids 为 None 时的容错处理
 def test_missing_prompt_token_ids():
     """Test behavior when RequestOutput has None prompt_token_ids."""
     context = HarmonyContext(messages=[], available_tools=[])
@@ -216,6 +226,7 @@ def test_missing_prompt_token_ids():
     assert context.num_tool_output_tokens == 0
 
 
+# 测试推理通道（analysis）中的 token 被正确计入推理 token
 def test_reasoning_tokens_counting(mock_parser):
     """Test that reasoning tokens are counted correctly."""
     context = HarmonyContext(messages=[], available_tools=[])
@@ -236,6 +247,7 @@ def test_reasoning_tokens_counting(mock_parser):
     assert context.num_output_tokens == 4
 
 
+# 测试前言（无接收者的 commentary）不计入推理 token
 def test_preamble_tokens_not_counted_as_reasoning(mock_parser):
     """Preambles (commentary with no recipient) are visible user text,
     not hidden reasoning. They must NOT inflate num_reasoning_tokens."""
@@ -255,6 +267,7 @@ def test_preamble_tokens_not_counted_as_reasoning(mock_parser):
     assert context.num_output_tokens == 3
 
 
+# 测试有接收者的 commentary 通道 token 应计入推理 token
 def test_commentary_with_recipient_counted_as_reasoning(mock_parser):
     """Commentary directed at a tool (recipient != None) is hidden from
     the user, so it should still count as reasoning tokens."""
@@ -274,6 +287,7 @@ def test_commentary_with_recipient_counted_as_reasoning(mock_parser):
     assert context.num_output_tokens == 3
 
 
+# 测试所有 token 计数均为零的边界情况
 def test_zero_tokens_edge_case():
     """Test behavior with all zero token counts."""
     context = HarmonyContext(messages=[], available_tools=[])
@@ -296,6 +310,7 @@ def test_zero_tokens_edge_case():
     assert context.num_reasoning_tokens == 0
 
 
+# 测试首轮对话即使有工具可用也不产生工具输出 token
 @pytest.mark.asyncio
 async def test_single_turn_no_tool_output():
     """Test that first turn never generates tool output tokens."""
@@ -318,6 +333,7 @@ async def test_single_turn_no_tool_output():
     assert context.is_first_turn is False  # Should be updated after first turn
 
 
+# 测试工具 token 计算结果为负数时应被截断为 0 并记录错误
 @pytest.mark.asyncio
 async def test_negative_tool_tokens_edge_case():
     """Test edge case where calculation could result in negative tool
@@ -359,6 +375,7 @@ async def test_negative_tool_tokens_edge_case():
         assert "-3" in str(args)  # Check that -3 is in the arguments
 
 
+# 测试流式多轮对话中逐 token 输出的计数和消息边界处理
 @pytest.mark.asyncio
 async def test_streaming_multi_turn_token_counting(mock_parser):
     """Test token counting for streaming multi-turn conversations.
@@ -519,6 +536,7 @@ async def test_streaming_multi_turn_token_counting(mock_parser):
     assert context.all_turn_metrics[2].tool_output_tokens == 2
 
 
+# 测试流式上下文与解析器之间的消息同步逻辑
 @pytest.mark.asyncio
 async def test_streaming_message_synchronization(mock_parser):
     """Test message synchronization logic from lines 413-417 in context.py.
@@ -595,6 +613,7 @@ async def test_streaming_message_synchronization(mock_parser):
     assert context._messages[2].content[0].text == "Response 4"
 
 
+# 测试 TurnMetrics 的 copy 和 reset 方法的正确性与独立性
 def test_turn_metrics_copy_and_reset():
     """Test TurnMetrics copy and reset methods work correctly."""
     # Create a TurnMetrics with specific values
@@ -641,6 +660,7 @@ def test_turn_metrics_copy_and_reset():
 # ==================== SimpleContext Tests ====================
 
 
+# 辅助函数：为 SimpleContext 测试创建可自定义文本的 RequestOutput
 def create_simple_context_output(
     text="",
     token_ids=None,
@@ -675,12 +695,14 @@ def create_simple_context_output(
     )
 
 
+# 测试 SimpleContext 在未追加输出前 output_messages 为空
 def test_simple_context_output_messages_empty():
     """output_messages should be empty before any output is appended."""
     context = SimpleContext()
     assert context.output_messages == []
 
 
+# 测试非流式模式下单次追加输出产生一条输出消息
 def test_simple_context_output_messages_single_call():
     """Non-streaming: single append_output produces a single output message."""
     context = SimpleContext()
@@ -698,6 +720,7 @@ def test_simple_context_output_messages_single_call():
     assert messages[0].type == "raw_message_tokens"
 
 
+# 测试流式模式下多次追加输出合并为单条消息
 def test_simple_context_output_messages_streaming_consolidation():
     """Streaming: multiple append_output calls consolidate into one message."""
     context = SimpleContext()
@@ -731,6 +754,7 @@ def test_simple_context_output_messages_streaming_consolidation():
     assert messages[0].tokens == [10, 20, 30]
 
 
+# 测试大量小增量流式输出仍合并为单条消息
 def test_simple_context_output_messages_many_deltas():
     """Streaming with many small deltas still produces a single message."""
     context = SimpleContext()
@@ -751,6 +775,7 @@ def test_simple_context_output_messages_many_deltas():
     assert messages[0].tokens == [100, 101, 102, 103, 104]
 
 
+# 测试 input_messages 在首次追加输出时被填充且不重复添加
 def test_simple_context_input_messages():
     """input_messages is populated on the first append_output call."""
     context = SimpleContext()
@@ -782,6 +807,7 @@ def test_simple_context_input_messages():
     assert len(context.input_messages) == 1
 
 
+# 测试 SimpleContext 的 token 计数在流式增量中正确累加
 def test_simple_context_token_counting():
     """Token counting accumulates across streaming deltas."""
     context = SimpleContext()
@@ -808,6 +834,7 @@ def test_simple_context_token_counting():
     assert context.num_cached_tokens == 2
 
 
+# 测试 final_output 正确重建累计的文本和 token_ids
 def test_simple_context_final_output():
     """final_output reconstructs accumulated text and token_ids."""
     context = SimpleContext()
@@ -833,6 +860,7 @@ def test_simple_context_final_output():
     assert final.outputs[0].token_ids == (1, 2, 3)
 
 
+# 测试文本为空但有 token 时仍返回输出消息
 def test_simple_context_output_messages_empty_text_with_tokens():
     """output_messages should be returned when tokens exist even if text is
     empty (e.g. special tokens)."""
@@ -851,6 +879,7 @@ def test_simple_context_output_messages_empty_text_with_tokens():
     assert messages[0].tokens == [99]
 
 
+# 测试每次访问 output_messages 返回独立副本，调用者无法污染内部状态
 def test_simple_context_output_messages_no_mutation():
     """Each call to output_messages returns a fresh list; callers can't
     corrupt internal state."""

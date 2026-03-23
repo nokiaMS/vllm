@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Gemma3 系列模型（图像/音频）的多模态预处理，包括 token 数量计算和音频特征长度调整
 
 import pytest
 import torch

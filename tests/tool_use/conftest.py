@@ -12,6 +12,7 @@ from .utils import ARGS, CONFIGS, ServerConfig
 
 
 # select models to test based on command line arguments
+# [中文注释] 添加命令行选项：--models 指定测试模型，--extended 启用需要大GPU的扩展测试
 def pytest_addoption(parser):
     parser.addoption("--models", nargs="+", help="Specify one or more models to test")
     parser.addoption(
@@ -22,6 +23,7 @@ def pytest_addoption(parser):
     )
 
 
+# [中文注释] 会话级fixture：遍历所有模型配置，下载模型并返回配置（按命令行参数过滤）
 # for each server config, download the model and return the config
 @pytest.fixture(scope="session", params=CONFIGS.keys())
 def server_config(request):
@@ -51,6 +53,7 @@ def server_config(request):
     yield CONFIGS[request.param]
 
 
+# [中文注释] 会话级fixture：启动RemoteOpenAIServer，最长等待480秒
 # run this for each server config
 @pytest.fixture(scope="session")
 def server(request, server_config: ServerConfig):
@@ -62,6 +65,7 @@ def server(request, server_config: ServerConfig):
         yield server
 
 
+# [中文注释] 异步fixture：创建OpenAI异步客户端用于测试请求
 @pytest_asyncio.fixture
 async def client(server: RemoteOpenAIServer):
     async with server.get_async_client() as async_client:

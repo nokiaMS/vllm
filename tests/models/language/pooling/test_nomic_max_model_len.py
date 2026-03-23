@@ -21,6 +21,7 @@ original_max_position_embeddings = 2048
 max_model_len = int(original_max_position_embeddings * factor)
 
 
+# 测试 Nomic 嵌入模型在默认配置下的最大模型长度是否正确
 @pytest.mark.parametrize("model_info", MODELS)
 def test_default(model_info, vllm_runner):
     with vllm_runner(
@@ -35,6 +36,7 @@ def test_default(model_info, vllm_runner):
             assert model_config.max_model_len == original_max_position_embeddings
 
 
+# 测试设置合法的 max_model_len 值（不超过模型上限）时模型能正常加载
 @pytest.mark.parametrize("model_info", MODELS)
 def test_set_max_model_len_legal(model_info, vllm_runner):
     # set max_model_len <= 512
@@ -59,6 +61,7 @@ def test_set_max_model_len_legal(model_info, vllm_runner):
             assert model_config.max_model_len == 1024
 
 
+# 测试设置非法的 max_model_len 值（超过模型上限）时是否正确抛出 ValueError
 @pytest.mark.parametrize("model_info", MODELS)
 def test_set_max_model_len_illegal(model_info, vllm_runner):
     # set max_model_len > 2048
@@ -78,6 +81,7 @@ def test_set_max_model_len_illegal(model_info, vllm_runner):
             pass
 
 
+# 测试使用合法的 RoPE 缩放参数（yarn 类型）时模型能正常加载
 @pytest.mark.parametrize("model_info", MODELS)
 def test_use_rope_scaling_legal(model_info, vllm_runner):
     hf_overrides = {
@@ -96,6 +100,7 @@ def test_use_rope_scaling_legal(model_info, vllm_runner):
         pass
 
 
+# 测试使用非法的 RoPE 缩放参数（超出允许的模型长度）时是否正确抛出 ValueError
 @pytest.mark.parametrize("model_info", MODELS)
 def test_use_rope_scaling_illegal(model_info, vllm_runner):
     hf_overrides: dict[str, Any] = {

@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 内存工具模块，提供 GPU/CPU 内存的格式化、查询、性能分析等功能
+# 核心设计思路：将 GPU 内存分为 torch 管理和非 torch（如 NCCL）两部分分别追踪，
+# 通过快照差值计算 KV Cache 之外的内存占用，从而决定可分配给 KV Cache 的空间
 import contextlib
 import gc
 import time
@@ -16,14 +19,17 @@ from vllm.platforms import current_platform
 from .mem_constants import GiB_bytes, MiB_bytes
 
 
+# 将字节数格式化为 MiB 字符串，用于日志输出
 def format_mib(b: int) -> str:
     return f"{round(b / MiB_bytes, 2)}"
 
 
+# 将字节数格式化为 GiB 字符串，用于日志输出
 def format_gib(b: int) -> str:
     return f"{round(b / GiB_bytes, 2)}"
 
 
+# 获取指定 GPU 每个线程块的最大共享内存（字节），结果会被缓存以避免重复查询
 @cache
 def get_max_shared_memory_bytes(gpu: int = 0) -> int:
     """Returns the maximum shared memory per thread block in bytes."""
@@ -36,11 +42,14 @@ def get_max_shared_memory_bytes(gpu: int = 0) -> int:
     return int(max_shared_mem)
 
 
+# 获取当前节点的 CPU 总内存（字节）
 def get_cpu_memory() -> int:
     """Returns the total CPU memory of the node in bytes."""
     return psutil.virtual_memory().total
 
 
+# 设备内存分析器，作为上下文管理器使用
+# 在进入和退出时分别记录 GPU 内存使用量，计算代码块期间消耗的内存
 class DeviceMemoryProfiler:
     def __init__(self, device: torch.types.Device | None = None):
         self.device = device
@@ -63,6 +72,9 @@ class DeviceMemoryProfiler:
         gc.collect()
 
 
+# 内存快照数据类，记录某一时刻 GPU 内存的各项指标
+# 将内存拆分为 torch 管理的部分和非 torch 部分（如 NCCL 通信库占用），
+# 支持两个快照之间的减法运算以计算增量
 @dataclass
 class MemorySnapshot:
     """Memory snapshot."""
@@ -163,6 +175,9 @@ class MemorySnapshot:
         )
 
 
+# 内存分析结果数据类，所有数值单位为字节
+# 汇总模型加载权重、前向推理峰值激活、非 torch 组件三部分的内存占用，
+# 用于推算可分配给 KV Cache 的剩余显存
 @dataclass
 class MemoryProfilingResult:
     """Memory profiling result. All numbers are in bytes."""
@@ -193,6 +208,10 @@ class MemoryProfilingResult:
         )
 
 
+# 内存分析上下文管理器
+# 设计思路：在进入时重置 PyTorch 峰值内存统计，在退出时测量差值，
+# 从而精确计算推理过程中 torch 峰值激活增量和非 torch 内存增量，
+# 最终得出除 KV Cache 外的总内存占用量
 @contextlib.contextmanager
 def memory_profiling(
     baseline_snapshot: MemorySnapshot,

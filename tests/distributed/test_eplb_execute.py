@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 EPLB 专家权重重排列的执行逻辑（包括冗余配置、异步传输、profile 模式等）
 
 import asyncio
 import random

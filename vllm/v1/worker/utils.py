@@ -37,6 +37,9 @@ from vllm.v1.kv_cache_interface import (
 logger = init_logger(__name__)
 
 
+# Triton JIT 编译的 KV 缓存块清零内核
+# 通过绝对字节地址定位不同 CUDA 内存分配中的段，实现跨分配的高效批量清零
+# 程序网格映射为 (block_index, seg_index, chunk_index) 三维索引
 @triton.jit
 def _zero_kv_blocks_kernel(
     seg_addrs_ptr,
@@ -77,6 +80,9 @@ def _zero_kv_blocks_kernel(
     tl.store(ptr + offset + cols, tl.zeros([BLOCK_SIZE], dtype=tl.int32))
 
 
+# KV 缓存块清零管理器，负责将新分配的 KV 缓存块高效置零
+# 设计思路：一次性预计算段地址表（init_meta），后续每步只需传入块 ID 即可快速清零
+# 使用 pinned memory 实现 CPU->GPU 的高效异步传输
 class KVBlockZeroer:
     """Manages efficient zeroing of KV cache blocks via a Triton kernel.
 
@@ -217,6 +223,8 @@ class KVBlockZeroer:
         )
 
 
+# 注意力组数据类，将共享相同后端和 KV 缓存规格的注意力层分为一组
+# 当启用微批次时，每个微批次拥有独立的元数据构建器以避免 CUDAGraph 缓冲区冲突
 @dataclass
 class AttentionGroup:
     backend: type[AttentionBackend]
@@ -257,6 +265,8 @@ class AttentionGroup:
         return self.metadata_builders[ubatch_id]
 
 
+# 选择所有注意力后端都支持的公共块大小
+# 算法：优先使用 KV 管理器的块大小；若不兼容，则降序搜索所有后端支持的整数块大小
 def select_common_block_size(
     kv_manager_block_size: int,
     backends: list[type[AttentionBackend]],
@@ -326,6 +336,7 @@ def select_common_block_size(
     raise ValueError(f"No common block size for {kv_manager_block_size}. ")
 
 
+# 为每个 KV 缓存组生成内核块大小，支持虚拟块拆分（attention）和直接使用（Mamba）
 def prepare_kernel_block_sizes(
     kv_cache_config: KVCacheConfig, attn_groups: list[list[AttentionGroup]]
 ) -> list[int]:
@@ -370,6 +381,7 @@ def prepare_kernel_block_sizes(
     return kernel_block_sizes
 
 
+# 对多模态编码器输出进行健全性检查，验证输出格式和数量是否符合预期
 def sanity_check_mm_encoder_outputs(
     mm_embeddings: MultiModalEmbeddings,
     expected_num_items: int,
@@ -400,6 +412,7 @@ def sanity_check_mm_encoder_outputs(
     )
 
 
+# 根据 GPU 内存利用率配置计算所需内存量，并验证当前可用内存是否充足
 def request_memory(init_snapshot: MemorySnapshot, cache_config: CacheConfig) -> int:
     """
     Calculate the amount of memory required by vLLM, then validate
@@ -423,6 +436,8 @@ def request_memory(init_snapshot: MemorySnapshot, cache_config: CacheConfig) -> 
     return requested_memory
 
 
+# 将 KV 缓存共享层添加到对应的 KV 缓存组中
+# 使共享层复用目标层的 KV 缓存，避免重复分配内存
 def add_kv_sharing_layers_to_kv_cache_groups(
     shared_kv_cache_layers: dict[str, str],
     kv_cache_groups: list[KVCacheGroupSpec],
@@ -454,6 +469,8 @@ def add_kv_sharing_layers_to_kv_cache_groups(
             runner_only_attn_layers.add(layer_name)
 
 
+# 将已分配的 KV 缓存绑定到 ModelRunner 和前向上下文
+# 使每个注意力层在前向传播中能正确访问其对应的 KV 缓存张量
 def bind_kv_cache(
     kv_caches: dict[str, torch.Tensor],
     forward_context: dict[str, Attention],
@@ -514,6 +531,8 @@ def bind_kv_cache(
         forward_context[layer_name].kv_cache = [kv_cache]
 
 
+# 判断残差张量是否因序列并行而被分散到各张量并行 rank 上
+# 在全图编译模式或特定编译尺寸下启用序列并行
 def is_residual_scattered_for_sp(
     vllm_config: VllmConfig, num_input_tokens: int
 ) -> bool:

@@ -14,6 +14,8 @@ import torch
 from tests.quantization.utils import is_quant_method_supported
 
 
+# 测试 ModelOpt 量化方法（FP8 各种模式）的检查点加载和结构验证
+
 @pytest.fixture(scope="function", autouse=True)
 def enable_pickle(monkeypatch):
     """`LLM.apply_model` requires pickling a function."""

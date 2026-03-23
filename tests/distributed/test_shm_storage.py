@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试共享内存对象存储（SingleWriterShmObjectStorage）的读写、清理和多进程场景
 
 import multiprocessing
 import random

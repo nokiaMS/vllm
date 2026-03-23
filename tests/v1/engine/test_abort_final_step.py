@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试在最终执行步骤中被中止的请求是否被正确标记为FINISHED_ABORTED
 
 """
 Test for the fix in PR #29987: Eagerly abort cancelled final-step requests.

@@ -14,6 +14,7 @@ from ..models.utils import build_model_context
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 测试MultiModalRegistry.supports_multimodal_inputs：验证不同模型和限制条件下的多模态支持判断
 @pytest.mark.parametrize(
     "model_id,limit_mm_per_prompt,expected",
     [

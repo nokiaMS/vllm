@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 OLMo3 工具解析器，使用 <function_calls> 标签格式解析 Pythonic 风格工具调用
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -68,6 +70,7 @@ ESCAPED_STRING_FUNCTION_CALL = FunctionCall(
 )
 
 
+# 测试无工具调用时解析器正确返回普通文本
 @pytest.mark.parametrize("streaming", [True, False])
 def test_no_tool_call(streaming: bool, default_tokenizer: TokenizerLike):
     tool_parser: ToolParser = ToolParserManager.get_tool_parser("olmo3")(
@@ -183,6 +186,7 @@ TEST_CASES = [
 ]
 
 
+# 参数化测试各种 OLMo3 格式的工具调用提取（含 function_calls 标签）
 @pytest.mark.parametrize("streaming, model_output, expected_tool_calls", TEST_CASES)
 def test_tool_call(
     streaming: bool,
@@ -205,6 +209,7 @@ def test_tool_call(
         assert actual.function == expected
 
 
+# 测试单次大步长输入下流式解析多个并行工具调用
 def test_streaming_tool_call_with_large_steps(default_tokenizer: TokenizerLike):
     tool_parser: ToolParser = ToolParserManager.get_tool_parser("olmo3")(
         default_tokenizer
@@ -227,6 +232,7 @@ def test_streaming_tool_call_with_large_steps(default_tokenizer: TokenizerLike):
     assert reconstructor.tool_calls[2].function == EMPTY_LIST_FUNCTION_CALL
 
 
+# 测试正则表达式超时时的优雅降级处理
 @pytest.mark.parametrize("streaming", [False])
 def test_regex_timeout_handling(streaming: bool, default_tokenizer: TokenizerLike):
     """test regex timeout is handled gracefully"""

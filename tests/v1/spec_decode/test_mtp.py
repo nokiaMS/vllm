@@ -30,6 +30,7 @@ from vllm.v1.spec_decode.eagle import EagleProposer
 mimo_7b_dir = "XiaomiMiMo/MiMo-7B-Base"
 
 
+# [中文注释] 辅助函数：创建MTP（多token预测）提议器实例用于测试
 def _create_mtp_proposer(num_speculative_tokens: int) -> EagleProposer:
     """Create an MTP proposer with unified model configuration."""
     model_config = ModelConfig(
@@ -63,6 +64,7 @@ def _create_mtp_proposer(num_speculative_tokens: int) -> EagleProposer:
 @mock.patch("vllm.v1.spec_decode.eagle.get_pp_group")
 @mock.patch("vllm.v1.spec_decode.eagle.get_layers_from_vllm_config")
 @mock.patch("vllm.v1.spec_decode.eagle.get_model")
+# [中文注释] 测试MTP统一模型的模型加载逻辑
 def test_mtp_load_model_unified(mock_get_model, mock_get_layers, mock_get_pp_group):
     """Test MTP-specific model loading with unified model approach."""
 
@@ -115,6 +117,7 @@ def test_mtp_load_model_unified(mock_get_model, mock_get_layers, mock_get_pp_gro
 
 
 @pytest.mark.parametrize("num_speculative_tokens", [1])
+# [中文注释] 参数化测试：验证MTP提议器在不同推测token数下的提议功能
 def test_mtp_propose(num_speculative_tokens, monkeypatch):
     """Test that MTP's forward method returns hidden states directly"""
 

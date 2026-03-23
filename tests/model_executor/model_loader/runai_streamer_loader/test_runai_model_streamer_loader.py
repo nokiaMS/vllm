@@ -7,6 +7,7 @@ from vllm import SamplingParams
 from vllm.config.load import LoadConfig
 from vllm.model_executor.model_loader import get_model_loader
 
+# 测试 RunAI 流式模型加载器的加载和推理功能
 load_format = "runai_streamer"
 test_model = "openai-community/gpt2"
 # TODO(amacaskill): Replace with a GKE owned GCS bucket.
@@ -22,16 +23,19 @@ prompts = [
 sampling_params = SamplingParams(temperature=0.8, top_p=0.95, seed=0)
 
 
+# 辅助函数：获取 RunAI 模型加载器实例
 def get_runai_model_loader():
     load_config = LoadConfig(load_format=load_format)
     return get_model_loader(load_config)
 
 
+# 测试使用 runai_streamer 标志时是否返回正确的加载器类型
 def test_get_model_loader_with_runai_flag():
     model_loader = get_runai_model_loader()
     assert model_loader.__class__.__name__ == "RunaiModelStreamerLoader"
 
 
+# 测试 RunAI 加载器从 HuggingFace 下载模型文件并生成输出
 def test_runai_model_loader_download_files(vllm_runner):
     with vllm_runner(test_model, load_format=load_format) as llm:
         deserialized_outputs = llm.generate(prompts, sampling_params)
@@ -42,6 +46,7 @@ def test_runai_model_loader_download_files(vllm_runner):
     reason="Temporarily disabled due to GCS access issues. "
     "TODO: Re-enable this test once the underlying issue is resolved."
 )
+# 测试 RunAI 加载器从 GCS（Google Cloud Storage）下载模型文件
 def test_runai_model_loader_download_files_gcs(
     vllm_runner, monkeypatch: pytest.MonkeyPatch
 ):

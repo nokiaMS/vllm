@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# [视觉分类在线测试模块：验证多模态分类模型对文本、图片URL、图片base64和视频输入的分类能力]
+
 import json
 
 import pytest
@@ -19,6 +22,7 @@ image_base64 = {"url": encode_image_url(fetch_image(image_url))}
 video_url = "https://www.bogotobogo.com/python/OpenCV_Python/images/mean_shift_tracking/slow_traffic_small.mp4"
 
 
+# [测试夹具：启动 Qwen2.5-VL 视觉分类模型的远程服务器]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -37,6 +41,7 @@ def server():
         yield remote_server
 
 
+# [测试纯文本聊天分类请求：验证文本输入的分类结果和 token 计数]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_text_request(server: RemoteOpenAIServer, model_name: str):
     messages = [
@@ -65,6 +70,7 @@ def test_chat_text_request(server: RemoteOpenAIServer, model_name: str):
     assert output.usage.prompt_tokens == 35
 
 
+# [测试图片 URL 分类请求：验证通过图片 URL 输入的分类结果]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_image_url_request(server: RemoteOpenAIServer, model_name: str):
     messages = [
@@ -92,6 +98,7 @@ def test_chat_image_url_request(server: RemoteOpenAIServer, model_name: str):
     assert output.usage.prompt_tokens == 47
 
 
+# [测试 base64 编码图片分类请求：验证通过 base64 图片输入的分类结果]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_image_base64_request(server: RemoteOpenAIServer, model_name: str):
     messages = [
@@ -119,6 +126,7 @@ def test_chat_image_base64_request(server: RemoteOpenAIServer, model_name: str):
     assert output.usage.prompt_tokens == 47
 
 
+# [测试视频 URL 分类请求：验证通过视频 URL 输入的分类结果]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_video_url_request(server: RemoteOpenAIServer, model_name: str):
     messages = [

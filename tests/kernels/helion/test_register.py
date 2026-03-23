@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Helion内核注册系统的单元测试，
+# 覆盖ConfiguredHelionKernel配置选择、HelionKernelWrapper自定义算子注册、全局内核注册表以及设置验证
 """
 Unit tests for Helion kernel registration.
 
@@ -111,6 +113,7 @@ def configured_kernel(sample_kernel, sample_configs, config_manager_with_test_co
         )
 
 
+# 测试validate_helion_settings工具函数的参数验证逻辑
 class TestValidateHelionSettings:
     """Test suite for validate_helion_settings utility function."""
 
@@ -178,6 +181,7 @@ def create_configured_kernel_with_configs(
         )
 
 
+# 测试ConfiguredHelionKernel的配置选择器、picker验证和helion设置传递
 class TestConfiguredHelionKernel:
     """Test suite for ConfiguredHelionKernel."""
 
@@ -343,6 +347,7 @@ class TestConfiguredHelionKernel:
             assert config is kernel.configs["hiddensize_4096_batchsize_64"]
 
 
+# 测试HelionKernelWrapper的配置验证、自定义算子注册和缓存机制
 class TestHelionKernelWrapper:
     """Test suite for HelionKernelWrapper."""
 
@@ -555,6 +560,7 @@ class TestHelionKernelWrapper:
             assert mock_register.call_args[1]["op_func"] is mock_decorated
 
 
+# 测试全局内核注册表的注册、查询、重复检测和装饰器语法
 class TestKernelRegistry:
     """Test suite for kernel registry functionality."""
 

@@ -63,6 +63,7 @@ from vllm.utils.torch_utils import set_random_seed
 from vllm.v1.worker.workspace import init_workspace_manager
 
 
+# [中文注释] 迭代式MoE参考实现：逐token-expert对计算，用于验证融合内核的正确性
 def iterative_moe(
     hidden_states: torch.Tensor,
     w1: torch.Tensor,
@@ -209,6 +210,7 @@ FUSED_MOE_WN16_MNK_FACTORS = [
 vllm_config = VllmConfig()
 
 
+# [中文注释] MoE测试核心：运行融合MoE内核并与参考实现（iterative_moe和torch_moe）比较结果
 def run_moe_test(
     baseline: Callable | torch.Tensor,
     moe_fn: Callable,
@@ -287,6 +289,7 @@ def run_moe_test(
 @pytest.mark.parametrize("ep_size", EP_SIZE)
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @pytest.mark.parametrize("padding", [True, False])
+# [中文注释] 参数化测试：验证融合MoE内核在不同M/N/K/topk/dtype配置下的计算正确性
 def test_fused_moe(
     m: int,
     n: int,
@@ -394,6 +397,7 @@ def test_fused_moe(
         )
 
 
+# [中文注释] 测试融合MoE在大规模输入下的INT64溢出处理
 def test_fused_moe_int64_overflow(workspace_init):
     """Regression test for int32 overflow in stride*offset products.
 
@@ -445,6 +449,7 @@ def test_fused_moe_int64_overflow(workspace_init):
 @pytest.mark.parametrize("topk", TOP_KS_SMALL)
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @pytest.mark.parametrize("padding", [True, False])
+# [中文注释] 测试朴素块分配MoE实现与标准融合MoE的结果一致性
 def test_naive_block_assignment_moe(
     m: int,
     n: int,
@@ -551,6 +556,7 @@ def test_naive_block_assignment_moe(
 @pytest.mark.parametrize("group_size", [64, 128])
 @pytest.mark.parametrize("has_zp", [True, False])
 @pytest.mark.parametrize("weight_bits", [4, 8])
+# [中文注释] 测试WN16量化（INT4/INT8 weight-only）融合MoE的计算正确性
 def test_fused_moe_wn16(
     m: int,
     n: int,
@@ -680,6 +686,7 @@ def test_fused_moe_wn16(
     "use_rocm_aiter", [True, False] if current_platform.is_rocm() else [False]
 )
 @torch.inference_mode()
+# [中文注释] 测试vLLM MixtralMoE实现与HuggingFace原始实现的输出一致性
 def test_mixtral_moe(
     default_vllm_config,
     dist_init,
@@ -797,6 +804,7 @@ def test_mixtral_moe(
         )
 
 
+# [中文注释] 生成Marlin MoE的有效测试用例（不同量化类型、维度组合）
 def marlin_moe_generate_valid_test_cases():
     import itertools
 
@@ -875,6 +883,7 @@ def marlin_moe_generate_valid_test_cases():
 
 
 @dataclass
+# [中文注释] Marlin MoE权重数据类，封装量化后的权重、缩放因子和排列索引
 class MarlinMoEWeightData:
     w_ref: torch.Tensor
     qweight: torch.Tensor
@@ -1011,6 +1020,7 @@ class MarlinMoEWeightData:
     marlin_moe_generate_valid_test_cases(),
 )
 @pytest.mark.skipif(current_platform.is_rocm(), reason="Skip for rocm")
+# [中文注释] 测试Marlin量化融合MoE内核（支持GPTQ/AWQ/FP8/FP4多种量化类型）
 def test_fused_marlin_moe(
     a_type: ScalarType,
     b_type: ScalarType,
@@ -1124,6 +1134,7 @@ def test_fused_marlin_moe(
 @pytest.mark.flaky(reruns=2)
 @pytest.mark.skipif(current_platform.is_rocm(), reason="Skip for rocm")
 @pytest.mark.parametrize("m", [1, 256])
+# [中文注释] 测试带偏置的Marlin量化融合MoE内核的正确性
 def test_fused_marlin_moe_with_bias(m):
     torch.cuda.manual_seed(0)
 
@@ -1199,6 +1210,7 @@ def test_fused_marlin_moe_with_bias(m):
 @pytest.mark.parametrize("n,k", [(1024, 1024), (2048, 2048)])
 @pytest.mark.parametrize("e,topk", [(8, 2), (64, 4)])
 @pytest.mark.parametrize("activation", [MoEActivation.RELU2_NO_MUL])
+# [中文注释] 测试非门控（non-gated）Marlin量化融合MoE内核的正确性
 def test_fused_marlin_moe_non_gated(
     m: int, n: int, k: int, e: int, topk: int, activation: MoEActivation
 ):
@@ -1276,6 +1288,7 @@ def test_fused_marlin_moe_non_gated(
 
 
 @pytest.mark.parametrize("ep_size", [1, 2])
+# [中文注释] 测试moe_align_block_size自定义算子的正确性（opcheck验证）
 def test_moe_align_block_size_opcheck(ep_size):
     num_experts = 4
     block_size = 4
@@ -1318,6 +1331,7 @@ def test_moe_align_block_size_opcheck(ep_size):
     )
 
 
+# [中文注释] 测试批量moe_align_block_size自定义算子的正确性
 def test_batched_moe_align_block_size_opcheck():
     max_tokens_per_batch = 512
     num_experts = 4
@@ -1357,6 +1371,7 @@ def test_batched_moe_align_block_size_opcheck():
 @pytest.mark.parametrize("topk", TOP_KS)
 @pytest.mark.parametrize("k", [128, 511, 1024])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+# [中文注释] 测试MoE求和操作在不同维度和数据类型下的正确性
 def test_moe_sum(m: int, topk: int, k: int, dtype: torch.dtype):
     input = torch.randn((m, topk, k), device="cuda", dtype=dtype)
     actual = torch.empty((m, k), device="cuda", dtype=dtype)
@@ -1378,6 +1393,7 @@ def test_moe_sum(m: int, topk: int, k: int, dtype: torch.dtype):
 @pytest.mark.parametrize("with_bias", [False, True])
 @pytest.mark.parametrize("activation", [MoEActivation.SILU])
 @pytest.mark.skipif(not current_platform.is_cpu(), reason="CPU only test")
+# [中文注释] 测试CPU融合MoE基本功能（运行在CPU设备上）
 def test_cpu_fused_moe_basic(
     m: int,
     n: int,
@@ -1455,6 +1471,7 @@ def test_cpu_fused_moe_basic(
 @pytest.mark.parametrize("topk", [2, 4])
 @pytest.mark.parametrize("max_tokens_per_batch", [16, 32, 64])
 @pytest.mark.skipif(current_platform.is_rocm(), reason="Skip for rocm")
+# [中文注释] 测试批量Marlin量化融合MoE内核在不同量化配置下的正确性
 def test_batched_fused_marlin_moe(
     m: int, n: int, k: int, e: int, topk: int, max_tokens_per_batch: int
 ):
@@ -1622,6 +1639,7 @@ def test_batched_fused_marlin_moe(
     not current_platform.is_device_capability_family(100),
     reason="TRTLLM backend test only runs on Blackwell GPUs (SM10x).",
 )
+# [中文注释] 测试未量化BF16 FlashInfer TRT-LLM后端的MoE计算正确性
 def test_unquantized_bf16_flashinfer_trtllm_backend(
     m: int,
     n: int,

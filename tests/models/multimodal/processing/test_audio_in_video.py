@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 回归测试：验证 Qwen2.5-Omni/Qwen3-Omni 音频嵌入视频处理器的缓存一致性
 """
 Regression tests for Qwen2.5-Omni and Qwen3-Omni audio-in-video processor
 caching.

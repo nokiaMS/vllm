@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试融合RMSNorm+量化内核的正确性，
+# 覆盖per-token/per-block的FP8和INT8量化、残差连接、scale上界、TMA对齐和步长输入等场景
 
 import itertools
 
@@ -42,10 +44,12 @@ EPS = 1e-6
 ## Helpers
 
 
+# 将标量或张量转换为float32 CUDA张量
 def as_float32_tensor(x: float | torch.Tensor) -> torch.Tensor:
     return torch.as_tensor(x, dtype=torch.float32, device="cuda")
 
 
+# RMSNorm参考实现，支持可选残差连接
 def ref_rms_norm(
     rms_norm_layer: RMSNorm, x: torch.Tensor, residual: torch.Tensor | None
 ) -> tuple[torch.Tensor, torch.Tensor | None]:
@@ -58,6 +62,7 @@ def ref_rms_norm(
     return out, residual
 
 
+# 参考实现：RMSNorm后执行per-token或per-block动态量化
 def ref_dynamic_per_token_or_block_quant(
     rms_norm_layer: RMSNorm,
     x: torch.Tensor,
@@ -95,6 +100,7 @@ def ref_dynamic_per_token_or_block_quant(
     return torch_out, scales, residual
 
 
+# 参考实现入口：调用ref_dynamic_per_token_or_block_quant
 def ref_impl(
     rms_norm_layer: RMSNorm,
     x: torch.Tensor,
@@ -108,6 +114,7 @@ def ref_impl(
     )
 
 
+# 被测实现：调用vllm的rms_norm_per_block_quant或rms_norm_dynamic_per_token_quant
 def ops_dynamic_per_token_or_block_quant(
     weight: torch.Tensor,
     x: torch.Tensor,
@@ -139,6 +146,7 @@ def ops_dynamic_per_token_or_block_quant(
     return out, scales, residual
 
 
+# 被测实现入口：调用ops_dynamic_per_token_or_block_quant
 def ops_impl(
     weight: torch.Tensor,
     x: torch.Tensor,
@@ -166,6 +174,7 @@ def ops_impl(
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("strided_input", [False, True])
 @torch.inference_mode()
+# 测试融合RMSNorm+动态量化内核与参考实现的数值一致性
 def test_rms_norm(
     default_vllm_config,
     num_tokens: int,

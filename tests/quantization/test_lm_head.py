@@ -14,6 +14,8 @@ from vllm.model_executor.layers.vocab_parallel_embedding import (
     UnquantizedEmbeddingMethod,
 )
 
+# 测试 GPTQ 模型中 lm_head 层是否正确使用量化方法
+
 PROMPT = "On the surface of Mars, we found"
 
 MODELS_QUANT = [

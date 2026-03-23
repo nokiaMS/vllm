@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 LLM.collective_rpc 方法在不同张量并行度和后端（mp/ray）下的正确性
+
 import pytest
 import torch
 
@@ -9,6 +11,7 @@ from vllm import LLM
 from ...utils import create_new_process_for_each_test
 
 
+# 测试 collective_rpc 在 TP=1/2 和 mp/ray 后端下能正确返回各 worker 的 rank
 @pytest.mark.parametrize("tp_size", [1, 2])
 @pytest.mark.parametrize("backend", ["mp", "ray"])
 @create_new_process_for_each_test()

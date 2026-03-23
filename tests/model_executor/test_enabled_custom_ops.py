@@ -31,6 +31,8 @@ from vllm.model_executor.layers.layernorm import (
 )
 from vllm.platforms import current_platform
 
+# 测试自定义算子的启用/禁用逻辑和不同编译配置下的调度行为
+
 RMS_NORM_SUPPORTED_DTYPES = [torch.float16, torch.bfloat16]
 
 
@@ -80,6 +82,7 @@ class Relu3(ReLUSquaredActivation):
         ("all,-rms_norm", 3, "inductor", [0, 1, 1, 1], True),
     ],
 )
+# 测试不同编译模式和后端下自定义算子的启用状态
 def test_enabled_ops(
     env: str | None,
     compilation_mode: int,
@@ -123,6 +126,7 @@ def test_enabled_ops(
 @pytest.mark.parametrize(
     "env", ["all,none", "all,+rms_norm,all", "+rms_norm,-rms_norm"]
 )
+# 测试无效的自定义算子配置应抛出异常
 def test_enabled_ops_invalid(env: str):
     with pytest.raises(Exception):  # noqa
         vllm_config = VllmConfig(
@@ -135,6 +139,7 @@ def test_enabled_ops_invalid(env: str):
 @pytest.mark.parametrize(
     "use_rocm_aiter", [True, False] if current_platform.is_rocm() else [False]
 )
+# 测试 topk softmax 函数在 ROCm AITER 开启/关闭时的正确调度
 def test_topk_softmax_dispatch(use_rocm_aiter: bool):
     topk_func = dispatch_topk_softmax_func(use_rocm_aiter)
 
@@ -147,6 +152,7 @@ def test_topk_softmax_dispatch(use_rocm_aiter: bool):
 @pytest.mark.parametrize(
     "use_rocm_aiter", [True, False] if current_platform.is_rocm() else [False]
 )
+# 测试 topk sigmoid 函数在 ROCm AITER 开启/关闭时的正确调度
 def test_topk_sigmoid_dispatch(use_rocm_aiter: bool):
     topk_func = dispatch_topk_sigmoid_func(use_rocm_aiter)
 
@@ -162,6 +168,7 @@ def test_topk_sigmoid_dispatch(use_rocm_aiter: bool):
 @pytest.mark.skipif(
     not current_platform.is_rocm(), reason="AITER is a feature exclusive for ROCm"
 )
+# 测试 RMS Norm 在不同 dtype 和 ROCm AITER 条件下的正确调度
 def test_rms_norm_dispatch(
     add_residual: bool, dtype: torch.dtype, use_rocm_aiter: bool
 ):

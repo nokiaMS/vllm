@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试视频聊天补全 API：单视频、多视频、流式、beam search、base64 编码和 media_io_kwargs 覆盖]
 
 import json
 
@@ -22,6 +23,7 @@ TEST_VIDEO_URLS = [
 ]
 
 
+# [创建支持视频输入的 LLaVA-OneVision 模型服务器 fixture]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -58,6 +60,7 @@ async def client(server):
         yield async_client
 
 
+# [预加载并 base64 编码测试视频的 session 级 fixture]
 @pytest.fixture(scope="session")
 def url_encoded_video() -> dict[str, str]:
     return {
@@ -66,6 +69,7 @@ def url_encoded_video() -> dict[str, str]:
     }
 
 
+# [构造包含视频 URL 的聊天消息]
 def dummy_messages_from_video_url(
     video_urls: str | list[str],
     content_text: str = "What's in this video?",
@@ -90,6 +94,7 @@ def dummy_messages_from_video_url(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", TEST_VIDEO_URLS)
+# [测试单视频聊天会话：补全、logprobs 和多轮对话]
 async def test_single_chat_session_video(
     client: openai.AsyncOpenAI, model_name: str, video_url: str
 ):
@@ -132,6 +137,7 @@ async def test_single_chat_session_video(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", [TEST_VIDEO_URLS[0]])
+# [测试请求级 media_io_kwargs 覆盖减少视频帧数以降低 prompt token 数]
 async def test_request_media_io_kwargs_override_uses_fewer_video_frames(
     client: openai.AsyncOpenAI, model_name: str, video_url: str
 ):
@@ -165,6 +171,7 @@ async def test_request_media_io_kwargs_override_uses_fewer_video_frames(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", [TEST_VIDEO_URLS[0]])
+# [测试无效 num_frames 参数后服务器仍可恢复处理后续请求]
 async def test_invalid_num_frames_request_recoverable(
     client: openai.AsyncOpenAI, model_name: str, video_url: str
 ):
@@ -199,6 +206,7 @@ async def test_invalid_num_frames_request_recoverable(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", TEST_VIDEO_URLS)
+# [测试 video_url 格式错误（字符串而非字典）应返回 BadRequest]
 async def test_error_on_invalid_video_url_type(
     client: openai.AsyncOpenAI, model_name: str, video_url: str
 ):
@@ -225,6 +233,7 @@ async def test_error_on_invalid_video_url_type(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", TEST_VIDEO_URLS)
+# [测试视频输入的 beam search 产生不同的多候选结果]
 async def test_single_chat_session_video_beamsearch(
     client: openai.AsyncOpenAI, model_name: str, video_url: str
 ):
@@ -249,6 +258,7 @@ async def test_single_chat_session_video_beamsearch(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", TEST_VIDEO_URLS)
+# [测试 base64 编码视频输入的聊天会话和多轮对话]
 async def test_single_chat_session_video_base64encoded(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -295,6 +305,7 @@ async def test_single_chat_session_video_base64encoded(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", TEST_VIDEO_URLS)
+# [测试 base64 编码视频的 beam search]
 async def test_single_chat_session_video_base64encoded_beamsearch(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -320,6 +331,7 @@ async def test_single_chat_session_video_base64encoded_beamsearch(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("video_url", TEST_VIDEO_URLS)
+# [测试视频聊天的流式响应与非流式结果一致性]
 async def test_chat_streaming_video(
     client: openai.AsyncOpenAI, model_name: str, video_url: str
 ):
@@ -365,6 +377,7 @@ async def test_chat_streaming_video(
 @pytest.mark.parametrize(
     "video_urls", [TEST_VIDEO_URLS[:i] for i in range(2, len(TEST_VIDEO_URLS))]
 )
+# [测试多视频输入：超过限制返回错误，未超过限制正常补全]
 @pytest.mark.flaky(
     reruns=2,
     reruns_delay=5,

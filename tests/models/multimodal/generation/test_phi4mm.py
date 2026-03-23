@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Phi-4 多模态模型的图像理解和语音视觉联合推理能力
 
 import os
 from collections.abc import Sequence

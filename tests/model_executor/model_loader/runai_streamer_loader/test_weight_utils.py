@@ -14,6 +14,7 @@ from vllm.model_executor.model_loader.weight_utils import (
 )
 
 
+# 测试 RunAI safetensors 权重迭代器与标准 safetensors 迭代器的输出一致性
 def test_runai_model_loader():
     with tempfile.TemporaryDirectory() as tmpdir:
         huggingface_hub.constants.HF_HUB_OFFLINE = False

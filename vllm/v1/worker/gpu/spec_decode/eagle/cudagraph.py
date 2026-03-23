@@ -18,6 +18,11 @@ from vllm.v1.worker.gpu.model_states.interface import ModelState
 from vllm.v1.worker.utils import AttentionGroup
 
 
+# EAGLE 推测解码专用的 CUDA Graph 管理器，继承自通用 CudaGraphManager。
+# 设计要点：
+# 1. 仅支持 FULL 模式（不支持 PIECEWISE），因为 EAGLE 的多步解码需要完整捕获
+# 2. 使用独立的 CUDA Graph 内存池，避免与主模型的内存分配冲突（如 Gumbel 采样临时张量）
+# 3. EAGLE 始终使用 query_len=1 的均匀解码模式
 class EagleCudaGraphManager(CudaGraphManager):
     """CudaGraphManager for Eagle speculative decoding (FULL mode only)."""
 
@@ -42,6 +47,8 @@ class EagleCudaGraphManager(CudaGraphManager):
         if cudagraph_mode:
             self.pool = torch.cuda.graph_pool_handle()
 
+    # 捕获 CUDA Graph：为不同批大小预录制 EAGLE 的前向推理计算图，
+    # 包括注意力元数据和 slot mapping 的准备，以便后续高效重放
     def capture(
         self,
         generate_fn: Callable,
@@ -85,6 +92,7 @@ class EagleCudaGraphManager(CudaGraphManager):
 
         super().capture(create_forward_fn, progress_bar_desc)
 
+    # 重放已捕获的 CUDA Graph 并返回草稿 token 张量
     def run_fullgraph(self, desc: BatchExecutionDescriptor) -> torch.Tensor:
         """Replay a captured FULL cudagraph and return draft tokens."""
         super().run_fullgraph(desc)

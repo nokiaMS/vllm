@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试前缀预填充注意力内核（chunked_prefill_paged_decode和context_attention_fwd）
 
 import math
 import random
@@ -30,6 +31,7 @@ KV_CACHE_DTYPES = ["auto", "fp8", "fp8_e5m2"]
 OPS = [chunked_prefill_paged_decode, context_attention_fwd]
 
 
+# 构建用于SDPA的因果注意力掩码（支持多序列和滑动窗口）
 def create_causal_attention_mask_for_sdpa(
     query_lens: list[int],
     seq_lens: list[int],
@@ -70,6 +72,7 @@ def create_causal_attention_mask_for_sdpa(
     return mask
 
 
+# 构建ALiBi位置编码的因果注意力掩码
 def create_alibi_causal_mask(
     query_len: int,
     seq_len: int,
@@ -98,6 +101,7 @@ def create_alibi_causal_mask(
     return alibi_bias.unsqueeze(0)
 
 
+# 测试前缀预填充注意力内核在分页KV缓存、滑动窗口和FP8下与SDPA的一致性
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("num_queries_per_kv", NUM_QUERIES_PER_KV)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -321,6 +325,7 @@ def test_contexted_kv_attention(
     torch.testing.assert_close(output, output_ref, atol=atol, rtol=0)
 
 
+# 测试前缀预填充注意力内核在ALiBi位置编码下与SDPA的一致性
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("num_queries_per_kv", NUM_QUERIES_PER_KV)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -588,6 +593,7 @@ def test_contexted_kv_attention_alibi(
 #
 # These tests are useful to test model dtype float32 on Turing devices.
 # We skip them to not increase the time when running tests on CI
+# 可选测试：float32精度下前缀预填充注意力（用于Turing设备验证）
 @pytest.mark.optional
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("num_queries_per_kv", NUM_QUERIES_PER_KV)
@@ -620,6 +626,7 @@ def test_contexted_kv_attention_f32(
     )
 
 
+# 可选测试：float32精度下ALiBi前缀预填充注意力
 @pytest.mark.optional
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("num_queries_per_kv", NUM_QUERIES_PER_KV)
@@ -643,6 +650,7 @@ def test_contexted_kv_attention_alibi_f32(
     )
 
 
+# 测试Qwen3-Next-80B非标准块大小（544）在ROCm上的注意力计算
 @pytest.mark.parametrize("head_size", [128])
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("device", CUDA_DEVICES)

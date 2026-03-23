@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 logprobs 模块：验证非扁平和扁平两种 logprobs 数据结构的创建、追加、扩展和访问]
 
 
 from vllm.logprobs import (
@@ -12,6 +13,7 @@ from vllm.logprobs import (
 )
 
 
+# [测试非扁平模式下 prompt/sample logprobs 的创建：prompt 首位为 None，sample 为空列表]
 def test_create_logprobs_non_flat() -> None:
     prompt_logprobs = create_prompt_logprobs(flat_logprobs=False)
     assert isinstance(prompt_logprobs, list)
@@ -24,6 +26,7 @@ def test_create_logprobs_non_flat() -> None:
     assert len(sample_logprobs) == 0
 
 
+# [测试扁平模式下 prompt/sample logprobs 的创建：使用 FlatLogprobs 结构]
 def test_create_logprobs_flat() -> None:
     prompt_logprobs = create_prompt_logprobs(flat_logprobs=True)
     assert isinstance(prompt_logprobs, FlatLogprobs)
@@ -48,6 +51,7 @@ def test_create_logprobs_flat() -> None:
     assert len(sample_logprobs) == 0
 
 
+# [测试非扁平模式下逐位置追加 logprobs，验证字典格式正确]
 def test_append_logprobs_for_next_position_none_flat() -> None:
     logprobs = create_sample_logprobs(flat_logprobs=False)
     append_logprobs_for_next_position(
@@ -76,6 +80,7 @@ def test_append_logprobs_for_next_position_none_flat() -> None:
     ]
 
 
+# [测试扁平模式下逐位置追加 logprobs，验证索引和数据数组正确]
 def test_append_logprobs_for_next_position_flat() -> None:
     logprobs = create_sample_logprobs(flat_logprobs=True)
     append_logprobs_for_next_position(
@@ -117,6 +122,7 @@ LOGPROBS_ONE_POSITION_2: LogprobsOnePosition = {
 }
 
 
+# [测试 FlatLogprobs 的 append 方法：逐个位置追加后索引和数据一致]
 def test_flat_logprobs_append() -> None:
     logprobs = FlatLogprobs()
     logprobs.append(LOGPROBS_ONE_POSITION_0)
@@ -137,6 +143,7 @@ def test_flat_logprobs_append() -> None:
     assert logprobs.decoded_tokens == ["10", "20", "30", "40", "50", "60"]
 
 
+# [测试 FlatLogprobs 的 extend 方法：支持从列表和另一个 FlatLogprobs 对象扩展]
 def test_flat_logprobs_extend() -> None:
     logprobs = FlatLogprobs()
     # Extend with list[LogprobsOnePosition]
@@ -160,6 +167,7 @@ def test_flat_logprobs_extend() -> None:
     assert logprobs.decoded_tokens == ["40", "50", "60", "10", "20", "30", "10"]
 
 
+# [测试 FlatLogprobs 的随机访问：__len__、__iter__、__getitem__（单项和切片）]
 def test_flat_logprobs_access() -> None:
     logprobs = FlatLogprobs()
     logprobs.extend(

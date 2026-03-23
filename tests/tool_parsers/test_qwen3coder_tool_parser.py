@@ -25,6 +25,7 @@ from vllm.tool_parsers.qwen3xml_tool_parser import Qwen3XMLToolParser
 MODEL = "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8"
 
 
+# [中文注释] 加载Qwen3-Coder工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def qwen3_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL)

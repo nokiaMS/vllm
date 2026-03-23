@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试权重传输引擎（NCCL 和 IPC 后端的解析、验证、跨进程权重传输集成测试）
 """Tests for weight transfer engine backends.
 
 Unit tests for engine classes (parsing, validation, registry).

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试ColBERT迟交互评分模型，验证多种编码器后端（BERT/ModernBERT/Jina）的
+# token嵌入、1:1/1:N/N:N评分和与HuggingFace的输出对比
 """Tests for ColBERT late interaction scoring.
 
 Tests are parametrized across multiple ColBERT backbones to ensure the

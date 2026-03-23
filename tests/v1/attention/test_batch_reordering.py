@@ -9,6 +9,9 @@ import pytest
 from vllm.v1.attention.backends.utils import reorder_batch_to_split_decodes_and_prefills
 
 
+# 测试批次重排序逻辑：将 decode 请求排到 prefill 请求之前
+
+# 模拟输入批次，支持状态交换操作
 class MockInputBatch:
     def __init__(self, req_ids, num_computed_tokens_cpu):
         self.req_ids = req_ids
@@ -22,11 +25,13 @@ class MockInputBatch:
         )
 
 
+# 模拟调度器输出，记录每个请求的调度 token 数
 class MockSchedulerOutput:
     def __init__(self, num_scheduled_tokens):
         self.num_scheduled_tokens = num_scheduled_tokens
 
 
+# 重排序测试用例定义：请求配置、期望顺序及是否被修改
 @dataclass
 class ReorderTestCase:
     requests: list[tuple[int, int]]  # (num_scheduled_tokens, num_computed_tokens)

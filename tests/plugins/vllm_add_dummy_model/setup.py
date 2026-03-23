@@ -3,6 +3,7 @@
 
 from setuptools import setup
 
+# 虚拟模型插件的安装配置，用于测试 vLLM 模型注册机制
 setup(
     name="vllm_add_dummy_model",
     version="0.1",

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试EngineCore生命周期：请求添加/步进/中止、高级采样、并发批次、张量并行和EPD零KV缓存
 
 import copy
 import time

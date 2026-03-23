@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试AsyncLLM：加载、中止、多重中止、完成标志、流中取消、自定义日志、DP排名、健康检查和暂停/恢复模式
 
 import asyncio
 import time

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试BitsAndBytes 4/8位量化功能，包括在线量化、预量化模型加载、
+# 张量并行、流水线并行、MoE模型量化和嵌入模型量化
 """Tests whether bitsandbytes computation is enabled correctly.
 
 Run `pytest tests/quantization/test_bitsandbytes.py`.
@@ -249,6 +251,7 @@ def log_generated_texts(prompts, outputs, runner_name):
     return logged_texts
 
 
+# 验证vLLM与HuggingFace生成的文本是否一致
 def validate_generated_texts(
     hf_runner,
     vllm_runner,

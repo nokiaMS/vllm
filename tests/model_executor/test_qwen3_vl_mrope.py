@@ -26,6 +26,8 @@ def _force_cpu_default_device():
     torch.set_default_device(original)
 
 
+# 测试 Qwen3-VL 模型的多旋转位置编码（MRoPE）在视频剪枝和交错文本 token 场景下的正确性
+
 IMAGE_TOKEN_ID = 999
 VIDEO_TOKEN_ID = 888
 VISION_START_TOKEN_ID = 777

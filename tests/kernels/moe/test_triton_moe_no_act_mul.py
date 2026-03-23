@@ -31,6 +31,7 @@ NO_MUL_ACTIVATIONS = [
 ]
 
 
+# [中文注释] 创建非门控激活MoE测试张量：w1投影K->N，w2投影N->K（不除以2）
 def make_test_tensors(
     m: int,
     n: int,
@@ -68,6 +69,7 @@ def make_test_tensors(
 @pytest.mark.parametrize("topk", TOPK_VALUES)
 @pytest.mark.parametrize("activation", NO_MUL_ACTIVATIONS)
 @torch.inference_mode()
+# [中文注释] 测试Triton MoE专家层在非门控激活（silu_no_mul/gelu_no_mul/relu2_no_mul）下的正确性
 def test_triton_experts_no_mul_activation(
     m: int,
     n: int,
@@ -149,6 +151,7 @@ def test_triton_experts_no_mul_activation(
     reason="Requires compute capability >= 8.0",
 )
 @torch.inference_mode()
+# [中文注释] 测试非门控与门控激活的workspace形状差异是否符合预期
 def test_workspace_shapes_no_mul_vs_gated():
     """Test that workspace shapes differ correctly between gated and non-gated."""
     from vllm.model_executor.layers.fused_moe.fused_moe import TritonExperts
@@ -190,6 +193,7 @@ def test_workspace_shapes_no_mul_vs_gated():
     reason="Requires compute capability >= 8.0",
 )
 @torch.inference_mode()
+# [中文注释] 测试adjust_N_for_activation方法：门控返回N//2，非门控返回N
 def test_adjust_n_for_activation():
     """Test the adjust_N_for_activation method."""
     from vllm.model_executor.layers.fused_moe.fused_moe import TritonExperts

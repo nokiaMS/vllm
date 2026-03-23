@@ -15,6 +15,7 @@ from vllm.config import (
 )
 
 
+# 端到端测试异步张量并行（Async TP）的正确性，比较 async TP 与普通 TP 的输出
 @create_new_process_for_each_test()
 @pytest.mark.parametrize(
     "model_id",

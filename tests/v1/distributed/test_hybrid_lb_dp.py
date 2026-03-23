@@ -27,6 +27,7 @@ NUM_NODES = 2
 DP_SIZE_LOCAL = DP_SIZE // NUM_NODES  # 2 ranks per node
 
 
+# [中文注释] 管理类：为混合负载均衡器测试管理多节点数据并行vLLM服务器实例
 class HybridLBServerManager:
     """Manages hybrid data parallel vLLM server instances where each node
     runs a single logical API server that balances requests only to the
@@ -194,6 +195,7 @@ def _get_parallel_config(server: RemoteOpenAIServer):
     return vllm_config["parallel_config"]
 
 
+# [中文注释] 测试混合负载均衡器模式下服务器信息和DP配置的正确性
 def test_hybrid_dp_server_info(server_manager):
     servers = server_manager.servers
     api_server_count = server_manager.api_server_count

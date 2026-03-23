@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Prithvi MAE 遥感图像模型的嵌入输出，对比 vLLM 与 HF 的结果
 
 import pytest
 import torch

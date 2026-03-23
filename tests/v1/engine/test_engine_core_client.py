@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试EngineCoreClient：同步/异步模式、工具方法、自定义返回类型、Future工具、KV缓存事件和启动失败处理
 
 import asyncio
 import importlib

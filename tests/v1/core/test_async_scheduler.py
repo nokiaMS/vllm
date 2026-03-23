@@ -11,9 +11,12 @@ from vllm.v1.utils import ConstantList
 
 from .utils import create_requests, create_scheduler
 
+# 测试异步调度器的核心功能：按 max_tokens 停止、中止请求、抢占及前缀缓存
+
 pytestmark = pytest.mark.cpu_test
 
 
+# 根据调度输出创建模拟的模型运行器输出
 def _make_model_runner_output(
     scheduler_output: SchedulerOutput,
 ) -> ModelRunnerOutput:

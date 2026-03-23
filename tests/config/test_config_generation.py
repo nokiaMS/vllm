@@ -6,6 +6,7 @@ from vllm.engine.arg_utils import EngineArgs
 from vllm.model_executor.layers.quantization.quark.utils import deep_compare
 
 
+# [中文注释] 测试CUDA_VISIBLE_DEVICES为空字符串和未设置时生成的引擎配置是否等价
 def test_cuda_empty_vs_unset_configs(monkeypatch: pytest.MonkeyPatch):
     """Test that configs created with normal (untouched) CUDA_VISIBLE_DEVICES
     and CUDA_VISIBLE_DEVICES="" are equivalent. This ensures consistent
@@ -40,6 +41,7 @@ def test_cuda_empty_vs_unset_configs(monkeypatch: pytest.MonkeyPatch):
     )
 
 
+# [中文注释] 测试Ray运行时环境变量是否正确传递到并行配置中
 def test_ray_runtime_env(monkeypatch: pytest.MonkeyPatch):
     # In testing, this method needs to be nested inside as ray does not
     # see the test module.
@@ -80,6 +82,7 @@ def test_ray_runtime_env(monkeypatch: pytest.MonkeyPatch):
     ray.shutdown()
 
 
+# [中文注释] 测试未识别的VLLM环境变量在fail_on_environ_validation开启时是否抛出错误
 def test_unrecognized_env(monkeypatch):
     import os
 

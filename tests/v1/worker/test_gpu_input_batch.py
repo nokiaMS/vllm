@@ -29,6 +29,7 @@ CUDA_DEVICES = [
 MAX_NUM_PROMPT_TOKENS = 64
 
 
+# [中文注释] 辅助函数：递归比较两个对象的所有属性是否相等（张量用allclose比较）
 def _compare_objs(obj1, obj2, skip: Sequence = ("logitsprocs", "batch_update_builder")):
     attrs = inspect.getmembers(obj1, lambda a: not (inspect.isroutine(a)))
     attr_names = set(
@@ -221,6 +222,7 @@ def _construct_cached_request_state(req_id_suffix: int):
 
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("batch_size", [1, 2, 32, 64])
+# [中文注释] 测试InputBatch中采样元数据的管理逻辑（添加、删除、压缩后的正确性）
 def test_sampling_metadata_in_input_batch(device: str, batch_size: int):
     """
     Tests the logic for managing sampling metadata in the InputBatch.
@@ -316,6 +318,7 @@ def test_sampling_metadata_in_input_batch(device: str, batch_size: int):
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("batch_size", [32])
 @pytest.mark.parametrize("swap_list", [((0, 1),)])
+# [中文注释] 测试InputBatch中请求状态交换操作的正确性
 def test_swap_states_in_input_batch(device: str, batch_size: int, swap_list: list):
     """
     Tests the logic for managing sampling metadata in the InputBatch.

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试convert_fp8算子的opcheck验证，确保自定义算子符合PyTorch规范
 """
 Tests for miscellaneous utilities
 """
@@ -9,6 +10,7 @@ import torch
 from tests.kernels.utils import opcheck
 
 
+# 对convert_fp8自定义算子执行opcheck合规性检查
 def test_convert_fp8_opcheck():
     data = torch.randn((256, 256), dtype=torch.float32, device="cuda")
     result = torch.empty_like(data, dtype=torch.float8_e4m3fn)

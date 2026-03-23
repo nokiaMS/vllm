@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Mamba2 SSD（结构化状态空间对偶）分块扫描内核的正确性，
+# 覆盖单样本、连续批处理和分块预填充场景，验证变长序列下的输出和状态
 
 import pytest
 import torch
@@ -17,6 +19,7 @@ from vllm.v1.attention.backends.mamba2_attn import compute_varlen_chunk_metadata
 # Adapted from https://github.com/state-spaces/mamba/blob/v2.2.4/mamba_ssm/modules/ssd_minimal.py
 
 
+# [中文注释] 计算段累加和（segment sum），用于SSD分块扫描中的掩码累加
 # this is the segsum implementation taken from above
 def segsum(x):
     """Calculates segment sum."""
@@ -30,6 +33,7 @@ def segsum(x):
     return x_segsum
 
 
+# SSD最小离散实现的参考函数，用于生成正确性对比的基准输出
 def ssd_minimal_discrete(X, A, B, C, block_len, initial_states=None):
     """
     Arguments:
@@ -81,6 +85,7 @@ def ssd_minimal_discrete(X, A, B, C, block_len, initial_states=None):
     return Y, final_state
 
 
+# 生成SSD测试所需的随机输入张量（A、dt、X、B、C）
 def generate_random_inputs(batch_size, seqlen, n_heads, d_head, itype, device="cuda"):
     set_random_seed(0)
     A = -torch.exp(torch.rand(n_heads, dtype=itype, device=device))
@@ -94,6 +99,7 @@ def generate_random_inputs(batch_size, seqlen, n_heads, d_head, itype, device="c
     return A, dt, X, B, C
 
 
+# 生成连续批处理样本，将完整序列按指定长度切分并逐批返回
 def generate_continuous_batched_examples(
     example_lens_by_batch,
     num_examples,
@@ -192,6 +198,7 @@ def generate_continuous_batched_examples(
 @pytest.mark.parametrize("n_heads", [4, 16, 32])
 @pytest.mark.parametrize("d_head", [5, 8, 32, 128])
 @pytest.mark.parametrize("seq_len_chunk_size", [(112, 16), (128, 32)])
+# 测试单样本（batch=1）下Mamba分块扫描内核的输出和最终状态正确性
 def test_mamba_chunk_scan_single_example(d_head, n_heads, seq_len_chunk_size, itype):
     # this tests the kernels on a single example (bs=1)
 
@@ -283,6 +290,7 @@ def test_mamba_chunk_scan_single_example(d_head, n_heads, seq_len_chunk_size, it
         (768, 128, 2, [(138, 225), (138, 225)]),
     ],
 )
+# 测试多样本连续批处理下Mamba分块扫描的正确性，包含状态传递和序列循环
 def test_mamba_chunk_scan_cont_batch(d_head, n_heads, seq_len_chunk_size_cases, itype):
     # this test with multiple examples in a continuous batch
     # (i.e. chunked prefill)
@@ -351,6 +359,7 @@ def test_mamba_chunk_scan_cont_batch(d_head, n_heads, seq_len_chunk_size_cases, 
     "seqlens",
     [(16, 20), (270, 88, 212, 203)],
 )
+# 测试分块预填充：验证序列分两段处理后拼接的结果与完整序列一次处理的结果一致
 def test_mamba_chunk_scan_cont_batch_prefill_chunking(chunk_size, seqlens):
     # This test verifies the correctness of the chunked prefill implementation
     # in the mamba2 ssd kernels, by comparing concatenation (in the sequence

@@ -85,11 +85,13 @@ MODELS = [
 ]
 
 
+# 测试 Snowflake Arctic 嵌入模型系列（含 Bert、NomicBert、XLMRoberta、Gte 架构）在 MTEB 基准上的评分
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     mteb_test_embed_models(hf_runner, vllm_runner, model_info)
 
 
+# 测试 Snowflake Arctic 嵌入模型的输出正确性：与 HuggingFace 模型的嵌入进行对比
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_correctness(
     hf_runner, vllm_runner, model_info: EmbedModelInfo, example_prompts

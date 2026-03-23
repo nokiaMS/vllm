@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试Responses API的图像输入：单图URL、base64编码、多图输入和图像数量限制
 
 import json
 
@@ -22,6 +23,7 @@ TEST_IMAGE_ASSETS = [
 ]
 
 
+# [中文注释] 图像测试服务器的默认参数：限制模型长度、序列数和图像数
 @pytest.fixture(scope="module")
 def default_image_server_args():
     return [
@@ -62,6 +64,7 @@ def url_encoded_image(local_asset_server) -> dict[str, str]:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("image_url", TEST_IMAGE_ASSETS, indirect=True)
+# [中文注释] 测试单张图片URL输入的聊天会话
 async def test_single_chat_session_image(
     client: openai.AsyncOpenAI, model_name: str, image_url: str
 ):
@@ -91,6 +94,7 @@ async def test_single_chat_session_image(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("raw_image_url", TEST_IMAGE_ASSETS)
+# [中文注释] 测试base64编码图片输入的聊天会话
 async def test_single_chat_session_image_base64encoded(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -126,6 +130,7 @@ async def test_single_chat_session_image_base64encoded(
     [TEST_IMAGE_ASSETS[:i] for i in range(2, len(TEST_IMAGE_ASSETS))],
     indirect=True,
 )
+# [中文注释] 测试多图输入：验证超过限制时返回错误且服务器仍正常工作
 async def test_multi_image_input(
     client: openai.AsyncOpenAI, model_name: str, image_urls: list[str]
 ):

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 v1 调度器的各项功能：调度、抢占、优先级、分块预填充、结构化输出等
 import dataclasses
 from unittest.mock import Mock
 

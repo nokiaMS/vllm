@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# EPLB（专家级负载均衡）测试的工具函数，提供分布式运行和环境初始化辅助
 
 import os
 import random

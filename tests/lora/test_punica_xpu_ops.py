@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Punica LoRA 在 XPU 设备上的内核操作正确性
 
 import pytest
 import torch

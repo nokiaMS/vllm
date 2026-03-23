@@ -10,6 +10,7 @@ from vllm.reasoning.gptoss_reasoning_parser import GptOssReasoningParser
 REASONING_MODEL_NAME = "openai/gpt-oss-120b"
 
 
+# [中文注释] 加载GPT-OSS分词器夹具
 @pytest.fixture(scope="module")
 def gpt_oss_tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -126,6 +127,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试GPT-OSS的is_reasoning_end判断：验证特殊channel标记的推理结束检测
 @pytest.mark.parametrize(
     "output, is_reasoning_end",
     [(t["output"], t["is_reasoning_end"]) for t in TEST_CASES],

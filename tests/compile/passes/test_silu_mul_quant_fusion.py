@@ -50,6 +50,7 @@ def is_nvfp4_supported():
     return current_platform.has_device_capability(100)
 
 
+# SiLU*Mul + FP8 静态量化融合测试模型
 class TestSiluMulFp8QuantModel(torch.nn.Module):
     quant_key = kFp8StaticTensorSym
 
@@ -88,6 +89,7 @@ class TestSiluMulFp8QuantModel(torch.nn.Module):
         return [FUSED_OPS[kFp8StaticTensorSym]]
 
 
+# SiLU*Mul + NVFP4 量化融合测试模型（需 Blackwell GPU）
 class TestSiluMulNvfp4QuantModel(torch.nn.Module):
     def __init__(self, hidden_size: int, x: torch.Tensor, **kwargs):
         super().__init__()
@@ -132,6 +134,7 @@ class TestSiluMulNvfp4QuantModel(torch.nn.Module):
         return [FUSED_OPS[kNvfp4Dynamic]]
 
 
+# SiLU*Mul + Group FP8 量化融合测试模型（ROCm AITER）
 class TestSiluMulGroupFp8QuantModel(torch.nn.Module):
     def __init__(self, hidden_size: int, **kwargs):
         super().__init__()
@@ -205,6 +208,7 @@ TEST_KERNELS = ROCM_KERNELS if current_platform.is_rocm() else CUDA_KERNELS
 @pytest.mark.skipif(
     envs.VLLM_TARGET_DEVICE not in ["cuda", "rocm"], reason="Only test on CUDA and ROCm"
 )
+# 测试 ActivationQuantFusionPass 将 SiLU*Mul+Quant 融合为单一操作的正确性
 def test_fusion_silu_and_mul_quant(
     num_tokens: int,
     hidden_size: int,

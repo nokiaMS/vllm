@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试序列分类模型的输出正确性，对比HF与vLLM的分类logits
+
 import pytest
 import torch
 from transformers import AutoModelForSequenceClassification

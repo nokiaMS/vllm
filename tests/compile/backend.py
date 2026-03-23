@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 编译测试后端模块，提供用于测试自定义 Inductor 编译 pass 的辅助类
+
 import weakref
 from collections.abc import Callable, Sequence
 from contextlib import nullcontext
@@ -21,6 +23,7 @@ from vllm.logger import init_logger
 logger = init_logger("vllm.tests.compile.backend")
 
 
+# 延迟初始化的编译 pass，在首次调用时才创建实际的 pass 实例
 class LazyInitPass(InductorPass):
     """
     If there's a pass that we want to initialize lazily in a test,
@@ -37,6 +40,7 @@ class LazyInitPass(InductorPass):
         self.pass_(graph)
 
 
+# 测试用的 Inductor 编译后端，支持自定义 pass 链并保存编译前后的图用于断言验证
 class TestBackend:
     """
     This class provides a simple Inductor backend that can be used for testing.

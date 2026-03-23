@@ -105,6 +105,7 @@ TOP_KS = [1, 2, 6]
 SEEDS = [0]
 
 
+# [中文注释] W8A8块FP8 MoE参考实现：使用原生torch逐专家计算块量化矩阵乘法
 def torch_w8a8_block_fp8_moe(a, w1, w2, w1_s, w2_s, topk_weight, topk_ids, block_shape):
     """Fused moe with block-wise quantization using native torch."""
     B, D = a.shape
@@ -150,6 +151,7 @@ def setup_cuda():
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("seed", SEEDS)
 @torch.inference_mode()
+# [中文注释] 测试W8A8块FP8融合MoE内核与参考实现的数值一致性
 def test_w8a8_block_fp8_fused_moe(
     M, N, K, E, topk, block_size, dtype, seed, monkeypatch, workspace_init
 ):
@@ -217,6 +219,7 @@ def test_w8a8_block_fp8_fused_moe(
 @pytest.mark.skipif(not dg_available, reason="DeepGemm kernels not available.")
 @pytest.mark.skipif(is_deep_gemm_e8m0_used(), reason="Not E8M0 scale MOE")
 @torch.inference_mode()
+# [中文注释] 测试W8A8块FP8 DeepGEMM融合MoE内核，验证DeepGEMM后端与参考实现的结果一致
 def test_w8a8_block_fp8_deep_gemm_fused_moe(M, N, K, E, topk, seed, monkeypatch):
     if topk > E:
         pytest.skip(f"Skipping test: topk={topk} > E={E}")

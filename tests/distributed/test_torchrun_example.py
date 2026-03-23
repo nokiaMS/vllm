@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试使用 torchrun 启动的离线推理示例（验证跨 rank 的输出一致性）
 
 # unit test for `examples/offline_inference/torchrun_example.py`
 import os

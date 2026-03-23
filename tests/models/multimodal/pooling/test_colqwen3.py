@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 ColQwen3 迟交互多模态检索模型的逐标记嵌入、MaxSim 评分及多模态评分
 """Tests for ColQwen3 late interaction model for multi-modal retrieval.
 
 ColQwen3 is a multi-vector retrieval model based on Qwen3-VL backbone with

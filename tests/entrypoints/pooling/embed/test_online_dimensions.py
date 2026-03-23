@@ -4,6 +4,8 @@
 Run `pytest tests/entrypoints/openai/test_embedding_dimensions.py`.
 """
 
+# [嵌入维度测试模块：验证 Matryoshka 嵌入维度参数对嵌入输出的控制，包括有效和无效维度值]
+
 import openai
 import pytest
 
@@ -28,16 +30,19 @@ input_texts = [
 ]
 
 
+# [模型信息夹具：参数化两个模型（普通嵌入模型和 Matryoshka 嵌入模型）]
 @pytest.fixture(scope="module", params=MODELS)
 def model_info(request):
     return request.param
 
 
+# [数据类型夹具：使用 bfloat16 精度]
 @pytest.fixture(scope="module", params=["bfloat16"])
 def dtype(request):
     return request.param
 
 
+# [服务器夹具：根据模型类型启动远程服务器，对 Matryoshka 模型启用维度限制]
 @pytest.fixture(scope="module")
 def server(model_info, dtype: str):
     args = [
@@ -65,6 +70,7 @@ def server(model_info, dtype: str):
         yield remote_server
 
 
+# [HuggingFace 参考模型夹具：用于嵌入正确性对比]
 @pytest.fixture(scope="module")
 def hf_model(hf_runner, model_info, dtype: str):
     with hf_runner(
@@ -73,6 +79,7 @@ def hf_model(hf_runner, model_info, dtype: str):
         yield hf_model
 
 
+# [测试 Matryoshka 维度控制：验证有效和无效维度参数的嵌入输出，并与 HF 模型对比正确性]
 @pytest.mark.asyncio
 async def test_matryoshka(
     model_info: EmbedModelInfo, server: RemoteOpenAIServer, hf_model: HfRunner

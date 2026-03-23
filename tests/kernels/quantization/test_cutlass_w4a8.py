@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试CUTLASS W4A8（4bit权重8bit激活）量化内核的GEMM计算正确性
 """Tests for the CUTLASS W4A8 kernel.
 
 Run `pytest tests/kernels/quantization/test_cutlass_w4a8.py`.
@@ -61,6 +62,7 @@ SCHEDULES = [
 ]
 
 
+# W4A8测试的类型配置数据类，定义激活/权重/输出/缩放因子的数据类型
 @dataclass
 class TypeConfig:
     act_type: torch.dtype
@@ -71,6 +73,7 @@ class TypeConfig:
     token_scale_type: torch.dtype | None
 
 
+# W4A8测试的张量集合数据类，存储参考值和量化后的权重/缩放因子
 @dataclass
 class Tensors:
     w_ref: torch.Tensor
@@ -111,12 +114,14 @@ TEST_TYPES = [
 IS_SUPPORTED_BY_GPU = current_platform.has_device_capability(90)
 
 
+# 将张量裁剪并转换为FP8类型
 # For testing quantized linear kernels
 def to_fp8(tensor: torch.Tensor):
     finfo = torch.finfo(torch.float8_e4m3fn)
     return tensor.clamp(min=finfo.min, max=finfo.max).to(dtype=torch.float8_e4m3fn)
 
 
+# 量化权重并打包为CUTLASS W4A8内核所需的格式
 def cutlass_quantize_and_pack(
     atype: torch.dtype,
     w: torch.Tensor,
@@ -147,6 +152,7 @@ def cutlass_quantize_and_pack(
     return w_ref, w_q_packed, w_s_packed, w_zp
 
 
+# 创建W4A8测试所需的全套张量（含量化权重、缩放因子和参考值）
 def create_test_tensors(
     shape: tuple[int, int, int], types: TypeConfig, group_size: int | None
 ) -> Tensors:
@@ -186,6 +192,7 @@ def create_test_tensors(
     )
 
 
+# W4A8矩阵乘法测试辅助函数，比较CUTLASS输出与torch._scaled_mm参考结果
 def mm_test_helper(
     types: TypeConfig,
     tensors: Tensors,
@@ -220,6 +227,7 @@ def mm_test_helper(
     )
 
 
+# 测试CUTLASS W4A8 GEMM在不同形状和调度策略下的正确性
 @pytest.mark.skipif(
     not IS_SUPPORTED_BY_GPU, reason="CUTLASS W4A8 is not supported on this GPU type."
 )
@@ -233,6 +241,7 @@ def test_cutlass_w4a8(shape, types: TypeConfig, schedule):
         mm_test_helper(types, tensors, group_size, schedule)
 
 
+# 用于验证CUDA Graph兼容性的W4A8层封装
 # Test to make sure cuda graphs work
 class W4A8Layer(torch.nn.Module):
     def __init__(self, **kwargs):
@@ -243,6 +252,7 @@ class W4A8Layer(torch.nn.Module):
         return ops.cutlass_w4a8_mm(a=a, **self.kwargs)
 
 
+# 测试W4A8内核在CUDA Graph模式下的正确性
 @pytest.mark.skipif(
     not IS_SUPPORTED_BY_GPU, reason="CUTLASS W4A8 is not supported on this GPU type."
 )
@@ -295,6 +305,7 @@ def test_w4a8_cuda_graph():
     torch.testing.assert_close(output, output_ref, rtol=1e-2, atol=1e-2)
 
 
+# 测试uint4b8到有符号int4的原地转换正确性（W4A16检查点兼容性）
 @pytest.mark.skipif(
     not IS_SUPPORTED_BY_GPU, reason="CUTLASS W4A8 is not supported on this GPU type."
 )

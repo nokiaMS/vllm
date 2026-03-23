@@ -15,6 +15,7 @@ from ..utils import create_new_process_for_each_test, requires_fp8
 
 
 @create_new_process_for_each_test("fork" if not current_platform.is_rocm() else "spawn")
+# [中文注释] 测试CuMemAllocator在内存不足时唤醒操作是否正确抛出RuntimeError
 def test_python_error():
     """
     Test if Python error occurs when there's low-level
@@ -41,6 +42,7 @@ def test_python_error():
 
 
 @create_new_process_for_each_test("fork" if not current_platform.is_rocm() else "spawn")
+# [中文注释] 测试CuMemAllocator基本功能：自定义内存池分配、sleep释放内存、wake_up恢复张量
 def test_basic_cumem():
     # some tensors from default memory pool
     shape = (1024, 1024)
@@ -74,6 +76,7 @@ def test_basic_cumem():
 
 
 @create_new_process_for_each_test("fork" if not current_platform.is_rocm() else "spawn")
+# [中文注释] 测试CuMemAllocator与CUDA Graph的兼容性，验证sleep/wake_up后cudagraph重放的正确性
 def test_cumem_with_cudagraph():
     allocator = CuMemAllocator.get_instance()
     with allocator.use_memory_pool():
@@ -128,6 +131,7 @@ def test_cumem_with_cudagraph():
         "facebook/opt-125m",
     ],
 )
+# [中文注释] 端到端测试sleep模式：验证sleep释放GPU内存、wake_up后模型输出一致、分阶段唤醒权重和KV缓存
 def test_end_to_end(model: str):
     free, total = torch.cuda.mem_get_info()
     used_bytes_baseline = total - free  # in case other process is running
@@ -176,6 +180,7 @@ def test_end_to_end(model: str):
 
 
 @create_new_process_for_each_test()
+# [中文注释] 测试深度睡眠模式（level=2），验证GPU内存释放、权重重新加载和输出一致性
 def test_deep_sleep():
     model = "hmellor/tiny-random-LlamaForCausalLM"
     free, total = torch.cuda.mem_get_info()
@@ -207,6 +212,7 @@ def test_deep_sleep():
 
 
 @create_new_process_for_each_test()
+# [中文注释] 测试异步引擎的深度睡眠模式，使用AsyncLLMEngine验证异步sleep/wake_up流程
 def test_deep_sleep_async():
     async def test():
         model = "hmellor/tiny-random-LlamaForCausalLM"
@@ -246,6 +252,7 @@ def test_deep_sleep_async():
 
 
 @requires_fp8
+# [中文注释] 测试FP8 KV缓存下的深度睡眠模式，验证内存释放和输出一致性
 def test_deep_sleep_fp8_kvcache():
     model = "Qwen/Qwen2-0.5B"
     used_bytes_baseline = current_platform.get_current_memory_usage()

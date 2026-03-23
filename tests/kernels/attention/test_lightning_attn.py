@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Lightning Attention线性注意力机制的Triton解码内核和参考实现的一致性
 
 import pytest
 import torch
@@ -14,6 +15,7 @@ SEQ_LENGTHS = [16]
 DTYPES = [torch.float32]
 
 
+# Lightning Attention核心算法的逐步顺序参考实现（用于验证Triton并行内核）
 def reference_lightning_attention(q, k, v, ed, block_size, kv_history):
     """Reference implementation of lightning attention core algorithm
 
@@ -63,6 +65,7 @@ def reference_lightning_attention(q, k, v, ed, block_size, kv_history):
     return output, final_kv_cache
 
 
+# 线性注意力解码的参考实现（带衰减因子和KV缓存更新）
 def reference_linear_decode(q, k, v, kv_caches, slope_rate, slot_idx):
     """Reference implementation: linear attention decode function"""
     B, H, _, D = q.shape
@@ -110,6 +113,7 @@ def reference_linear_decode(q, k, v, kv_caches, slope_rate, slot_idx):
     return output
 
 
+# 测试Triton线性解码内核输出和KV缓存更新与参考实现的一致性
 @pytest.mark.parametrize("batch_size", BATCH_SIZES)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -155,6 +159,7 @@ def test_linear_decode_forward_triton(
     assert triton_output.shape == (batch_size, num_heads * head_size)
 
 
+# 测试Triton线性解码内核在包含padding位置（slot_idx=-1）时的正确性
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -215,6 +220,7 @@ def test_linear_decode_forward_triton_with_padding(
     assert triton_output.shape == (batch_size, num_heads * head_size)
 
 
+# 测试Lightning Attention参考实现与实际Triton实现在多步序列上的一致性
 @pytest.mark.parametrize("batch_size", BATCH_SIZES)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)

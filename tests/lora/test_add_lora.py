@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试动态添加/移除 LoRA 适配器的功能和性能
 import asyncio
 import time
 

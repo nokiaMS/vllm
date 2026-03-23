@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试模型列表端点：验证基础模型和 LoRA 模型的 id/root/parent 信息]
 
 import openai  # use the official client for correctness check
 import pytest
@@ -45,6 +46,7 @@ async def client(server):
 
 
 @pytest.mark.asyncio
+# [测试模型列表返回正确的基础模型和 LoRA 模型信息]
 async def test_check_models(client: openai.AsyncOpenAI, qwen3_lora_files):
     models = await client.models.list()
     models = models.data

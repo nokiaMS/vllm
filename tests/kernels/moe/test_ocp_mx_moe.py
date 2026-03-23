@@ -47,6 +47,7 @@ if TRTLLM_GEN_MXFP8_AVAILABLE:
     )
 
 
+# [中文注释] 模型测试用例数据类，定义模型ID和张量并行度
 @dataclass
 class ModelCase:
     model_id: str
@@ -54,6 +55,7 @@ class ModelCase:
 
 
 @pytest.fixture(scope="function", autouse=True)
+# [中文注释] pytest fixture：启用pickle模块，用于加载MXFP4模型权重
 def enable_pickle(monkeypatch):
     """`LLM.apply_model` requires pickling a function."""
     monkeypatch.setenv("VLLM_ALLOW_INSECURE_SERIALIZATION", "1")
@@ -70,6 +72,7 @@ def enable_pickle(monkeypatch):
     ],
 )
 @pytest.mark.skipif(not QUARK_MXFP4_AVAILABLE, reason="amd-quark>=0.9 is not available")
+# [中文注释] 测试MXFP4模型加载和MoE推理执行的端到端正确性
 def test_mxfp4_loading_and_execution_moe(vllm_runner, model_case: ModelCase):
     if torch.accelerator.device_count() < model_case.tp:
         pytest.skip(
@@ -109,6 +112,7 @@ def test_mxfp4_loading_and_execution_moe(vllm_runner, model_case: ModelCase):
         assert output
 
 
+# [中文注释] SwiGLU激活函数参考实现，支持alpha/beta/limit参数
 def swiglu(x, alpha: float = 1.702, beta: float = 1.0, limit: float | None = None):
     # Note we add an extra bias of 1 to the linear layer
     x_glu, x_linear = torch.chunk(x, 2, dim=-1)
@@ -122,6 +126,7 @@ def swiglu(x, alpha: float = 1.702, beta: float = 1.0, limit: float | None = Non
 fp4_lookup_table = [0, 0.5, 1, 1.5, 2, 3, 4, 6, -0, -0.5, -1, -1.5, -2, -3, -4, -6]
 
 
+# [中文注释] MXFP4反量化：将FP4数据和缩放因子转换回浮点数
 def mxfp4_dequantize(x, scale):
     assert x.dtype == torch.uint8
     x = x.view(torch.uint8).to(torch.int32)
@@ -143,6 +148,7 @@ def mxfp4_dequantize(x, scale):
     return x_float * scale
 
 
+# [中文注释] MXFP8反量化：将FP8数据和缩放因子转换回浮点数
 def mxfp8_dequantize(x, scale):
     assert x.dtype == torch.float8_e4m3fn
     x_float = x.to(torch.float32)
@@ -155,6 +161,7 @@ def mxfp8_dequantize(x, scale):
     return x_float * scale
 
 
+# [中文注释] OCP MX格式MoE参考实现：使用反量化权重逐专家计算
 def reference_moe(
     roouting_logits,
     topk,
@@ -201,6 +208,7 @@ def reference_moe(
     return t.to(torch.bfloat16)
 
 
+# [中文注释] TRT-LLM Gen MXFP4 MoE实现：使用FlashInfer TRT-LLM FP4块缩放MoE内核
 def tg_mxfp4_moe(
     router_logits,
     topk,
@@ -455,6 +463,7 @@ def tg_mxfp4_moe(
     return tg_result
 
 
+# [中文注释] 精度检查函数：验证两个张量在给定容差和百分比阈值内匹配
 def check_accuracy(a, b, atol, rtol, percent):
     """Allow a mismatch percentage of 1 - percent."""
     if torch.any(torch.isnan(a)):
@@ -489,6 +498,7 @@ def check_accuracy(a, b, atol, rtol, percent):
     not TRTLLM_GEN_MXFP4_AVAILABLE,
     reason="nvidia gpu and compute capability sm100 is required for this test",
 )
+# [中文注释] 测试TRT-LLM Gen MXFP4融合MoE内核在SM100上的计算正确性
 def test_trtllm_gen_mxfp4_fused_moe(
     topk: int,
     num_experts: int,
@@ -640,6 +650,7 @@ def _interleave_scales_lastdim_by4(scales: torch.Tensor) -> torch.Tensor:
     not HOPPER_MXFP4_BF16_AVAILABLE,
     reason="nvidia gpu sm90 and flashinfer are required for this test",
 )
+# [中文注释] 测试FlashInfer CUTLASS MXFP4融合MoE内核在SM90上的计算正确性
 def test_flashinfer_cutlass_mxfp4_fused_moe(
     topk: int,
     num_experts: int,
@@ -794,6 +805,7 @@ def test_flashinfer_cutlass_mxfp4_fused_moe(
     ),
     reason="NVIDIA GPU sm100 and flashinfer are required for this test",
 )
+# [中文注释] 测试FlashInfer CUTLASS MXFP4+MXFP8融合MoE内核在SM100上的计算正确性
 def test_flashinfer_cutlass_mxfp4_mxfp8_fused_moe(
     topk: int,
     num_experts: int,
@@ -993,6 +1005,7 @@ def test_flashinfer_cutlass_mxfp4_mxfp8_fused_moe(
     not TRTLLM_GEN_MXFP8_AVAILABLE,
     reason="nvidia gpu and compute capability sm100 is required for this test",
 )
+# [中文注释] 测试TRT-LLM Gen MXFP8块缩放MoE内核在SM100上的计算正确性
 def test_trtllm_gen_mxfp8_block_scale_moe(
     topk: int,
     num_experts: int,

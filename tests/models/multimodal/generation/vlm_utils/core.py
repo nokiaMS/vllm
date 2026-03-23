@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 核心测试执行器：模态无关地对比 HF 和 vLLM 的推理输出
 """Core test implementation to be shared across modalities."""
 
 from collections.abc import Callable
@@ -16,6 +17,7 @@ from ....registry import HF_EXAMPLE_MODELS
 from .types import PromptWithMultiModalInput, RunnerOutput
 
 
+# 运行模态无关的 HF/vLLM 输出对比测试，先运行 vLLM 再运行 HF 以避免 CUDA 初始化冲突
 def run_test(
     *,
     hf_runner: type[HfRunner],
@@ -164,6 +166,7 @@ def run_test(
         )
 
 
+# 对两个运行器的输出应用后处理函数（如输出格式转换）
 def process_runner_outputs(
     model,
     first_runner_outputs,

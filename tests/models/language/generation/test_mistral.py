@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试Mistral模型的生成正确性，包括Mistral格式加载、
+# 符号语言（日文/中文/缅甸文）解码、函数调用和嵌套JSON解析
+
 import copy
 import json
 

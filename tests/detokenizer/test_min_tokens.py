@@ -19,6 +19,7 @@ PROMPT = "Hello, my name is Lee, and I'm a student in the " + "college of engine
         (5, "e", " is Lee, and I'm a stud"),
     ],
 )
+# [中文注释] 测试min_tokens与stop字符串的交互行为，验证最小token数约束
 def test_min_tokens_with_stop(min_tokens: int, stop: str, truth: str):
     """Test for a specific min_tokens and stop.
 

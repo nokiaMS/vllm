@@ -10,6 +10,7 @@ from typing_extensions import TypedDict
 from tests.utils import VLLM_PATH
 
 
+# [中文注释] 服务器配置类型定义：模型名称、启动参数、系统提示词、是否支持并行工具调用等
 class ServerConfig(TypedDict, total=False):
     model: str
     arguments: list[str]
@@ -19,6 +20,7 @@ class ServerConfig(TypedDict, total=False):
     extended: bool | None  # tests do not run in CI automatically
 
 
+# [中文注释] 替换或插入系统提示词到消息列表的首位
 def patch_system_prompt(
     messages: list[dict[str, Any]], system_prompt: str
 ) -> list[dict[str, Any]]:
@@ -30,6 +32,7 @@ def patch_system_prompt(
     return new_messages
 
 
+# [中文注释] 根据服务器配置确保消息列表包含系统提示词
 def ensure_system_prompt(
     messages: list[dict[str, Any]], config: ServerConfig
 ) -> list[dict[str, Any]]:
@@ -237,6 +240,7 @@ CONFIGS: dict[str, ServerConfig] = {
     },
 }
 
+# [中文注释] 天气查询工具定义：按城市、州、温度单位查询当前天气
 WEATHER_TOOL: ChatCompletionToolParam = {
     "type": "function",
     "function": {
@@ -266,6 +270,7 @@ WEATHER_TOOL: ChatCompletionToolParam = {
     },
 }
 
+# [中文注释] 网络搜索工具定义：通过关键词搜索互联网并返回摘要
 SEARCH_TOOL: ChatCompletionToolParam = {
     "type": "function",
     "function": {
@@ -289,16 +294,19 @@ SEARCH_TOOL: ChatCompletionToolParam = {
     },
 }
 
+# [中文注释] 不需要工具调用的普通对话消息
 MESSAGES_WITHOUT_TOOLS: list[ChatCompletionMessageParam] = [
     {"role": "user", "content": "Hi! How are you?"},
     {"role": "assistant", "content": "I'm doing great! How can I assist you?"},
     {"role": "user", "content": "Can you tell me a joke please?"},
 ]
 
+# [中文注释] 需要触发工具调用的用户消息（查询天气）
 MESSAGES_ASKING_FOR_TOOLS: list[ChatCompletionMessageParam] = [
     {"role": "user", "content": "What is the weather in Dallas, Texas in Fahrenheit?"}
 ]
 
+# [中文注释] 包含工具调用结果的完整对话消息（用户提问→助手调用工具→工具返回结果）
 MESSAGES_WITH_TOOL_RESPONSE: list[ChatCompletionMessageParam] = [
     {"role": "user", "content": "What is the weather in Dallas, Texas in Fahrenheit?"},
     {
@@ -323,6 +331,7 @@ MESSAGES_WITH_TOOL_RESPONSE: list[ChatCompletionMessageParam] = [
     },
 ]
 
+# [中文注释] 需要触发并行工具调用的用户消息（同时查询两个城市天气）
 MESSAGES_ASKING_FOR_PARALLEL_TOOLS: list[ChatCompletionMessageParam] = [
     {
         "role": "user",
@@ -331,6 +340,7 @@ MESSAGES_ASKING_FOR_PARALLEL_TOOLS: list[ChatCompletionMessageParam] = [
     }
 ]
 
+# [中文注释] 包含并行工具调用结果的完整对话消息（两个城市天气查询及返回）
 MESSAGES_WITH_PARALLEL_TOOL_RESPONSE: list[ChatCompletionMessageParam] = [
     {
         "role": "user",

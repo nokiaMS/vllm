@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试共享内存广播机制（MessageQueue 的读写、关闭、忙碌/空闲状态切换等）
 
 import random
 import threading

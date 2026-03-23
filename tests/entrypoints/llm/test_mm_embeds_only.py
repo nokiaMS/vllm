@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试启用 enable_mm_embeds 模式下的多模态嵌入处理：预计算嵌入输入、
+# 原始图像拒绝以及纯文本提示的兼容性
+
 import weakref
 
 import pytest

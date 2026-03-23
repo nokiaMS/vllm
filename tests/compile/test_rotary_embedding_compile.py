@@ -17,6 +17,7 @@ from vllm.model_executor.layers.rotary_embedding import get_rope
 from vllm.platforms import current_platform
 
 
+# 旋转位置编码的 torch.compile 兼容性测试模块
 @support_torch_compile
 class RotaryEmbeddingCompileModule(torch.nn.Module):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = "") -> None:
@@ -36,6 +37,7 @@ class RotaryEmbeddingCompileModule(torch.nn.Module):
         return q_rot + k_rot
 
 
+# 测试旋转位置编码自定义算子在 torch.compile 下的编译兼容性
 @pytest.mark.skipif(current_platform.is_cpu(), reason="Requires GPU for torch.compile")
 def test_rotary_embedding_torch_compile_with_custom_op(monkeypatch):
     # Ensure env toggles take effect for this test only.

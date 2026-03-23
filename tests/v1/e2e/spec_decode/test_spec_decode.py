@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件综合测试推测解码：ngram、suffix、eagle、eagle3、MTP、draft model的正确性、量化和张量并行
 import random
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ from vllm.v1.spec_decode.utils import create_vllm_config_for_draft_model
 MTP_SIMILARITY_RATE = 0.8
 
 
+# [中文注释] 检查可用GPU数量是否满足张量并行要求，不足则跳过测试
 def _skip_if_insufficient_gpus_for_tp(tp_size: int):
     """Skip test if available GPUs < tp_size on ROCm."""
     available_gpus = torch.accelerator.device_count()
@@ -42,6 +44,7 @@ def _skip_if_insufficient_gpus_for_tp(tp_size: int):
 Messages = list[dict[str, Any]]
 
 
+# [中文注释] 生成测试提示列表，支持重复、GSM8K和多模态类型
 def get_test_prompts(mm_enabled: bool, num_prompts: int = 100) -> list[Messages]:
     prompt_types = ["repeat", "gsm8k"]
     if mm_enabled:
@@ -98,6 +101,7 @@ def get_test_prompts(mm_enabled: bool, num_prompts: int = 100) -> list[Messages]
     return prompts
 
 
+# [中文注释] 从InstructCoder数据集中采样n条编程指令作为测试消息
 def get_instruct_coder_messages(n: int) -> list[Messages]:
     dataset = InstructCoderDataset(
         dataset_path="likaixin/InstructCoder", dataset_split="train"
@@ -124,6 +128,7 @@ def model_name():
     return "meta-llama/Llama-3.1-8B-Instruct"
 
 
+# [中文注释] 在GSM8K数据集上评估LLM准确率，验证推测解码不影响模型正确性
 def evaluate_llm_for_gsm8k(llm: LLM, expected_accuracy_threshold: float = 0.70) -> None:
     """Evaluate the LLM on GSM8K and check that accuracy is above a sanity threshold.
 
@@ -166,6 +171,7 @@ def reset_torch_dynamo():
         },
     ],
 )
+# [中文注释] 测试ngram和suffix推测解码与基准模型输出一致性
 @single_gpu_only
 @large_gpu_mark(min_gb=20)
 def test_ngram_and_suffix_correctness(
@@ -183,6 +189,7 @@ def test_ngram_and_suffix_correctness(
     cleanup_dist_env_and_memory()
 
 
+# [中文注释] 测试ngram_gpu推测解码在异步调度下的默认配置
 @pytest.mark.parametrize("async_scheduling", [True], ids=["async"])
 @single_gpu_only
 @large_gpu_mark(min_gb=20)
@@ -211,6 +218,7 @@ def test_ngram_gpu_default_with_async_scheduling(
     cleanup_dist_env_and_memory()
 
 
+# [中文注释] 测试suffix解码方法在InstructCoder数据集上的接受率
 @single_gpu_only
 @large_gpu_mark(min_gb=20)
 def test_suffix_decoding_acceptance(
@@ -280,6 +288,7 @@ def test_suffix_decoding_acceptance(
     ],
     ids=["llama3_eagle3_speculator", "qwen3_eagle3_speculator"],
 )
+# [中文注释] 测试speculators库模型集成的推测解码正确性
 @single_gpu_only
 @large_gpu_mark(min_gb=24)
 def test_speculators_model_integration(
@@ -359,6 +368,7 @@ def test_speculators_model_integration(
     )
 
 
+# [中文注释] 运行Eagle推测解码正确性测试的核心函数，对比基准和推测解码的输出
 def _run_eagle_correctness(
     monkeypatch: pytest.MonkeyPatch,
     sampling_config: SamplingParams,
@@ -502,6 +512,7 @@ def _run_eagle_correctness(
     ],
     ids=["deepseek_eagle"],
 )
+# [中文注释] Eagle推测解码轻量级正确性测试（DeepSeek等小模型）
 @pytest.mark.parametrize("attn_backend", get_attn_backend_list_based_on_platform())
 def test_eagle_correctness_light(
     monkeypatch: pytest.MonkeyPatch,
@@ -601,6 +612,7 @@ def test_eagle_correctness_light(
         "llama3_eagle3",
     ],
 )
+# [中文注释] Eagle推测解码中等规模正确性测试（Llama模型+GSM8K评估）
 @pytest.mark.parametrize("attn_backend", get_attn_backend_list_based_on_platform())
 def test_eagle_correctness_medium(
     monkeypatch: pytest.MonkeyPatch,
@@ -677,6 +689,7 @@ def test_eagle_correctness_medium(
         ),
     ],
 )
+# [中文注释] Eagle推测解码重量级正确性测试（大模型+多模态+GSM8K）
 @pytest.mark.parametrize("attn_backend", get_attn_backend_list_based_on_platform())
 def test_eagle_correctness_heavy(
     monkeypatch: pytest.MonkeyPatch,
@@ -708,6 +721,7 @@ def test_eagle_correctness_heavy(
     ],
     ids=["mimo", "deepseek"],
 )
+# [中文注释] 测试MTP（多token预测）推测解码在不同配置下与基准模型输出的相似度
 @single_gpu_only
 @large_gpu_mark(min_gb=20)
 def test_mtp_correctness(
@@ -783,6 +797,7 @@ def test_mtp_correctness(
 
 
 @dataclass
+# [中文注释] Draft model测试参数类，定义模型名、draft模型名、数据集和采样方式
 class ArgsTest:
     target_model: str
     draft_model: str
@@ -828,12 +843,14 @@ cases = [
 
 @pytest.mark.parametrize("args", cases)
 @pytest.mark.parametrize("enforce_eager", [True, False])
+# [中文注释] 测试draft model推测解码的输出正确性
 @single_gpu_only
 def test_draft_model_correctness(args: ArgsTest, enforce_eager: bool):
     args.enforce_eager = enforce_eager
     assert_draft_model_correctness(args)
 
 
+# [中文注释] 测试draft model在实际场景（InstructCoder数据集）下的正确性
 @single_gpu_only
 def test_draft_model_realistic_example():
     args = ArgsTest(
@@ -849,6 +866,7 @@ def test_draft_model_realistic_example():
     assert_draft_model_correctness(args)
 
 
+# [中文注释] 测试draft model的并行草稿生成功能
 @single_gpu_only
 def test_draft_model_parallel_drafting():
     args = ArgsTest(
@@ -875,6 +893,7 @@ def test_draft_model_parallel_drafting():
     ids=["target_quantized", "draft_quantized"],
 )
 @pytest.mark.parametrize("enforce_eager", [True, False])
+# [中文注释] 测试量化draft model的推测解码正确性
 @single_gpu_only
 def test_draft_model_quantization(models: tuple[str, str], enforce_eager: bool):
     tgt_model, draft_model = models
@@ -887,6 +906,7 @@ def test_draft_model_quantization(models: tuple[str, str], enforce_eager: bool):
     assert_draft_model_correctness(sd_case)
 
 
+# [中文注释] 测试draft model在2GPU张量并行下的正确性
 @multi_gpu_only(num_gpus=2)
 def test_draft_model_tensor_parallelism():
     """Ensure spec decode works when running with TP > 1."""
@@ -903,6 +923,7 @@ def test_draft_model_tensor_parallelism():
     assert_draft_model_correctness(sd_case)
 
 
+# [中文注释] 测试通过引擎参数配置draft model张量并行的正确性
 @multi_gpu_only(num_gpus=2)
 def test_draft_model_engine_args_tensor_parallelism():
     """Ensure the vllm_config for the draft model is created correctly,
@@ -928,6 +949,7 @@ def test_draft_model_engine_args_tensor_parallelism():
     assert draft_vllm_config.quant_config is None
 
 
+# [中文注释] 测试无效的张量并行参数名被正确拒绝
 def test_draft_model_engine_args_rejects_invalid_tp_argname():
     """The user should pass "draft_tensor_parallel_size" rather than
     "tensor_parallel_size". We enforce this with validation."""
@@ -946,6 +968,7 @@ def test_draft_model_engine_args_rejects_invalid_tp_argname():
         engine_args.create_engine_config()
 
 
+# [中文注释] 核心函数：对比基准模型和draft model推测解码的输出一致性
 def assert_draft_model_correctness(args: ArgsTest):
     """Compare the outputs using and not using speculative decoding.
     In the greedy decoding case, the outputs must match EXACTLY."""

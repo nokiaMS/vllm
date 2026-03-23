@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 各模型的输出后处理和 HF Runner 补丁函数，用于 vLLM 与 HF 输出格式的标准化对比
 """Common utility functions relating to different models that are useful
 for manipulating the input / output of HF & vLLM test runners, which are
 typically specific to a small subset of models.

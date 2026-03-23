@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Qwen2.5-VL 模型的 EVS（高效视频采样）功能，包括不同剪枝率和批量视频处理
 
 import pytest
 

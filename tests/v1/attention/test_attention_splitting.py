@@ -18,6 +18,8 @@ from vllm.v1.worker.ubatch_utils import (
 )
 
 
+# 测试注意力元数据的切分和拆分操作，包括 decode/prefill 分离和微批次切片
+
 @pytest.fixture
 def sample_query_start_loc():
     """Sample query_start_loc tensor for testing"""

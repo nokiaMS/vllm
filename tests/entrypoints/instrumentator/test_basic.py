@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 vLLM 服务器基础功能：版本查询、健康检查、请求取消、错误内容类型处理、
+# 服务器负载追踪以及引擎死亡时的健康检查响应
+
 import asyncio
 from http import HTTPStatus
 from unittest.mock import AsyncMock, Mock
@@ -19,6 +22,7 @@ from ...utils import RemoteOpenAIServer
 MODEL_NAME = "Qwen/Qwen3-0.6B"
 
 
+# 通过间接参数化提供额外服务器启动参数的 fixture
 @pytest.fixture(scope="module")
 def server_args(request: pytest.FixtureRequest) -> list[str]:
     """Provide extra arguments to the server via indirect parametrization
@@ -55,6 +59,7 @@ def server_args(request: pytest.FixtureRequest) -> list[str]:
     return request.param
 
 
+# 创建远程 OpenAI 兼容服务器实例 fixture
 @pytest.fixture(scope="module")
 def server(server_args):
     args = [

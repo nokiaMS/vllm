@@ -41,6 +41,7 @@ prompts = [
 ]
 
 
+# 矩阵乘法 + reduce_scatter 模式的测试模型
 class TestMMRSModel(torch.nn.Module):
     def __init__(self, hidden_size=16, dtype=torch.float16):
         super().__init__()
@@ -73,6 +74,7 @@ class TestMMRSModel(torch.nn.Module):
         return [torch.ops.symm_mem.fused_matmul_reduce_scatter.default]
 
 
+# all_gather + 矩阵乘法模式的测试模型
 class TestAGMMModel(torch.nn.Module):
     def __init__(self, hidden_size=16, dtype=torch.float16):
         super().__init__()
@@ -117,6 +119,7 @@ class _BaseScaledMMModel(torch.nn.Module):
         self.scale_b = torch.ones(1, self.hidden_size, dtype=torch.float32)
 
 
+# scaled_mm + reduce_scatter 模式的测试模型（FP8 输入）
 class TestScaledMMRSModel(_BaseScaledMMModel):
     def forward(self, input: torch.Tensor):
         """
@@ -142,6 +145,7 @@ class TestScaledMMRSModel(_BaseScaledMMModel):
         return [torch.ops.vllm.patched_fused_scaled_matmul_reduce_scatter.default]
 
 
+# all_gather + scaled_mm 模式的测试模型（FP8 输入）
 class TestAGScaledMMModel(_BaseScaledMMModel):
     def forward(self, input: torch.Tensor):
         """
@@ -168,6 +172,7 @@ class TestAGScaledMMModel(_BaseScaledMMModel):
         return [torch.ops.symm_mem.fused_all_gather_scaled_matmul.default]
 
 
+# cutlass_scaled_mm + reduce_scatter 模式的测试模型
 class TestCutlassScaledMMRSModel(_BaseScaledMMModel):
     def forward(self, input: torch.Tensor):
         """
@@ -195,6 +200,7 @@ class TestCutlassScaledMMRSModel(_BaseScaledMMModel):
         return [torch.ops.vllm.patched_fused_scaled_matmul_reduce_scatter.default]
 
 
+# all_gather + cutlass_scaled_mm 模式的测试模型
 class TestAGCutlassScaledMMModel(_BaseScaledMMModel):
     def forward(self, input: torch.Tensor):
         """
@@ -242,6 +248,7 @@ class TestAGCutlassScaledMMModel(_BaseScaledMMModel):
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @pytest.mark.parametrize("dynamic", [True, False])
 @pytest.mark.skipif(envs.VLLM_TARGET_DEVICE not in ["cuda"], reason="Only test on CUDA")
+# 测试 AsyncTPPass 将 GEMM+collective 替换为融合操作
 def test_async_tp_pass_replace(
     test_model: str,
     batch_size: int,
@@ -287,6 +294,7 @@ def test_async_tp_pass_replace(
     run_torch_spawn(async_tp_pass_on_test_model, num_processes)
 
 
+# 在分布式环境中运行 Async TP pass 并验证图替换结果
 def async_tp_pass_on_test_model(
     local_rank: int,
     world_size: int,

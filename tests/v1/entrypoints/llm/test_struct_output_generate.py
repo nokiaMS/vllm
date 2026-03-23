@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试结构化输出生成：JSON schema、JSON对象、EBNF/Lark语法、正则、choices、枚举、结构标签和批量混合
 
 import json
 from enum import Enum

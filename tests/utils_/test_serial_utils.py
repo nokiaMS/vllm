@@ -14,6 +14,7 @@ from vllm.utils.serial_utils import (
 )
 
 
+# [中文注释] 测试张量二进制序列化往返：验证不同字节序和数据类型下tensor2binary/binary2tensor的正确性
 @pytest.mark.parametrize("endianness", ENDIANNESS)
 @pytest.mark.parametrize("embed_dtype", EMBED_DTYPES.keys())
 @torch.inference_mode()

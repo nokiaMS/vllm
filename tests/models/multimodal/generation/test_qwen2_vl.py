@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Qwen2-VL 模型的图像/视频嵌入输入功能，验证嵌入与原始输入推理结果一致
 
 from typing import Any, TypedDict
 

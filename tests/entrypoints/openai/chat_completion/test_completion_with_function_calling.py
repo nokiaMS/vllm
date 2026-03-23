@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 Qwen3 和 Kimi-K2 模型的函数调用（tool_choice、无参数调用、命名工具等）
+
 import datetime
 import json
 
@@ -167,6 +169,7 @@ async def client(server):
     ],
 )
 @pytest.mark.parametrize("enable_thinking", [True, False])
+# 测试基本函数工具调用的触发和参数正确性
 async def test_function_tool_use(
     client: openai.AsyncOpenAI,
     model_name: str,
@@ -252,6 +255,7 @@ async def k2_client(k2_server):
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("tool_choice", ["required"])
+# 测试 Kimi-K2 格式的工具调用 ID 生成
 async def test_tool_id_kimi_k2(
     k2_client: openai.AsyncOpenAI, model_name: str, stream: bool, tool_choice: str
 ):
@@ -290,6 +294,7 @@ async def test_tool_id_kimi_k2(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("arguments", ["{}", ""])
+# 测试无参数工具调用的正确解析
 async def test_no_args_tool_call(
     client: openai.AsyncOpenAI, model_name: str, arguments: str
 ):
@@ -376,6 +381,7 @@ async def test_no_args_tool_call(
 
 
 @pytest.mark.asyncio
+# 测试通过 tool_choice 指定命名工具的调用
 async def test_named_tool_use(
     client: openai.AsyncOpenAI,
     sample_json_schema,
@@ -454,6 +460,7 @@ async def test_named_tool_use(
 
 
 @pytest.mark.asyncio
+# 测试 tool_choice 与 tools 不一致时的错误处理
 async def test_inconsistent_tool_choice_and_tools(
     client: openai.AsyncOpenAI, sample_json_schema
 ):
@@ -517,6 +524,7 @@ async def test_inconsistent_tool_choice_and_tools(
 
 
 @pytest.mark.asyncio
+# 测试 tool_choice=required 与 max_tokens 限制的组合
 async def test_max_tokens_with_tool_choice_required(client: openai.AsyncOpenAI):
     """ """
     models = await client.models.list()

@@ -31,6 +31,7 @@ class Assert10Frames1FPSVideoLoader(VideoLoader):
         return FAKE_OUTPUT_2
 
 
+# [中文注释] 测试VideoMediaIO参数传递：验证num_frames和fps参数正确传递到后端
 def test_video_media_io_kwargs(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as m:
         m.setenv("VLLM_VIDEO_LOADER_BACKEND", "assert_10_frames_1_fps")
@@ -60,6 +61,7 @@ def test_video_media_io_kwargs(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.mark.parametrize("is_color", [True, False])
 @pytest.mark.parametrize("fourcc, ext", [("mp4v", "mp4"), ("XVID", "avi")])
+# [中文注释] 测试OpenCV视频IO的色彩空间处理：彩色和灰度视频
 def test_opencv_video_io_colorspace(tmp_path, is_color: bool, fourcc: str, ext: str):
     """
     Test all functions that use OpenCV for video I/O return RGB format.
@@ -116,6 +118,7 @@ FAKE_OUTPUT_2 = np.random.rand(NUM_FRAMES, 1280, 720, 3)
 
 
 @VIDEO_LOADER_REGISTRY.register("test_video_backend_override_1")
+# [中文注释] 测试视频后端覆盖加载器1：用于验证backend参数覆盖环境变量
 class TestVideoBackendOverride1(VideoLoader):
     """Test loader that returns FAKE_OUTPUT_1 to verify backend selection."""
 
@@ -137,6 +140,7 @@ class TestVideoBackendOverride2(VideoLoader):
         return FAKE_OUTPUT_2, {"video_backend": "test_video_backend_override_2"}
 
 
+# [中文注释] 测试VideoMediaIO的backend参数覆盖环境变量设置
 def test_video_media_io_backend_kwarg_override(monkeypatch: pytest.MonkeyPatch):
     """
     Test that video_backend kwarg can override the VLLM_VIDEO_LOADER_BACKEND
@@ -168,6 +172,7 @@ def test_video_media_io_backend_kwarg_override(monkeypatch: pytest.MonkeyPatch):
         assert metadata_override["video_backend"] == "test_video_backend_override_2"
 
 
+# [中文注释] 测试backend参数不会传递到底层视频加载器
 def test_video_media_io_backend_kwarg_not_passed_to_loader(
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -214,6 +219,7 @@ def test_video_media_io_backend_kwarg_not_passed_to_loader(
         assert "other_kwarg" in metadata["received_kwargs"]
 
 
+# [中文注释] 测试无backend参数时回退到环境变量设置
 def test_video_media_io_backend_env_var_fallback(monkeypatch: pytest.MonkeyPatch):
     """
     Test that when video_backend kwarg is None or not provided,

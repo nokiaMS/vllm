@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试默认多模态 LoRA 适配器：验证基础模型加载默认 LoRA 后与显式 LoRA 模型结果一致]
 
 import os
 
@@ -22,6 +23,7 @@ AUDIO_LORA_PATH = os.path.join(MULTIMODAL_MODEL_NAME, "speech-lora")
 ACTIVE_MM_LORA_RESPONSE = "Spoken text: The first words I spoke in the original chronograph, a little piece of practical poetry. Mary had a little lamb, it slept with quite a snow, and everywhere that Mary went, the lamb was sure to go."  # noqa: E501
 
 
+# [创建带音频 LoRA 和 default-mm-loras 配置的多模态服务器]
 @pytest.fixture(scope="module")
 def multimodal_server():
     args = [
@@ -64,6 +66,7 @@ async def multi_modal_client(multimodal_server):
     "model_name",
     [MULTIMODAL_MODEL_NAME, "speech"],
 )
+# [测试默认多模态 LoRA 的聊天补全：基础模型与 LoRA 模型应产生相同转录结果]
 async def test_default_mm_lora_chat_completions(
     model_name: str,
     multi_modal_client: openai.AsyncOpenAI,

@@ -23,6 +23,8 @@ from vllm.model_executor.layers.quantization.fp8 import (
 from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 from vllm.platforms import current_platform
 
+# 测试 FP8 量化的模型加载、KV 缓存、在线量化、缩放量化和权重重载
+
 MODELS = [
     "neuralmagic/Meta-Llama-3-8B-Instruct-FP8-KV",
     # The checkpoint below was removed from the HF.

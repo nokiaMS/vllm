@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [回归测试：包含用户报告的已修复问题的回归测试，确保问题不再复现]
 """Containing tests that check for regressions in vLLM's behavior.
 
 It should include tests that are reported by users and making sure they
@@ -17,6 +18,7 @@ from vllm.platforms import current_platform
 
 
 @pytest.mark.skip(reason="In V1, we reject tokens > max_seq_len")
+# [回归测试 #1655：验证超长提示不会导致重复的被忽略序列组]
 def test_duplicated_ignored_sequence_group():
     """https://github.com/vllm-project/vllm/issues/1655"""
 
@@ -32,6 +34,7 @@ def test_duplicated_ignored_sequence_group():
     assert len(prompts) == len(outputs)
 
 
+# [测试 max_tokens 设为 None 时模型能正常生成输出]
 def test_max_tokens_none():
     sampling_params = SamplingParams(temperature=0.01, top_p=0.1, max_tokens=None)
     llm = LLM(
@@ -45,6 +48,7 @@ def test_max_tokens_none():
     assert len(prompts) == len(outputs)
 
 
+# [测试 LLM 对象删除后 GPU 内存能被正确释放（残留应低于 50MB）]
 def test_gc():
     llm = LLM(model="distilbert/distilgpt2", enforce_eager=True)
     del llm
@@ -59,6 +63,7 @@ def test_gc():
     assert allocated < 50 * 1024 * 1024
 
 
+# [测试从 ModelScope 加载模型并成功生成输出]
 def test_model_from_modelscope(monkeypatch: pytest.MonkeyPatch):
     # model: https://modelscope.cn/models/qwen/Qwen1.5-0.5B-Chat/summary
     with monkeypatch.context() as m:

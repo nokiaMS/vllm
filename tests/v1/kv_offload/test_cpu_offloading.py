@@ -23,6 +23,7 @@ elif current_platform.is_rocm():
     ATTN_BACKENDS = ["TRITON_ATTN"]
 
 
+# [中文注释] 模拟订阅者：接收和验证通过ZMQ发布的KV缓存事件。
 class MockSubscriber:
     """Helper class to receive and verify published events"""
 
@@ -70,6 +71,7 @@ class MockSubscriber:
         self.sub.close()
 
 
+# [中文注释] 延迟测试：验证CPU缓存命中时的延迟低于冷启动延迟。
 def _latency_test(llm: LLM, subscriber: MockSubscriber):
     sampling_params = SamplingParams(max_tokens=1)
 
@@ -117,6 +119,7 @@ def _latency_test(llm: LLM, subscriber: MockSubscriber):
     assert num_times_cpu_better_than_cold >= 0.8 * num_tests
 
 
+# [中文注释] 精度测试：验证CPU卸载后重新加载的KV缓存不会影响生成输出的正确性。
 def _accuracy_test(llm: LLM, subscriber: MockSubscriber):
     sampling_params = SamplingParams(max_tokens=1)
     cpu_block_size = (
@@ -151,6 +154,7 @@ def _accuracy_test(llm: LLM, subscriber: MockSubscriber):
 
 @pytest.mark.parametrize("cpu_block_size", CPU_BLOCK_SIZES)
 @pytest.mark.parametrize("attn_backend", ATTN_BACKENDS)
+# [中文注释] 集成测试：验证OffloadingConnector与CPUOffloadingSpec的完整延迟和精度表现。
 def test_cpu_offloading(cpu_block_size: int, attn_backend: str) -> None:
     """
     Tests OffloadingConnector with CPUOffloadingSpec.

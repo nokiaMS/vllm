@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试TerraTorch地理空间模型（Prithvi-EO）的推理功能，验证嵌入输出无NaN值
+
 import pytest
 import torch
 
@@ -16,6 +18,7 @@ from tests.utils import create_new_process_for_each_test
         "ibm-nasa-geospatial/Prithvi-EO-2.0-300M-BurnScars",
     ],
 )
+# 测试地理空间模型的编码推理，验证输出不包含NaN
 def test_inference(
     vllm_runner: type[VllmRunner],
     model: str,

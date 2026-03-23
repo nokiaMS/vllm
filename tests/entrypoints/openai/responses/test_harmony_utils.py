@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 Harmony 消息到 Responses API 输出项的转换逻辑
+
 """Unit tests for vllm.entrypoints.openai.responses.harmony."""
 
 from openai.types.responses import (
@@ -17,6 +20,7 @@ from vllm.entrypoints.openai.responses.harmony import (
 )
 
 
+# 测试 Responses API 输入到 Harmony 消息的转换
 class TestResponsePreviousInputToHarmony:
     """
     Tests for scenarios that are specific to the Responses API
@@ -92,6 +96,7 @@ class TestResponsePreviousInputToHarmony:
         assert messages[0].content[0].text == ""
 
 
+# 测试 Harmony 消息到 Responses API 输出项的转换
 class TestHarmonyToResponseOutput:
     """Tests for harmony_to_response_output function."""
 
@@ -286,6 +291,7 @@ class TestHarmonyToResponseOutput:
         assert len(output_items) == 0
 
 
+# 测试基本 MCP 调用解析的类型和 server_label 正确性
 def test_parse_mcp_call_basic() -> None:
     """Test that MCP calls are parsed with correct type and server_label."""
     message = Message.from_role_and_content(Role.ASSISTANT, '{"path": "/tmp"}')
@@ -303,6 +309,7 @@ def test_parse_mcp_call_basic() -> None:
     assert output_items[0].status == "completed"
 
 
+# 测试点分接收者名称中工具名的正确提取
 def test_parse_mcp_call_dotted_recipient() -> None:
     """Test that dotted recipients extract the tool name correctly."""
     message = Message.from_role_and_content(Role.ASSISTANT, '{"cmd": "ls"}')
@@ -317,6 +324,7 @@ def test_parse_mcp_call_dotted_recipient() -> None:
     assert output_items[0].server_label == "repo_browser"
 
 
+# 测试函数调用不会被误解析为 MCP 调用
 def test_mcp_vs_function_call() -> None:
     """Test that function calls are not parsed as MCP calls."""
     func_message = Message.from_role_and_content(Role.ASSISTANT, '{"arg": "value"}')
@@ -330,6 +338,7 @@ def test_mcp_vs_function_call() -> None:
     assert func_items[0].type == "function_call"
 
 
+# 测试内置工具（python/container）不会被解析为 MCP 调用
 def test_mcp_vs_builtin_tools() -> None:
     """Test that built-in tools (python, container) are not parsed as MCP calls."""
     # Test python (built-in tool) - should be reasoning, not MCP
@@ -344,6 +353,7 @@ def test_mcp_vs_builtin_tools() -> None:
     assert python_items[0].type == "reasoning"
 
 
+# 测试 parser_state_to_response_output 在 commentary 频道下的各种接收者处理
 def test_parser_state_to_response_output_commentary_channel() -> None:
     """Test parser_state_to_response_output with commentary
     channel and various recipients."""
@@ -411,6 +421,7 @@ def test_parser_state_to_response_output_commentary_channel() -> None:
     assert preamble_items[0].status == "incomplete"  # streaming
 
 
+# 测试 parser_state_to_response_output 在 analysis 频道下的各种接收者处理
 def test_parser_state_to_response_output_analysis_channel() -> None:
     """Test parser_state_to_response_output with analysis
     channel and various recipients."""

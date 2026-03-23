@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试XPU平台上稀疏MLA注意力的Triton BF16实现正确性
 
 import pytest
 import torch
@@ -7,6 +8,7 @@ import torch
 from vllm.v1.attention.ops.xpu_mla_sparse import triton_bf16_mla_sparse_interface
 
 
+# 合并两个log-sum-exp值用于注意力状态组合
 # https://github.com/deepseek-ai/FlashMLA/blob/main/tests/ref.py#L7
 def _merge_two_lse(
     lse0: torch.Tensor, lse1: torch.Tensor | None, s_q: int, h_q: int
@@ -20,6 +22,7 @@ def _merge_two_lse(
         )
 
 
+# 稀疏MLA预填充的参考实现（支持topk索引、注意力sink和无效掩码处理）
 # Adapted from https://github.com/deepseek-ai/FlashMLA/blob/main/tests/ref.py#L19
 def reference_mla_sparse_prefill(
     q: torch.Tensor,
@@ -75,6 +78,7 @@ def reference_mla_sparse_prefill(
     return (out.to(kv.dtype), out, max_logits, orig_lse)
 
 
+# 测试XPU上Triton BF16稀疏MLA内核与参考实现的输出、max_logits和LSE一致性
 @pytest.mark.parametrize("device_str", ["xpu"])
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
 @pytest.mark.skipif(

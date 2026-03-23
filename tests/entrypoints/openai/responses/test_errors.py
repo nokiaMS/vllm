@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 GenerationError 异常抛出和流式错误响应转换
+
 from http import HTTPStatus
 from unittest.mock import MagicMock
 
@@ -9,6 +11,7 @@ import pytest
 from vllm.entrypoints.openai.engine.serving import GenerationError, OpenAIServing
 
 
+# 测试 _raise_if_error 在 finish_reason 为 error 时抛出 GenerationError
 @pytest.mark.asyncio
 async def test_raise_if_error_raises_generation_error():
     """test _raise_if_error raises GenerationError"""
@@ -37,6 +40,7 @@ async def test_raise_if_error_raises_generation_error():
     serving._raise_if_error(None, "test-request-id")  # should not raise
 
 
+# 测试 GenerationError 转换为流式错误 JSON 响应的格式正确性
 @pytest.mark.asyncio
 async def test_convert_generation_error_to_streaming_response():
     """test _convert_generation_error_to_streaming_response output"""

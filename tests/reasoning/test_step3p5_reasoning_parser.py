@@ -14,6 +14,7 @@ end_token = "</think>"
 REASONING_MODEL_NAME = "stepfun-ai/Step-3.5-Flash"
 
 
+# [中文注释] 加载Step-3.5-Flash分词器夹具
 @pytest.fixture(scope="module")
 def step3p5_tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -272,6 +273,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试Step-3.5推理提取：验证换行处理和多轮对话提示词的推理提取
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,
@@ -328,6 +330,7 @@ def test_reasoning(
         assert content == []
 
 
+# [中文注释] 测试Step-3.5流式解析是否正确删除</think>后的前导换行符
 def test_step3p5_streaming_drops_leading_newline(step3p5_tokenizer):
     parser_cls = ReasoningParserManager.get_reasoning_parser("step3p5")
     parser = parser_cls(step3p5_tokenizer)

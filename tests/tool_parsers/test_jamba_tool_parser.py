@@ -16,6 +16,7 @@ from vllm.tool_parsers.jamba_tool_parser import JambaToolParser
 MODEL = "ai21labs/Jamba-tiny-dev"
 
 
+# [中文注释] 加载Jamba工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def jamba_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL)

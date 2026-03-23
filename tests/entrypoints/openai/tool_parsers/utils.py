@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 工具解析器测试的通用工具模块，提供流式和非流式工具提取的辅助函数
+
 from collections.abc import Iterable
 
 from vllm.entrypoints.openai.chat_completion.protocol import ChatCompletionRequest
@@ -14,6 +16,7 @@ from vllm.tokenizers import TokenizerLike
 from vllm.tool_parsers import ToolParser
 
 
+# 流式工具调用重建器，将流式增量消息聚合还原为完整的工具调用列表
 class StreamingToolReconstructor:
     def __init__(self, assert_one_tool_per_delta: bool = True):
         self.tool_calls: list[ToolCall] = []
@@ -81,6 +84,7 @@ class StreamingToolReconstructor:
                 )
 
 
+# 统一的工具提取入口，根据 streaming 参数选择流式或非流式提取模式
 def run_tool_extraction(
     tool_parser: ToolParser,
     model_output: str,
@@ -102,6 +106,7 @@ def run_tool_extraction(
         return extracted.content, extracted.tool_calls
 
 
+# 非流式工具提取，直接从完整模型输出中提取工具调用信息
 def run_tool_extraction_nonstreaming(
     tool_parser: ToolParser,
     model_output: str,
@@ -111,6 +116,7 @@ def run_tool_extraction_nonstreaming(
     return tool_parser.extract_tool_calls(model_output, request)
 
 
+# 将字符串按分词器逐 token 拆分为增量文本序列，模拟流式输出
 def split_string_into_token_deltas(tokenizer: TokenizerLike, text: str) -> list[str]:
     # Split a string into a series of deltas using the provided tokenizer. Each
     # delta will be the string equivalent of a single token.
@@ -126,6 +132,7 @@ def split_string_into_token_deltas(tokenizer: TokenizerLike, text: str) -> list[
     return deltas
 
 
+# 流式工具提取，逐增量地解析模型输出并重建完整的工具调用
 def run_tool_extraction_streaming(
     tool_parser: ToolParser,
     model_deltas: Iterable[str],

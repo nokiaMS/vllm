@@ -7,6 +7,7 @@ from transformers import AutoModel
 from tests.models.utils import check_embeddings_close
 
 
+# 测试多向量检索模型（BGE-M3）：验证 vLLM 的 token 级别嵌入输出与 HuggingFace 的结果是否一致
 @pytest.mark.parametrize(
     "model",
     ["BAAI/bge-m3"],

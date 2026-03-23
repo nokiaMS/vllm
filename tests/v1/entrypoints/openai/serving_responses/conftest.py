@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件提供Responses API测试的fixture：Qwen3-1.7B模型服务器和异步客户端
 import pytest
 import pytest_asyncio
 

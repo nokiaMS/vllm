@@ -58,6 +58,7 @@ TRITON_MLA_ATTN = pytest.param(
     id="TRITON_MLA",
 )
 
+# [中文注释] 各模型的融合信息定义，包含模型名称和根据层数计算的期望融合匹配数
 # Models
 llama3_8b = ModelFusionInfo(
     model_name="meta-llama/Llama-3.1-8B-Instruct",

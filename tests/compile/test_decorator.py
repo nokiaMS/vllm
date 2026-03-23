@@ -24,6 +24,7 @@ BATCH_SIZE = 32
 MLP_SIZE = 128
 
 
+# 运行模型进行预热、CUDA Graph 捕获和重放的辅助函数
 @torch.inference_mode
 def run_model(
     vllm_config: VllmConfig, model: nn.Module, cudagraph_runtime_mode: CUDAGraphMode
@@ -68,6 +69,7 @@ def run_model(
 
 
 @pytest.mark.parametrize("use_inductor_graph_partition", [True, False])
+# 测试 @ignore_torch_compile 可覆盖 @support_torch_compile，以及反向继承恢复
 def test_ignore_torch_compile_decorator(use_inductor_graph_partition, monkeypatch):
     # disable compile cache so that we can count the number of compilations
     # appropriately
@@ -161,6 +163,7 @@ def test_ignore_torch_compile_decorator(use_inductor_graph_partition, monkeypatc
         run_model(vllm_config, mod_C, cudagraph_runtime_mode)
 
 
+# [中文注释] 仅当 kv_sharing_fast_prefill=True 时启用 torch.compile 的子模块
 # Only enable torch.compile if
 # vllm_config.cache_config.kv_sharing_fast_prefill=True
 @support_torch_compile(
@@ -179,6 +182,7 @@ class B(nn.Module):
         return x
 
 
+# [中文注释] 仅当 kv_sharing_fast_prefill=False 时启用 torch.compile 的父模块，包含两个 B 子模块
 # Only enable torch.compile if
 # vllm_config.cache_config.kv_sharing_fast_prefill=False
 @support_torch_compile(
@@ -200,6 +204,7 @@ class A(nn.Module):
 
 
 @pytest.mark.parametrize("use_inductor_graph_partition", [True, False])
+# 测试 @support_torch_compile(enable_if=...) 根据配置条件启用/禁用编译
 def test_conditional_compile_enable_if(use_inductor_graph_partition, monkeypatch):
     # disable compile cache so that we can count the number of compilations
     # appropriately

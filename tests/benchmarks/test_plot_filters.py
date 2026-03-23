@@ -15,6 +15,7 @@ from vllm.benchmarks.sweep.plot import (
 )
 
 
+# [中文注释] 测试绘图过滤器功能，包括等于、不等于、小于、大于等比较操作，以及inf边界情况和过滤字符串解析
 class TestPlotFilters:
     """Test PlotFilter functionality including 'inf' edge case."""
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试AWQ Triton内核的反量化和GEMM计算正确性
 """Tests for the AWQ Triton kernel.
 
 Run `pytest tests/kernels/quantization/test_awq_triton.py`.
@@ -18,6 +19,7 @@ from vllm.utils.torch_utils import set_random_seed
 device = "cuda"
 
 
+# 反转AWQ权重的位排列顺序以匹配标准布局
 def reverse_awq_order(t: torch.Tensor):
     bits = 4
     AWQ_REVERSE_ORDER = [0, 4, 1, 5, 2, 6, 3, 7]
@@ -34,6 +36,7 @@ def reverse_awq_order(t: torch.Tensor):
     return t
 
 
+# 使用PyTorch实现的AWQ反量化参考函数
 # qweights - [R     , C // 8], int32
 # scales   - [R // G, C     ], float16
 # zeros    - [R // G, C // 8], int32
@@ -68,6 +71,7 @@ def awq_dequantize_torch(
     return (iweights - zeros) * scales
 
 
+# 测试Triton AWQ反量化与PyTorch参考实现的数值一致性
 # qweights - [R     , C // 8], int32
 # scales   - [R // G, C     ], float16
 # zeros    - [R // G, C // 8], int32
@@ -115,6 +119,7 @@ def test_dequantize(qweight_rows, qweight_cols, group_size):
     torch.testing.assert_close(iweights_triton, iweights_torch)
 
 
+# 测试Triton AWQ GEMM在不同batch大小和splitK配置下的正确性
 # input   - [N, K]
 # qweight - [K, M // 8]
 # qzeros  - [K // G, M // 8]

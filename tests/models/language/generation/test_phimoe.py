@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试PhiMoE模型的路由函数正确性和生成输出的logprobs匹配
+
 import pytest
 import torch
 

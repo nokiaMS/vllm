@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 WebSocket 实时音频转录 API：多块流式输入和空提交不崩溃引擎]
 
 import asyncio
 import base64
@@ -28,6 +29,7 @@ MISTRAL_FORMAT_ARGS = [
 MODEL_NAME = "mistralai/Voxtral-Mini-4B-Realtime-2602"
 
 
+# [将 HTTP URL 转换为 WebSocket URL]
 def _get_websocket_url(server: RemoteOpenAIServer) -> str:
     """Convert HTTP URL to WebSocket URL for realtime endpoint."""
     http_url = server.url_root
@@ -35,17 +37,20 @@ def _get_websocket_url(server: RemoteOpenAIServer) -> str:
     return f"{ws_url}/v1/realtime"
 
 
+# [从 WebSocket 接收并解析 JSON 事件]
 async def receive_event(ws, timeout: float = 60.0) -> dict:
     """Receive and parse JSON event from WebSocket."""
     message = await asyncio.wait_for(ws.recv(), timeout=timeout)
     return json.loads(message)
 
 
+# [向 WebSocket 发送 JSON 事件]
 async def send_event(ws, event: dict) -> None:
     """Send JSON event to WebSocket."""
     await ws.send(json.dumps(event))
 
 
+# [将音频文件分割为约 0.1 秒的 base64 编码块]
 @pytest.fixture
 def mary_had_lamb_audio_chunks() -> list[str]:
     """Audio split into ~1 second chunks for streaming."""
@@ -66,6 +71,7 @@ def mary_had_lamb_audio_chunks() -> list[str]:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# [测试多块音频流式输入后提交并验证转录结果]
 async def test_multi_chunk_streaming(
     model_name, mary_had_lamb_audio_chunks, rocm_aiter_fa_attention
 ):
@@ -162,6 +168,7 @@ async def test_multi_chunk_streaming(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# [测试空提交（无音频数据）不会导致引擎崩溃，后续请求仍可正常处理]
 async def test_empty_commit_does_not_crash_engine(
     model_name, mary_had_lamb_audio_chunks, rocm_aiter_fa_attention
 ):

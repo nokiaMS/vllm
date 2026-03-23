@@ -33,6 +33,7 @@ from vllm.utils.deep_gemm import per_block_cast_to_fp8
 from vllm.utils.math_utils import round_up
 
 
+# [中文注释] 将权重交错排列，适配Triton MoE / SwiGLU内核的布局要求
 def shuffle_weight(w: torch.Tensor) -> torch.Tensor:
     """Fold weights to adjacent locations for Triton MoE / SwiGLU kernel layout."""
     shape = w.shape
@@ -43,6 +44,7 @@ def shuffle_weight(w: torch.Tensor) -> torch.Tensor:
     return stacked.reshape(shape)
 
 
+# [中文注释] 创建虚拟MoE配置对象，用于测试中快速构建FusedMoEConfig
 def make_dummy_moe_config(
     num_experts: int = 1,
     experts_per_token: int = 1,
@@ -72,6 +74,7 @@ def make_dummy_moe_config(
     )
 
 
+# [中文注释] Triton MoE封装函数：使用TritonExperts和标准PrepareFinalize运行MoE
 def triton_moe(
     a: torch.Tensor,
     w1: torch.Tensor,
@@ -99,6 +102,7 @@ def triton_moe(
     return fused_experts(a, w1, w2, topk_weight, topk_ids, quant_config=quant_config)
 
 
+# [中文注释] 批量MoE封装函数：使用BatchedTritonExperts和BatchedPrepareAndFinalize运行MoE
 def batched_moe(
     a: torch.Tensor,
     w1: torch.Tensor,
@@ -153,6 +157,7 @@ def batched_moe(
     )
 
 
+# [中文注释] 朴素批量MoE封装函数：使用NaiveBatchedExperts运行MoE（用于对比验证）
 def naive_batched_moe(
     a: torch.Tensor,
     w1: torch.Tensor,
@@ -206,6 +211,7 @@ def naive_batched_moe(
     )
 
 
+# [中文注释] 将缩放因子按块大小分割，用于块量化测试
 def chunk_scales(
     scales: torch.Tensor | None, start: int, end: int
 ) -> torch.Tensor | None:
@@ -217,6 +223,7 @@ def chunk_scales(
     return None
 
 
+# [中文注释] 创建量化测试激活：生成专家分组的量化激活张量和缩放因子
 def make_quantized_test_activations(
     E: int,
     m: int,
@@ -248,6 +255,7 @@ def make_quantized_test_activations(
     return a, a_q, a_scale
 
 
+# [中文注释] 对MoE权重进行量化：支持FP8逐张量/逐通道/块量化和INT8量化
 def moe_quantize_weights(
     w: torch.Tensor,
     w_s: torch.Tensor | None,
@@ -293,6 +301,7 @@ def moe_quantize_weights(
     return w, w_s, w_gs
 
 
+# [中文注释] 创建单个测试权重：生成随机权重并可选量化（FP8/INT8/NVFP4）
 def make_test_weight(
     e: int,
     rows: int,
@@ -335,6 +344,7 @@ def make_test_weight(
     return w_16, w, w_s, w_gs
 
 
+# [中文注释] 创建完整MoE测试权重对（w1和w2），包含量化缩放因子
 def make_test_weights(
     e: int,
     n: int,
@@ -362,6 +372,7 @@ def make_test_weights(
     )
 
 
+# [中文注释] 逐token将输入转换为FP8格式，返回量化值和缩放因子
 def per_token_cast_to_fp8(
     x: torch.Tensor, block_size: int = 128
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -375,6 +386,7 @@ def per_token_cast_to_fp8(
     return fp8_data.view(m, n + pad_size)[:, :n], (x_amax / 448.0).view(m, -1)
 
 
+# [中文注释] 创建测试用量化配置对象（FusedMoEQuantConfig）
 def make_test_quant_config(
     e: int,
     n: int,
@@ -428,6 +440,7 @@ def make_test_quant_config(
     )
 
 
+# [中文注释] 融合MoE测试封装：使用fused_experts运行完整的TopK路由和专家计算
 def fused_moe(
     hidden_states: torch.Tensor,
     w1: torch.Tensor,
@@ -455,6 +468,7 @@ def fused_moe(
 
 
 # CustomOp?
+# [中文注释] 基准矩阵乘法模块：使用torch.mm实现简单的线性变换
 class BaselineMM(torch.nn.Module):
     def __init__(
         self,
@@ -469,6 +483,7 @@ class BaselineMM(torch.nn.Module):
         return torch.mm(a.to(dtype=torch.float32), self.b).to(self.out_dtype), None
 
 
+# [中文注释] 测试MLP模块：两层线性变换+SiLU门控激活，模拟MoE中的单个专家
 class TestMLP(torch.nn.Module):
     def __init__(
         self,
@@ -488,6 +503,7 @@ class TestMLP(torch.nn.Module):
         return x
 
 
+# [中文注释] 创建朴素共享专家层：使用TestMLP模拟共享专家
 def make_naive_shared_experts(
     N: int,
     K: int,
@@ -498,6 +514,7 @@ def make_naive_shared_experts(
     return TestMLP(w1, w2, out_dtype=in_dtype)
 
 
+# [中文注释] 真实MLP模块：使用完整的FusedMoE权重结构实现单专家MLP
 class RealMLP(torch.nn.Module):
     def __init__(
         self,
@@ -564,6 +581,7 @@ class RealMLP(torch.nn.Module):
         return x
 
 
+# [中文注释] 创建真实共享专家层：使用RealMLP模拟生产环境中的共享专家
 def make_shared_experts(
     N: int,
     K: int,
@@ -600,6 +618,7 @@ def make_shared_experts(
         torch.set_default_dtype(old_dtype)
 
 
+# [中文注释] 模块化Triton融合MoE封装：使用模块化内核架构运行完整MoE流程
 def modular_triton_fused_moe(
     moe_config: FusedMoEConfig,
     quant_config: FusedMoEQuantConfig,

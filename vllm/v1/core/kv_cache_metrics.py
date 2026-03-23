@@ -13,6 +13,13 @@ if TYPE_CHECKING:
 from vllm.v1.metrics.stats import KVCacheEvictionEvent
 
 
+# [中文注释] 单个 KV cache block 的生命周期指标。
+#   记录 block 的诞生时间 (birth_time_ns)、最后访问时间 (last_access_ns)
+#   和最近 4 次访问的时间戳 (access_history)。
+#   用于在 block 被驱逐时生成 KVCacheEvictionEvent，包含：
+#     - lifetime_seconds: block 从创建到驱逐的总存活时长
+#     - idle_seconds: 最后一次访问到驱逐的空闲时长
+#     - reuse_gaps_seconds: 连续两次访问之间的间隔列表
 class BlockMetricsState:
     """Tracks lifecycle metrics for a single KV cache block."""
 
@@ -43,6 +50,13 @@ class BlockMetricsState:
         return [(history[i] - history[i - 1]) / 1e9 for i in range(1, len(history))]
 
 
+# [中文注释] KV Cache 驻留指标的采样收集器。
+#   通过 sample_rate 控制采样比例（默认 1%），避免对所有 block 追踪指标的开销。
+#   核心流程：
+#     on_block_allocated → 以 sample_rate 概率开始追踪该 block
+#     on_block_accessed  → 更新已追踪 block 的访问记录
+#     on_block_evicted   → 生成 KVCacheEvictionEvent 并加入 _eviction_events
+#     drain_events()     → 取走并清空事件队列，供 metrics reporter 上报
 class KVCacheMetricsCollector:
     """Collects KV cache residency metrics with sampling."""
 

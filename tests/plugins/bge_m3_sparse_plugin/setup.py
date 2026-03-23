@@ -3,6 +3,7 @@
 
 from setuptools import setup
 
+# BGE-M3 稀疏嵌入插件的安装配置
 setup(
     name="bge-m3-sparse-plugin",
     version="0.1",

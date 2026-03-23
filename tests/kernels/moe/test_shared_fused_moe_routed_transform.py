@@ -17,6 +17,7 @@ from vllm.model_executor.layers.fused_moe.shared_fused_moe import SharedFusedMoE
 from vllm.utils.torch_utils import is_torch_equal_or_newer
 
 
+# [中文注释] 简单线性变换层：模拟潜在MoE中的latent投影
 class SimpleLinear(nn.Module):
     """A simple linear transform mimicking latent projection in latent MoE."""
 
@@ -30,6 +31,7 @@ class SimpleLinear(nn.Module):
         return nn.functional.linear(x, self.weight)
 
 
+# [中文注释] 简单共享专家MLP：模拟共享专家的两层MLP结构
 class SimpleSharedExperts(nn.Module):
     """A simple 2-layer MLP mimicking shared experts."""
 
@@ -65,6 +67,7 @@ def setup_cuda():
     is_torch_equal_or_newer("2.10.0"),
     reason="Test fails with PyTorch 2.10.0 see: https://github.com/vllm-project/vllm/issues/33995",
 )
+# [中文注释] 测试SharedFusedMoE内部路由输入变换与外部手动变换的结果一致性
 def test_routed_input_transform_inside_vs_outside(
     num_tokens: int,
     hidden_size: int,

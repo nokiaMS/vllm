@@ -25,11 +25,14 @@ T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+# 恒等函数，直接返回第一个参数，常用作默认回调或占位函数
 def identity(value: T, **kwargs) -> T:
     """Returns the first provided value."""
     return value
 
 
+# 装饰器：确保被装饰的函数只执行一次
+# 使用线程锁实现线程安全的双重检查锁定（double-checked locking）模式
 def run_once(f: Callable[P, None]) -> Callable[P, None]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
         if wrapper.has_run:  # type: ignore[attr-defined]
@@ -45,6 +48,8 @@ def run_once(f: Callable[P, None]) -> Callable[P, None]:
     return wrapper
 
 
+# 装饰器：标记函数的位置参数为已弃用
+# 当调用者通过位置方式传递 start_index 之后的参数时发出弃用警告
 def deprecate_args(
     start_index: int,
     is_deprecated: bool | Callable[[], bool] = True,
@@ -85,6 +90,8 @@ def deprecate_args(
     return wrapper
 
 
+# 装饰器：标记函数的指定关键字参数为已弃用
+# 当调用者传递了被标记的关键字参数时发出弃用警告
 def deprecate_kwargs(
     *kws: str,
     is_deprecated: bool | Callable[[], bool] = True,
@@ -120,6 +127,9 @@ def deprecate_kwargs(
     return wrapper
 
 
+# 检查某个关键字是否是可调用对象的有效关键字参数
+# 支持检查是否仅限关键字参数、是否允许通过 **kwargs 传递
+# 结果使用 LRU 缓存避免重复的签名解析开销
 @lru_cache
 def supports_kw(
     callable: Callable[..., object],
@@ -175,6 +185,9 @@ def supports_kw(
     return False
 
 
+# 过滤覆盖参数字典，仅保留可调用对象接受的关键字参数
+# 主要用于多模态模型中处理用户提供的处理器选项覆盖
+# 不匹配的参数会被丢弃并记录警告日志
 def get_allowed_kwarg_only_overrides(
     callable: Callable[..., object],
     overrides: Mapping[str, object] | None,

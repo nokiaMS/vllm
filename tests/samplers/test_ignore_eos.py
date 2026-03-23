@@ -14,6 +14,7 @@ from vllm import SamplingParams
 MODELS = ["distilbert/distilgpt2", "meta-llama/Llama-3.2-1B"]
 
 
+# [中文注释] 测试ignore_eos参数使生成长度严格等于max_tokens
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("dtype", ["half"])
 @pytest.mark.parametrize("max_tokens", [512])

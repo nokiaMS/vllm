@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [OpenAI 测试工具函数：流式响应累积、Harmony 消息验证和聊天响应验证]
 import json
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -15,6 +16,7 @@ from vllm.entrypoints.openai.engine.protocol import (
 )
 
 
+# [将流式 SSE 块累积为完整的 ChatCompletionResponse]
 async def accumulate_streaming_response(
     stream_generator: AsyncGenerator[str, None],
 ) -> ChatCompletionResponse:
@@ -140,6 +142,7 @@ async def accumulate_streaming_response(
     return response
 
 
+# [验证 Harmony 消息列表的角色、通道、内容和工具定义]
 def verify_harmony_messages(
     messages: list[Any], expected_messages: list[dict[str, Any]]
 ):
@@ -163,6 +166,7 @@ def verify_harmony_messages(
             assert actual_tools == expected["tool_definitions"]
 
 
+# [验证聊天补全响应的内容、推理和工具调用]
 def verify_chat_response(
     response: ChatCompletionResponse,
     content: str | None = None,

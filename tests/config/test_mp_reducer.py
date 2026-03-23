@@ -8,6 +8,7 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.v1.engine.async_llm import AsyncLLM
 
 
+# [中文注释] 测试AsyncLLM实例化时多进程reducer是否正确注册VllmConfig，防止回归问题(PR #18640)
 def test_mp_reducer():
     """
     Test that _reduce_config reducer is registered when AsyncLLM is instantiated

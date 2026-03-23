@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试使用 prompt_embeds 进行补全：单条/批量/流式/混合文本嵌入、logprobs 和错误处理]
 
 import base64
 import io
@@ -23,6 +24,7 @@ LORA_SERVING_MODEL_NAME = "opt125m-lora"
 CONFIG = AutoConfig.from_pretrained(MODEL_NAME)
 
 
+# [构建带 LoRA 和 prompt_embeds 支持的服务器默认参数]
 @pytest.fixture(scope="module", params=["use-lora"])
 def default_server_args(
     request: pytest.FixtureRequest, opt125_lora_files: str
@@ -68,12 +70,14 @@ EXAMPLE_PROMPTS = [
 ]
 
 
+# [将 PyTorch 嵌入张量编码为 base64 字符串]
 def _encode_embeds(embeds: torch.Tensor):
     buffer = io.BytesIO()
     torch.save(embeds, buffer)
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
+# [使用 HF 模型生成示例提示嵌入向量]
 @pytest.fixture(scope="module")
 def example_prompt_embeds(hf_runner):
     """Create example embeddings and return them as base64 encoded string."""
@@ -83,6 +87,7 @@ def example_prompt_embeds(hf_runner):
     return [_encode_embeds(item) for item in example_embeddings]
 
 
+# [创建支持 prompt_embeds 的远程服务器（含前端多进程模式切换）]
 @pytest.fixture(scope="module", params=["", "--disable-frontend-multiprocessing"])
 def server_with_prompt_embeds(default_server_args, request):
     if request.param:
@@ -100,6 +105,7 @@ async def client_with_prompt_embeds(server_with_prompt_embeds):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME, LORA_SERVING_MODEL_NAME])
+# [测试使用 prompt_embeds 的单条/批量/流式/混合补全功能]
 async def test_completions_with_prompt_embeds(
     example_prompt_embeds,
     client_with_prompt_embeds: openai.AsyncOpenAI,
@@ -209,6 +215,7 @@ async def test_completions_with_prompt_embeds(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME, LORA_SERVING_MODEL_NAME])
+# [测试使用无效 prompt_embeds 时应返回 BadRequest 错误]
 async def test_completions_errors_with_prompt_embeds(
     client_with_prompt_embeds: openai.AsyncOpenAI, model_name: str
 ):
@@ -226,6 +233,7 @@ async def test_completions_errors_with_prompt_embeds(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("logprobs_arg", [1, 0])
 @pytest.mark.parametrize("model_name", [MODEL_NAME, LORA_SERVING_MODEL_NAME])
+# [测试 prompt_embeds 与 logprobs 参数的组合使用]
 async def test_completions_with_logprobs_and_prompt_embeds(
     example_prompt_embeds,
     client_with_prompt_embeds: openai.AsyncOpenAI,
@@ -278,6 +286,7 @@ async def test_completions_with_logprobs_and_prompt_embeds(
 
 
 @pytest.mark.asyncio
+# [测试 prompt_embeds 与 prompt_logprobs 不兼容时应报错]
 async def test_prompt_logprobs_raises_error(
     example_prompt_embeds,
     client_with_prompt_embeds: openai.AsyncOpenAI,
@@ -295,6 +304,7 @@ async def test_prompt_logprobs_raises_error(
 
 
 @pytest.mark.asyncio
+# [测试空 prompt_embeds 列表不影响正常文本补全]
 async def test_empty_prompt_embeds(
     client_with_prompt_embeds: openai.AsyncOpenAI,
 ) -> None:

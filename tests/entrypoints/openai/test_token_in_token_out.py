@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试跳过 tokenizer 初始化的 token-in-token-out 模式：验证 token_ids 和 prompt_token_ids]
 
 import os
 import tempfile
@@ -39,6 +40,7 @@ def server():
 
 
 @pytest.mark.asyncio
+# [测试 token 输入输出模式下 return_token_ids 与 prompt 的一致性]
 async def test_token_in_token_out_and_logprobs(server):
     """
     Test token-in-token-out and token_ids align with prompt_logprobs

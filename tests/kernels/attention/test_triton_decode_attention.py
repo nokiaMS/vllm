@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Triton解码注意力内核在不同batch、序列长度、头配置和页大小下的正确性
 
 import pytest
 import torch
@@ -8,6 +9,7 @@ from vllm.utils.math_utils import cdiv
 from vllm.v1.attention.ops.triton_decode_attention import decode_attention_fwd
 
 
+# 测试Triton解码注意力内核在不同页大小下的输出一致性
 @pytest.mark.parametrize("B", [3, 5])
 @pytest.mark.parametrize("L", [1027, 1025])
 @pytest.mark.parametrize("H_Q", [32])
@@ -92,6 +94,7 @@ def test_decode_attention(B, L, H_Q, H_KV, D_QK, D_V, CACHE_SIZE, PAGE_SIZE):
     assert torch.allclose(o, o1)
 
 
+# 将BF16张量量化为FP8 e4m3fn格式并返回per-tensor缩放因子
 def _quantize_to_fp8(tensor: torch.Tensor):
     """Quantize a BF16 tensor to FP8 e4m3fn with per-tensor scale.
 
@@ -108,6 +111,7 @@ def _quantize_to_fp8(tensor: torch.Tensor):
     return fp8_tensor, scale
 
 
+# 测试FP8 KV缓存路径下Triton解码注意力内核与BF16参考输出的一致性
 @pytest.mark.parametrize("B", [3])
 @pytest.mark.parametrize("L", [1025])
 @pytest.mark.parametrize("H_Q", [32])

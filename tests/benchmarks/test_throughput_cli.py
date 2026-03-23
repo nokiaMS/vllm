@@ -7,6 +7,7 @@ import pytest
 MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
 
 
+# [中文注释] 测试vllm bench throughput CLI命令，使用Llama模型验证吞吐量基准测试是否正常运行
 @pytest.mark.benchmark
 def test_bench_throughput():
     command = [

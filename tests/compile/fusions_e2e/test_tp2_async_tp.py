@@ -36,6 +36,7 @@ pytestmark = pytest.mark.skipif(not current_platform.is_cuda(), reason="Only tes
 @pytest.mark.parametrize("n_layers", [4])
 @pytest.mark.parametrize("custom_ops", custom_ops_combos("quant_fp8", "rms_norm"))
 @pytest.mark.parametrize("inductor_graph_partition", INDUCTOR_GRAPH_PARTITION)
+# TP=2 下 Async TP + FP8 量化融合 E2E 测试（含序列并行）
 def test_tp2_async_tp_fp8_fusions(
     model_name: str,
     matches_fn: Callable[[int], Matches],
@@ -104,6 +105,7 @@ def test_tp2_async_tp_fp8_fusions(
 @pytest.mark.parametrize("n_layers", [4])
 @pytest.mark.parametrize("custom_ops", custom_ops_combos("rms_norm"))
 @pytest.mark.parametrize("inductor_graph_partition", INDUCTOR_GRAPH_PARTITION)
+# TP=2 下无量化的 Async TP 融合 E2E 测试
 def test_tp2_async_tp_fusions(
     model_name: str,
     matches_fn: Callable[[int], Matches],
@@ -161,6 +163,7 @@ def test_tp2_async_tp_fusions(
 @pytest.mark.parametrize("n_layers", [4])
 @pytest.mark.parametrize("custom_ops", custom_ops_combos("quant_fp8", "rms_norm"))
 @pytest.mark.parametrize("inductor_graph_partition", INDUCTOR_GRAPH_PARTITION)
+# TP=2 下同时启用序列并行 + AllReduce+RMS + Async TP + FP8 量化的融合测试
 def test_tp2_sp_ar_rms_fp8_fusions(
     model_name: str,
     matches_fn: Callable[[int], Matches],
@@ -230,6 +233,7 @@ def test_tp2_sp_ar_rms_fp8_fusions(
 @pytest.mark.parametrize("n_layers", [4])
 @pytest.mark.parametrize("custom_ops", custom_ops_combos("rms_norm"))
 @pytest.mark.parametrize("inductor_graph_partition", INDUCTOR_GRAPH_PARTITION)
+# TP=2 下无量化的序列并行 + AllReduce+RMS + Async TP 融合测试
 def test_tp2_sp_ar_rms_fusions(
     model_name: str,
     matches_fn: Callable[[int], Matches],

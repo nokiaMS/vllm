@@ -13,6 +13,10 @@ from vllm.v1.pool.late_interaction import (
 )
 
 
+# 后交互（Late Interaction）评分运行器，用于ColBERT等后交互检索模型
+# 设计思路：维护查询缓存，支持一个查询对多个文档的MaxSim评分
+# 工作流程：1) 缓存查询请求的token级嵌入  2) 文档请求完成时，
+# 从缓存取出对应查询嵌入，计算MaxSim相似度分数
 class LateInteractionRunner:
     """Worker-side state and postprocessing for late-interaction scoring."""
 
@@ -29,6 +33,7 @@ class LateInteractionRunner:
         self._query_uses.clear()
         self._doc_query_keys.clear()
 
+    # 注册新请求：若为文档评分请求，记录其关联的查询键
     def register_request(
         self, req_id: str, pooling_params: PoolingParams | None
     ) -> None:
@@ -38,12 +43,16 @@ class LateInteractionRunner:
         else:
             self._doc_query_keys.pop(req_id, None)
 
+    # 请求完成回调：释放已完成文档请求对应的查询引用计数
     def on_requests_finished(self, finished_req_ids: Iterable[str]) -> None:
         for req_id in finished_req_ids:
             query_key = self._doc_query_keys.pop(req_id, None)
             if query_key is not None:
                 self._release_query_use(query_key)
 
+    # 后处理池化输出：对已完成的请求执行后交互评分逻辑
+    # 查询请求：将嵌入存入缓存，返回零值占位
+    # 文档请求：从缓存取查询嵌入，计算MaxSim分数替换原始输出
     def postprocess_pooler_output(
         self,
         raw_pooler_output: PoolerOutput,
@@ -126,6 +135,7 @@ class LateInteractionRunner:
 
         return outputs
 
+    # 释放查询引用计数：计数归零时从缓存中删除查询嵌入以释放GPU内存
     def _release_query_use(self, query_key: str) -> None:
         remaining = self._query_uses.get(query_key, 1) - 1
         if remaining <= 0:
@@ -134,6 +144,7 @@ class LateInteractionRunner:
         else:
             self._query_uses[query_key] = remaining
 
+    # 解析池化参数中的后交互元数据：提取模式（缓存查询/文档评分）、查询键和使用次数
     @staticmethod
     def _parse_late_interaction_meta(
         pooling_params: PoolingParams | None,

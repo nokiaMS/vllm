@@ -17,6 +17,7 @@ from tests.tracing.conftest import (  # noqa: F401
 )
 
 
+# [中文注释] 测试OpenTelemetry追踪集成：验证LLM生成请求的追踪span属性正确性
 def test_traces(
     monkeypatch: pytest.MonkeyPatch,
     trace_service: FakeTraceService,

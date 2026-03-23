@@ -4,6 +4,7 @@
 from vllm.config.pooler import PoolerConfig
 
 
+# 测试将多模态模型（Idefics3）转换为分类模式，验证分类输出的概率维度是否正确
 def test_idefics_multimodal(
     vllm_runner,
 ) -> None:
@@ -31,6 +32,7 @@ def test_idefics_multimodal(
             assert len(output.outputs.probs) == 2
 
 
+# 辅助函数：更新模型配置，将架构替换为 Gemma3 序列分类模型，并设置分类标签映射
 def update_config(config):
     text_config = config.get_text_config()
     text_config.update(
@@ -50,6 +52,7 @@ def update_config(config):
     return config
 
 
+# 测试 Gemma3 多模态分类：使用图片和文本进行家具分类，验证分类概率的正确性
 def test_gemma_multimodal(
     vllm_runner,
 ) -> None:

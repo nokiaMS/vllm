@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 端到端测试：验证调度器在并发部分预填充场景下的正确性
 
 import pytest
 

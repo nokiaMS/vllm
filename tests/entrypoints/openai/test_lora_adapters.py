@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 LoRA 适配器的动态加载/替换/删除：模型谱系、并发加载、错误处理和 beam search]
 
 import asyncio
 import json
@@ -31,6 +32,7 @@ BADREQUEST_CASES = [
 ]
 
 
+# [创建带 LoRA 模块和运行时动态加载支持的服务器]
 @pytest.fixture(scope="module", params=[True])
 def server_with_lora_modules_json(request, qwen3_lora_files):
     # Define the json format LoRA module configurations
@@ -73,6 +75,7 @@ async def client(server_with_lora_modules_json):
 
 
 @pytest.mark.asyncio
+# [测试静态 LoRA 模型的谱系信息（root/parent/id）]
 async def test_static_lora_lineage(client: openai.AsyncOpenAI, qwen3_lora_files):
     models = await client.models.list()
     models = models.data
@@ -87,6 +90,7 @@ async def test_static_lora_lineage(client: openai.AsyncOpenAI, qwen3_lora_files)
 
 
 @pytest.mark.asyncio
+# [测试动态加载 LoRA 适配器后的谱系信息]
 async def test_dynamic_lora_lineage(client: openai.AsyncOpenAI, qwen3_lora_files):
     response = await client.post(
         "load_lora_adapter",
@@ -105,6 +109,7 @@ async def test_dynamic_lora_lineage(client: openai.AsyncOpenAI, qwen3_lora_files
 
 
 @pytest.mark.asyncio
+# [测试同名 LoRA 适配器的就地替换：从 meow 替换为 woof]
 async def test_load_lora_adapter_with_same_name_replaces_inplace(
     client: openai.AsyncOpenAI, qwen3_meowing_lora_files, qwen3_woofing_lora_files
 ):
@@ -151,6 +156,7 @@ async def test_load_lora_adapter_with_same_name_replaces_inplace(
 
 
 @pytest.mark.asyncio
+# [测试 load_inplace=False 时重复加载同名适配器应返回错误]
 async def test_load_lora_adapter_with_load_inplace_false_errors(
     client: openai.AsyncOpenAI, qwen3_meowing_lora_files
 ):
@@ -181,6 +187,7 @@ async def test_load_lora_adapter_with_load_inplace_false_errors(
 
 
 @pytest.mark.asyncio
+# [测试加载不存在的 LoRA 路径应返回 NotFound 错误]
 async def test_dynamic_lora_not_found(client: openai.AsyncOpenAI):
     with pytest.raises(openai.NotFoundError):
         await client.post(
@@ -191,6 +198,7 @@ async def test_dynamic_lora_not_found(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [测试加载包含无效 JSON 配置的 LoRA 文件应返回内部错误]
 async def test_dynamic_lora_invalid_files(client: openai.AsyncOpenAI, tmp_path):
     invalid_files = tmp_path / "invalid_files"
     invalid_files.mkdir()
@@ -206,6 +214,7 @@ async def test_dynamic_lora_invalid_files(client: openai.AsyncOpenAI, tmp_path):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_name,config_change,expected_error", BADREQUEST_CASES)
+# [测试不满足 LoRA 约束（rank/dora/modules_to_save）时的 BadRequest 错误]
 async def test_dynamic_lora_badrequests(
     client: openai.AsyncOpenAI,
     tmp_path,
@@ -241,6 +250,7 @@ async def test_dynamic_lora_badrequests(
 
 
 @pytest.mark.asyncio
+# [测试并发动态注册和推理多个 LoRA 适配器以验证 LRU 缓存机制]
 async def test_multiple_lora_adapters(
     client: openai.AsyncOpenAI, tmp_path, qwen3_lora_files
 ):
@@ -273,6 +283,7 @@ async def test_multiple_lora_adapters(
 
 
 @pytest.mark.asyncio
+# [测试加载无效适配器不会影响其他正常 LoRA 请求的执行]
 async def test_loading_invalid_adapters_does_not_break_others(
     client: openai.AsyncOpenAI, tmp_path, qwen3_lora_files
 ):
@@ -339,6 +350,7 @@ async def test_loading_invalid_adapters_does_not_break_others(
 
 
 @pytest.mark.asyncio
+# [测试异步 beam search 与 LoRA 适配器的兼容性]
 async def test_beam_search_with_lora_adapters(
     client: openai.AsyncOpenAI,
     tmp_path,

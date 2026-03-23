@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试视觉模型的 image_embeds 输入：单内容池化和多内容聊天补全（含交错文本）]
 
 import base64
 
@@ -16,6 +17,7 @@ from ...utils import RemoteOpenAIServer
 @pytest.mark.parametrize(
     "model_name", ["ibm-nasa-geospatial/Prithvi-EO-2.0-300M-TL-Sen1Floods11"]
 )
+# [测试单个 image_embeds 内容的池化端点返回正确维度的嵌入]
 def test_single_content(model_name: str):
     args = [
         "--runner",
@@ -68,6 +70,7 @@ def test_single_content(model_name: str):
 
 
 @pytest.mark.parametrize("model_name", ["Qwen/Qwen3-VL-2B-Instruct"])
+# [测试多个 image_embeds 和交错文本内容的聊天补全]
 def test_multi_content(model_name: str):
     args = [
         "--enforce-eager",

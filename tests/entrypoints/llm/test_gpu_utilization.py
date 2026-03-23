@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 gpu_memory_utilization 参数为每实例独立限制，多个 LLM 实例可共存
+
 from vllm import LLM, SamplingParams
 
 
+# 测试创建多个 LLM 实例各自使用独立的 GPU 内存配额
 def test_gpu_memory_utilization():
     prompts = [
         "Hello, my name is",

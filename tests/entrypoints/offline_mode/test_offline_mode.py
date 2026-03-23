@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Tests for HF_HUB_OFFLINE mode"""
 
+# 测试 HuggingFace Hub 离线模式：验证在禁用网络连接后仍可通过缓存文件构建 LLM
+
 import dataclasses
 import importlib
 import sys
@@ -56,6 +58,7 @@ MODEL_CONFIGS = [
 ]
 
 
+# 预先缓存所有测试模型文件（模块级别，仅执行一次）
 @pytest.fixture(scope="module")
 def cache_models():
     # Cache model files first
@@ -101,6 +104,7 @@ def test_offline_mode(monkeypatch: pytest.MonkeyPatch):
             _re_import_modules()
 
 
+# 辅助函数：重新导入 huggingface_hub 和 transformers 模块以应用环境变量变更
 def _re_import_modules():
     hf_hub_module_names = [k for k in sys.modules if k.startswith("huggingface_hub")]
     transformers_module_names = [

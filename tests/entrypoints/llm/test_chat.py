@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 LLM.chat() 接口的功能：单轮/多轮对话、多图输入、BOS token 去重、
+# 思考模式切换以及批量失败后的请求清理
+
 import weakref
 
 import pytest
@@ -11,6 +15,7 @@ from vllm.sampling_params import SamplingParams
 from ..openai.test_vision import TEST_IMAGE_ASSETS
 
 
+# 创建用于文本聊天测试的 LLM 实例 fixture
 @pytest.fixture(scope="function")
 def text_llm():
     # pytest caches the fixture so we use weakref.proxy to
@@ -24,6 +29,7 @@ def text_llm():
     cleanup_dist_env_and_memory()
 
 
+# 创建小 max_model_len 的 LLM 实例，用于触发长度错误以测试失败清理
 @pytest.fixture(scope="function")
 def llm_for_failure_test():
     """
@@ -47,6 +53,7 @@ def llm_for_failure_test():
     cleanup_dist_env_and_memory()
 
 
+# 测试基本单轮聊天功能
 def test_chat(text_llm):
     prompt1 = "Explain the concept of entropy."
     messages = [
@@ -57,6 +64,7 @@ def test_chat(text_llm):
     assert len(outputs) == 1
 
 
+# 测试批量多轮对话功能
 def test_multi_chat(text_llm):
     prompt1 = "Explain the concept of entropy."
     prompt2 = "Explain what among us is."
@@ -77,6 +85,7 @@ def test_multi_chat(text_llm):
     assert len(outputs) == 2
 
 
+# 创建支持视觉输入的 LLM 实例 fixture
 @pytest.fixture(scope="function")
 def vision_llm():
     # pytest caches the fixture so we use weakref.proxy to
@@ -101,6 +110,7 @@ def vision_llm():
 @pytest.mark.parametrize(
     "image_urls", [[TEST_IMAGE_ASSETS[0], TEST_IMAGE_ASSETS[1]]], indirect=True
 )
+# 测试多图输入的聊天功能
 def test_chat_multi_image(vision_llm, image_urls: list[str]):
     messages = [
         {
@@ -140,6 +150,7 @@ def test_llm_chat_tokenization_no_double_bos(text_llm):
     assert prompt_token_ids[1] != bos_token, "Double BOS"
 
 
+# 创建支持思考模式的 Qwen3 LLM 实例 fixture
 @pytest.fixture(scope="function")
 def thinking_llm():
     # pytest caches the fixture so we use weakref.proxy to
@@ -159,6 +170,7 @@ def thinking_llm():
 
 
 @pytest.mark.parametrize("enable_thinking", [True, False])
+# 测试通过 chat_template_kwargs 控制思考模式的开关
 def test_chat_extra_kwargs(thinking_llm, enable_thinking):
     messages = [
         {"role": "system", "content": "You are a helpful assistant"},

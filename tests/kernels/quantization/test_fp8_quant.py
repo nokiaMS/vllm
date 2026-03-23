@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FP8动态量化内核（逐张量和逐token量化）的正确性
 
 import pytest
 import torch
@@ -24,6 +25,7 @@ SCALE_UBS = [True, False]
 SEEDS = [0]
 
 
+# 对FP8量化操作执行opcheck验证（支持静态/动态/逐token模式）
 def opcheck_fp8_quant(
     output,
     input,
@@ -54,6 +56,7 @@ def opcheck_fp8_quant(
         opcheck(torch.ops._C.dynamic_scaled_fp8_quant, (output, input, scale))
 
 
+# 测试动态逐token FP8量化的数值正确性和opcheck一致性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -85,6 +88,7 @@ def test_dynamic_per_token_fp8_quant(
     opcheck_fp8_quant(ops_out, x, None, scale_ub, use_per_token_if_dynamic=True)
 
 
+# 测试动态逐张量FP8量化的数值正确性和opcheck一致性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES)
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -108,6 +112,7 @@ def test_dynamic_per_tensor_fp8_quant(
     opcheck_fp8_quant(ops_out, x)
 
 
+# 回归测试：大激活张量下int32索引溢出场景的FP8量化
 # Regression test for a case with large activations where an int32 index cannot
 # represent the number of elements.
 @torch.inference_mode()
@@ -149,6 +154,7 @@ NUM_TOKENS_GROUP = [128, 512]
 HIDDEN_SIZES_GROUP = [256, 1024, 2048]
 
 
+# 测试静态FP8量化在2D分组缩放因子下的正确性（含DeepSeek风格块级量化）
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS_GROUP)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES_GROUP)
 @pytest.mark.parametrize("group_shape", GROUP_SHAPES_2D)
@@ -188,6 +194,7 @@ def test_static_fp8_quant_group_2d(
     opcheck_fp8_quant(ops_out, x, scale=scale)
 
 
+# 测试静态FP8量化在1D缩放因子（逐token/逐通道）下的正确性
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS_GROUP)
 @pytest.mark.parametrize("hidden_size", HIDDEN_SIZES_GROUP)
 @pytest.mark.parametrize("dtype", DTYPES)

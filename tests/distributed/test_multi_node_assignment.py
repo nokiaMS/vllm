@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Ray 多节点场景下 GPU worker 被正确分配到相应节点
 """Make sure ray assigns GPU workers to the correct node.
 
 Run:

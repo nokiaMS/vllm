@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试注意力后端注册表：验证自定义注意力后端和 Mamba 后端的注册、别名检查和类路径解析]
 from vllm.v1.attention.backend import (
     AttentionBackend,
     AttentionImpl,
@@ -11,6 +12,7 @@ from vllm.v1.attention.backends.registry import (
 )
 
 
+# [模拟自定义注意力实现，用于测试后端注册功能]
 class CustomAttentionImpl(AttentionImpl):
     """Mock custom attention implementation for testing."""
 
@@ -22,6 +24,7 @@ class CustomAttentionImpl(AttentionImpl):
         pass
 
 
+# [模拟自定义注意力后端，用于测试后端注册功能]
 class CustomAttentionBackend(AttentionBackend):
     """Mock custom attention backend for testing."""
 
@@ -44,6 +47,7 @@ class CustomAttentionBackend(AttentionBackend):
         return None
 
 
+# [模拟自定义 Mamba 注意力实现，用于测试 Mamba 后端注册功能]
 class CustomMambaAttentionImpl(AttentionImpl):
     """Mock custom mamba attention implementation for testing."""
 
@@ -55,6 +59,7 @@ class CustomMambaAttentionImpl(AttentionImpl):
         pass
 
 
+# [模拟自定义 Mamba 注意力后端，用于测试 Mamba 后端注册功能]
 class CustomMambaAttentionBackend(AttentionBackend):
     """Mock custom mamba attention backend for testing."""
 
@@ -77,6 +82,7 @@ class CustomMambaAttentionBackend(AttentionBackend):
         return None
 
 
+# [测试 CUSTOM 枚举值不是其他后端的别名，防止注册时意外覆盖]
 def test_custom_is_not_alias_of_any_backend():
     # Get all members of AttentionBackendEnum
     all_backends = list(AttentionBackendEnum)
@@ -103,6 +109,7 @@ def test_custom_is_not_alias_of_any_backend():
     )
 
 
+# [测试通过类路径字符串注册自定义注意力后端，验证注册后可正确获取后端类]
 def test_register_custom_backend_with_class_path():
     # Register with explicit class path
     register_backend(
@@ -126,6 +133,7 @@ def test_register_custom_backend_with_class_path():
     assert backend_cls.get_impl_cls() == CustomAttentionImpl
 
 
+# [测试 Mamba CUSTOM 枚举值不是其他后端的别名]
 def test_mamba_custom_is_not_alias_of_any_backend():
     # Get all mamba backends
     all_backends = list(MambaAttentionBackendEnum)
@@ -145,6 +153,7 @@ def test_mamba_custom_is_not_alias_of_any_backend():
     )
 
 
+# [测试通过类路径字符串注册自定义 Mamba 注意力后端，验证注册后可正确获取后端类]
 def test_register_custom_mamba_backend_with_class_path():
     # Register with explicit class path
     register_backend(

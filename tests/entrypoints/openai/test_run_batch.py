@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 vllm run-batch 批处理：补全/嵌入/评分/重排/推理/转录/翻译/工具调用]
 
 import json
 import subprocess
@@ -367,6 +368,7 @@ INPUT_TOOL_CALLING_BATCH = json.dumps(
 )
 
 
+# [测试空输入文件的批处理应成功且输出为空]
 def test_empty_file():
     with (
         tempfile.NamedTemporaryFile("w") as input_file,
@@ -394,6 +396,7 @@ def test_empty_file():
         assert contents.strip() == ""
 
 
+# [测试聊天补全批处理：包含正常/非法模型/错误 URL/流式等用例]
 def test_completions():
     with (
         tempfile.NamedTemporaryFile("w") as input_file,
@@ -424,6 +427,7 @@ def test_completions():
             BatchRequestOutput.model_validate_json(line)
 
 
+# [测试无效输入格式的批处理应返回非零退出码]
 def test_completions_invalid_input():
     """
     Ensure that we fail when the input doesn't conform to the openai api.
@@ -451,6 +455,7 @@ def test_completions_invalid_input():
         assert proc.returncode != 0, f"{proc=}"
 
 
+# [测试嵌入模型的批处理]
 def test_embeddings():
     with (
         tempfile.NamedTemporaryFile("w") as input_file,
@@ -482,6 +487,7 @@ def test_embeddings():
 
 
 @pytest.mark.parametrize("input_batch", [INPUT_SCORE_BATCH, INPUT_RERANK_BATCH])
+# [测试评分和重排模型的批处理]
 def test_score(input_batch):
     with (
         tempfile.NamedTemporaryFile("w") as input_file,
@@ -517,6 +523,7 @@ def test_score(input_batch):
             assert line_dict["error"] is None
 
 
+# [测试带推理解析器的批处理：验证 reasoning 字段非空]
 def test_reasoning_parser():
     """
     Test that reasoning_parser parameter works correctly in run_batch.
@@ -564,6 +571,7 @@ def test_reasoning_parser():
             assert len(reasoning) > 0
 
 
+# [测试音频转录的批处理：base64 音频数据]
 def test_transcription():
     with (
         tempfile.NamedTemporaryFile("w") as input_file,
@@ -602,6 +610,7 @@ def test_transcription():
             assert "usage" in response_body
 
 
+# [测试通过 HTTP URL 提供音频的转录批处理]
 def test_transcription_http_url():
     with (
         tempfile.NamedTemporaryFile("w") as input_file,
@@ -642,6 +651,7 @@ def test_transcription_http_url():
             assert "Mary had a little lamb" in transcription_text
 
 
+# [测试音频翻译的批处理：意大利语到英语]
 def test_translation():
     with (
         tempfile.NamedTemporaryFile("w") as input_file,
@@ -682,6 +692,7 @@ def test_translation():
             assert "mary" in translation_text_lower or "lamb" in translation_text_lower
 
 
+# [测试批处理中的工具调用：验证 tool_calls 结构和函数名]
 def test_tool_calling():
     """
     Test that tool calling works correctly in run_batch.

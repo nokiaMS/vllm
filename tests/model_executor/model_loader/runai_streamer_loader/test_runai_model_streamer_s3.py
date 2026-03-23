@@ -14,6 +14,7 @@ load_format = "runai_streamer"
 test_model = "openai-community/gpt2"
 
 
+# 测试使用模拟 S3 存储的 RunAI 模型加载器，通过 monkey-patch 验证流式加载功能
 def test_runai_model_loader_download_files_s3_mocked_with_patch(
     vllm_runner,
     tmp_path: Path,

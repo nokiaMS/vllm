@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试引擎参数解析：前缀缓存CLI标志、哈希算法和默认配置
 
 from argparse import ArgumentError
 
@@ -12,6 +13,7 @@ from vllm.utils.argparse_utils import FlexibleArgumentParser
 from vllm.utils.hashing import _xxhash
 
 
+# [中文注释] 测试CLI参数解析前缀缓存开关
 def test_prefix_caching_from_cli():
     parser = EngineArgs.add_cli_args(FlexibleArgumentParser())
     args = parser.parse_args([])
@@ -50,6 +52,7 @@ def test_prefix_caching_from_cli():
 
 
 @pytest.mark.skipif(_xxhash is None, reason="xxhash not installed")
+# [中文注释] 测试CLI参数解析xxhash哈希算法配置
 def test_prefix_caching_xxhash_from_cli():
     parser = EngineArgs.add_cli_args(FlexibleArgumentParser())
 
@@ -64,6 +67,7 @@ def test_prefix_caching_xxhash_from_cli():
     assert vllm_config.cache_config.prefix_caching_hash_algo == "xxhash_cbor"
 
 
+# [中文注释] 测试不同usage_context下的引擎默认配置
 def test_defaults_with_usage_context():
     engine_args = EngineArgs(model="facebook/opt-125m")
     vllm_config: VllmConfig = engine_args.create_engine_config(UsageContext.LLM_CLASS)

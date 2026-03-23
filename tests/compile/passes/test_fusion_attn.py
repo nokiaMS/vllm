@@ -42,6 +42,7 @@ FP8_DTYPE = current_platform.fp8_dtype()
 FP4_DTYPE = torch.uint8
 
 
+# Attention+Quant 融合测试的基类模型，构建 attention 元数据和 KV cache
 class AttentionQuantPatternModel(torch.nn.Module):
     """Base model for AttentionQuantPattern fusion."""
 
@@ -137,6 +138,7 @@ class AttentionQuantPatternModel(torch.nn.Module):
         return self.attn_metadata
 
 
+# 测试 Attention + FP8 静态量化的融合模式
 class TestAttentionFp8StaticQuantPatternModel(AttentionQuantPatternModel):
     """Test model for AttentionFp8StaticQuantPattern fusion."""
 
@@ -171,6 +173,7 @@ class TestAttentionFp8StaticQuantPatternModel(AttentionQuantPatternModel):
         return self.fp8_linear(attn_output)
 
 
+# 测试 Attention + NVFP4 量化的融合模式
 class TestAttentionNvfp4QuantPatternModel(AttentionQuantPatternModel):
     """Test model for AttentionNvfp4QuantPattern fusion."""
 
@@ -270,6 +273,7 @@ elif current_platform.is_rocm():
     not current_platform.is_cuda_alike(), reason="Only test ROCm or CUDA"
 )
 @pytest.mark.skipif(not current_platform.supports_fp8(), reason="Need FP8")
+# 测试 AttnFusionPass 将量化操作融合到 attention 输出的正确性
 def test_attention_quant_pattern(
     num_qo_heads: int,
     num_kv_heads: int,

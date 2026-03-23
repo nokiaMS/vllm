@@ -24,6 +24,7 @@ MIN_CAPABILITY = os.environ.get("MIN_CAPABILITY", "80")
     not current_platform.has_device_capability(int(MIN_CAPABILITY)),
     reason="Current system does not have minimum capability.",
 )
+# [中文注释] 测试量化模型在张量并行(tp=2)下的权重加载和文本生成
 def test_weight_loading(vllm_runner):
     """
     Test parameter weight loading with tp>1.

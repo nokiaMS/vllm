@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Qwen2-VL 模型的多模态预处理，验证不同分辨率和参数下的 token 数量计算
 
 import pytest
 from packaging.version import Version

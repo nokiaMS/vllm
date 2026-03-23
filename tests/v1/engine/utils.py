@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件提供引擎测试工具：DummyOutputProcessorTestVectors、MockEngineCore和logprob生成辅助函数
 
 import random
 from dataclasses import dataclass

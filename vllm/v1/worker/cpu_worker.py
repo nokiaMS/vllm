@@ -20,6 +20,12 @@ from vllm.v1.worker.gpu_worker import Worker, init_worker_distributed_environmen
 logger = init_logger(__name__)
 
 
+# CPUWorker：CPU 后端的推理工作节点，继承自 GPU Worker
+# 核心职责：
+#   1. 初始化 CPU 设备环境（OpenMP 线程绑定、预加载库检查等）
+#   2. 构建 CPUModelRunner 并管理模型的生命周期
+#   3. 处理 CPU 特有的配置：禁用自定义 AllReduce、内存管理等
+# 设计要点：通过 NUMA 感知的线程亲和性绑定，最大化 CPU 推理吞吐量
 class CPUWorker(Worker):
     def __init__(
         self,
@@ -51,6 +57,11 @@ class CPUWorker(Worker):
                 activities=["CPU"],
             )
 
+    # 初始化 CPU 设备环境，包括：
+    #   1. 检查关键库（tcmalloc、iomp）是否已通过 LD_PRELOAD 加载
+    #   2. 根据 CPU 架构（x86/ARM/POWERPC/S390X）自动绑定 OpenMP 线程到 NUMA 节点
+    #   3. 初始化分布式通信环境和随机种子
+    #   4. 构建 CPUModelRunner
     def init_device(self):
         # Check whether critical libraries are loaded
         def check_preloaded_libs(name: str):
@@ -122,17 +133,21 @@ class CPUWorker(Worker):
             self.vllm_config, torch.device("cpu")
         )
 
+    # CPU 不支持休眠模式（GPU 版本中用于释放显存）
     def sleep(self, level: int = 1) -> None:
         logger.warning("sleep mode is not supported on CPU, ignore it.")
         pass
 
+    # CPU 不支持唤醒模式（与 sleep 配对的空操作）
     def wake_up(self, tags: list[str] | None = None) -> None:
         logger.warning("sleep mode is not supported on CPU, ignore it.")
         pass
 
+    # 返回 CPU KV 缓存可用内存字节数，由配置直接指定（不像 GPU 需要动态探测）
     def determine_available_memory(self) -> int:
         return self.cache_config.cpu_kvcache_space_bytes or 0
 
+    # 编译和预热模型：重置随机种子后执行预热，返回编译耗时
     def compile_or_warm_up_model(self) -> float:
         # Reset the seed to ensure that the random state is not affected by
         # the model initialization and profiling.
@@ -140,6 +155,11 @@ class CPUWorker(Worker):
         self.model_runner.warming_up_model()
         return self.compilation_config.compilation_time
 
+    # 基于 NUMA 拓扑自动选择当前 rank 应绑定的 CPU 核心 ID
+    # 算法：
+    #   1. 获取允许使用的 NUMA 节点列表，将 local_rank 映射到对应 NUMA 节点
+    #   2. 通过 cpu_selector 回调按架构特点筛选逻辑 CPU（如 x86 取每个物理核的一个线程）
+    #   3. 预留部分 CPU 给其他进程（如通信线程）
     def _get_autobind_cpu_ids(
         self, cpu_selector: Callable[[list[LogicalCPUInfo]], list[LogicalCPUInfo]]
     ) -> str:
@@ -226,6 +246,7 @@ class CPUWorker(Worker):
         )
         return ",".join([str(x.id) for x in logical_cpu_list])
 
+    # 控制 Torch Profiler 的启动和停止，用于性能分析
     def profile(self, is_start: bool = True, profile_prefix: str | None = None):
         if self.profiler is None:
             raise RuntimeError("Profiler is not enabled.")

@@ -15,6 +15,7 @@ stop_pil_image = ImageAsset("stop_sign").pil_image
 baby_reading_np_ndarrays = VideoAsset("baby_reading").np_ndarrays
 
 
+# [中文注释] 构建带有多模态配置的HfRenderer实例，支持设置缓存大小和前缀缓存开关
 def _build_renderer(
     *, mm_cache_gb: float = 4.0, enable_prefix_caching: bool = True
 ) -> HfRenderer:
@@ -37,6 +38,7 @@ def _build_renderer(
     )
 
 
+# [中文注释] 测试多模态UUID数量与数据项数量不匹配时抛出ValueError
 def test_multi_modal_uuids_length_mismatch_raises():
     renderer = _build_renderer()
 
@@ -63,6 +65,7 @@ def test_multi_modal_uuids_length_mismatch_raises():
         renderer._process_mm_uuids(mm_data, mm_data_items, mm_uuid_items, "req-1b")
 
 
+# [中文注释] 测试缺少多模态UUID时抛出ValueError
 def test_multi_modal_uuids_missing_modality_raises():
     renderer = _build_renderer()
 
@@ -90,6 +93,7 @@ def test_multi_modal_uuids_missing_modality_raises():
         (0.0, True),  # processor cache disabled
     ],
 )
+# [中文注释] 测试多模态UUID接受None值并正确透传，验证不同缓存配置下的行为
 def test_multi_modal_uuids_accepts_none_and_passes_through(
     mm_cache_gb: float, enable_prefix_caching: bool
 ):
@@ -125,6 +129,7 @@ def test_multi_modal_uuids_accepts_none_and_passes_through(
         (0.0, True),  # processor cache disabled
     ],
 )
+# [中文注释] 测试多模态UUID接受空列表（表示无多模态输入）
 def test_multi_modal_uuids_accepts_empty(
     mm_cache_gb: float, enable_prefix_caching: bool
 ):
@@ -149,6 +154,7 @@ def test_multi_modal_uuids_accepts_empty(
     assert processed_mm_uuids == mm_uuids
 
 
+# [中文注释] 测试缓存禁用时UUID被请求ID替代
 def test_multi_modal_uuids_ignored_when_caching_disabled():
     # When both processor cache is 0 and prefix caching disabled, the
     # processor builds overrides from request id instead of using user UUIDs.

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试Responses API的结构化输出：JSON schema约束和Pydantic模型解析
 import json
 
 import openai
@@ -8,6 +9,7 @@ from pydantic import BaseModel
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试使用JSON schema约束的结构化输出生成
 async def test_structured_output(client: openai.AsyncOpenAI):
     response = await client.responses.create(
         input=[
@@ -51,6 +53,7 @@ async def test_structured_output(client: openai.AsyncOpenAI):
 
 
 @pytest.mark.asyncio
+# [中文注释] 测试使用Pydantic模型自动解析的结构化输出
 async def test_structured_output_with_parse(client: openai.AsyncOpenAI):
     class CalendarEvent(BaseModel):
         event_name: str

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试输出处理器：增量去token化、logprobs处理、停止token/字符串、迭代统计和LoRA请求跟踪
 
 import math
 import time

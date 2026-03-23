@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试旋转位置编码（RotaryEmbedding）的正确性和缓存机制，
+# 覆盖neox/非neox风格、部分旋转维度、多种张量布局以及RoPE模块缓存复用
 from collections.abc import Callable
 from itertools import product
 
@@ -63,6 +65,7 @@ TENSORS_SHAPES_FN = [
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("use_key", USE_KEY)
 @torch.inference_mode()
+# 测试RotaryEmbedding的CUDA内核与原生实现在多种配置下的数值一致性
 def test_rotary_embedding(
     default_vllm_config,
     is_neox_style: bool,
@@ -123,6 +126,7 @@ def test_rotary_embedding(
 
 
 @torch.inference_mode()
+# 测试get_rope的模块缓存机制：相同参数返回同一实例，不同参数返回不同实例
 def test_rope_module_cache(default_vllm_config):
     MAX_POSITIONS = [123, 1234]
     ROPE_THETAS = [10000, 1000000]

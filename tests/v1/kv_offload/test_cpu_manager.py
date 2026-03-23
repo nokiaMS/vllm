@@ -19,16 +19,19 @@ from vllm.v1.kv_offload.mediums import CPULoadStoreSpec
 
 
 @dataclass
+# [中文注释] 预期存储输出数据类：用于验证prepare_store操作的结果。
 class ExpectedPrepareStoreOutput:
     block_hashes_to_store: list[int]
     store_block_ids: list[int]
     block_hashes_evicted: list[int]
 
 
+# [中文注释] 辅助函数：将整数列表转换为BlockHash列表。
 def to_hashes(int_hashes: list[int]) -> list[BlockHash]:
     return [BlockHash(str(i).encode()) for i in int_hashes]
 
 
+# [中文注释] 辅助函数：验证存储输出的块hash、块ID和驱逐信息是否符合预期。
 def verify_store_output(
     prepare_store_output: PrepareStoreOutput | None,
     expected_prepare_store_output: ExpectedPrepareStoreOutput,
@@ -48,6 +51,7 @@ def verify_store_output(
     assert np.array_equal(expected_array, store_spec.block_ids)
 
 
+# [中文注释] 辅助函数：验证加载输出的块ID是否符合预期。
 def verify_load_output(
     prepare_load_output: LoadStoreSpec, expected_prepare_load_output: list[int]
 ):
@@ -56,6 +60,7 @@ def verify_load_output(
     assert np.array_equal(expected_array, prepare_load_output.block_ids)
 
 
+# [中文注释] 辅助函数：验证卸载事件列表是否符合预期。
 def verify_events(
     events: Iterable[OffloadingEvent],
     block_size: int,
@@ -80,6 +85,7 @@ def verify_events(
 
 
 @pytest.mark.parametrize("manager_class", [LRUOffloadingManager, ARCOffloadingManager])
+# [中文注释] 测试用例：验证已存储的块在prepare_store期间不会被错误驱逐。
 def test_already_stored_block_not_evicted_during_prepare_store(manager_class):
     """
     Regression test: a block that is already stored must not be evicted
@@ -127,6 +133,7 @@ def test_already_stored_block_not_evicted_during_prepare_store(manager_class):
     assert manager.lookup(to_hashes([2])) == 1
 
 
+# [中文注释] 测试用例：全面测试LRU卸载管理器的存储、加载、驱逐和事件通知功能。
 def test_cpu_manager():
     """
     Tests LRUOffloadingManager with a CPUBackend.
@@ -239,6 +246,7 @@ def test_cpu_manager():
     )
 
 
+# [中文注释] 测试用例：验证ARC管理器的基本存储和加载功能。
 def test_arc_manager_basic():
     """
     Tests ARCOffloadingManager basic operations with a CPUBackend.
@@ -282,6 +290,7 @@ def test_arc_manager_basic():
     assert len(arc_manager.t2) == 0
 
 
+# [中文注释] 测试用例：验证ARC管理器T1到T2的晋升机制。
 def test_arc_manager_t1_to_t2_promotion():
     """
     Tests that accessing a block in T1 promotes it to T2 (frequent).
@@ -307,6 +316,7 @@ def test_arc_manager_t1_to_t2_promotion():
     assert to_hashes([1])[0] in arc_manager.t2
 
 
+# [中文注释] 测试用例：验证ARC管理器带加载操作时的驱逐行为。
 def test_arc_manager_eviction_with_load():
     """
     Tests ARC eviction behavior similar to LRU test.
@@ -347,6 +357,7 @@ def test_arc_manager_eviction_with_load():
     assert len(prepare_store_output.block_hashes_evicted) >= 1
 
 
+# [中文注释] 测试用例：验证ARC管理器的自适应目标调整机制。
 def test_arc_manager_adaptive_target():
     """
     Tests ARC's adaptive target adjustment via ghost lists.
@@ -378,6 +389,7 @@ def test_arc_manager_adaptive_target():
     assert arc_manager.target_t1_size > initial_target
 
 
+# [中文注释] 测试用例：验证ARC管理器的T1/T2驱逐策略。
 def test_arc_manager_t1_t2_eviction_policy():
     """
     Tests that ARC evicts from T1 or T2 based on target_t1_size.
@@ -415,6 +427,7 @@ def test_arc_manager_t1_t2_eviction_policy():
     assert to_hashes([5])[0] in arc_manager.t1
 
 
+# [中文注释] 测试用例：验证ARC管理器ghost列表的大小限制。
 def test_arc_manager_ghost_list_bounds():
     """
     Tests that ghost lists (B1, B2) don't grow unbounded.
@@ -438,6 +451,7 @@ def test_arc_manager_ghost_list_bounds():
     assert len(arc_manager.b2) <= arc_manager.cache_capacity
 
 
+# [中文注释] 测试用例：验证ARC管理器的touch排序对驱逐顺序的影响。
 def test_arc_manager_touch_ordering():
     """
     Tests that touch() correctly updates access patterns.
@@ -474,6 +488,7 @@ def test_arc_manager_touch_ordering():
     )
 
 
+# [中文注释] 测试用例：验证ARC管理器在存储失败后的状态恢复。
 def test_arc_manager_failed_store():
     """
     Tests that failed store operations clean up correctly.
@@ -506,6 +521,7 @@ def test_arc_manager_failed_store():
     assert evicted_hash in arc_manager.b1
 
 
+# [中文注释] 测试用例：ARC管理器完整场景测试，覆盖存储、加载、驱逐和晋升的组合操作。
 def test_arc_manager_full_scenario():
     """
     Comprehensive test covering multiple ARC operations in sequence.
@@ -546,6 +562,7 @@ def test_arc_manager_full_scenario():
     assert len(events) > 0  # should have store and eviction events
 
 
+# [中文注释] 测试用例：验证FilterReusedOffloadingManager过滤重复存储请求的功能。
 def test_filter_reused_manager():
     """
     Tests FilterReusedOffloadingManager with a CPUBackend.

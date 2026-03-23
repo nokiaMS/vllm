@@ -10,11 +10,13 @@ from vllm.utils.gc_utils import (
 )
 
 
+# [中文注释] 普通数据类：用于GC对象类型检测测试
 @dataclass
 class Normal:
     v: int
 
 
+# [中文注释] 带长度的列表包装类：用于测试带__len__方法的对象的详细类型输出
 @dataclass
 class ListWrapper:
     vs: list[int]
@@ -23,6 +25,7 @@ class ListWrapper:
         return len(self.vs)
 
 
+# [中文注释] 测试GC对象详细类型计算：验证不同容器和自定义类的类型字符串输出
 def test_compute_detailed_type():
     assert (
         _compute_detailed_type(Normal(v=8))
@@ -38,6 +41,7 @@ def test_compute_detailed_type():
     )
 
 
+# [中文注释] 测试GC收集对象的Top-N统计：验证按频率排序的对象类型统计输出
 def test_compute_top_gc_collected_objects():
     objects: list[Any] = [
         [1, 2, 3],
@@ -71,6 +75,7 @@ def test_compute_top_gc_collected_objects():
     )
 
 
+# [中文注释] 测试GC调试配置解析：验证不同输入格式（None、空、"0"、"1"、JSON）的配置行为
 def test_gc_debug_config():
     assert not GCDebugConfig(None).enabled
     assert not GCDebugConfig("").enabled

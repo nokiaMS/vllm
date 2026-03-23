@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 量化测试工具集：提供FP8/INT8量化的参考实现，包括逐token量化、逐tensor量化、
+# 分块量化矩阵乘法等，用于验证CUDA内核的量化正确性
 
 import torch
 
@@ -15,10 +17,12 @@ from vllm.utils.math_utils import round_up
 FP8_DTYPE = current_platform.fp8_dtype()
 
 
+# 将浮点数或张量转换为float32类型的CUDA张量
 def as_float32_tensor(x: float | torch.Tensor) -> torch.Tensor:
     return torch.as_tensor(x, dtype=torch.float32, device="cuda")
 
 
+# 逐token动态量化的参考实现，支持INT8和FP8数据类型
 def ref_dynamic_per_token_quant(
     x: torch.Tensor, quant_dtype: torch.dtype, scale_ub: torch.Tensor | None = None
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -66,6 +70,7 @@ def ref_dynamic_per_token_quant(
 # The int8 version is very similar. Incorporate the int8 version, like in
 # ref_dynamic_per_token_quant, when we have a dynamic_per_tensor int8 quant
 # kernel
+# 逐tensor动态FP8量化的参考实现
 def ref_dynamic_per_tensor_fp8_quant(
     x: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -88,6 +93,7 @@ def ref_dynamic_per_tensor_fp8_quant(
     return ref_out, ref_scale.view(1)
 
 
+# 使用原生PyTorch实现的W8A8分块量化矩阵乘法，支持INT8和FP8
 def native_w8a8_block_matmul(
     A: torch.Tensor,
     B: torch.Tensor,
@@ -154,6 +160,7 @@ def native_w8a8_block_matmul(
     return C
 
 
+# 按token分组的FP8量化参考实现
 def native_per_token_group_quant_fp8(
     x, group_size, eps=1e-10, dtype=torch.float8_e4m3fn
 ):
@@ -180,6 +187,7 @@ def native_per_token_group_quant_fp8(
     return x_q, x_s
 
 
+# 按token分组的INT8量化参考实现
 def native_per_token_group_quant_int8(x, group_size, eps=1e-10, dtype=torch.int8):
     """Function to perform per-token-group quantization on an input tensor
     `x` using native torch.
@@ -212,6 +220,7 @@ def native_per_token_group_quant_int8(x, group_size, eps=1e-10, dtype=torch.int8
 DEFAULT_BLOCK_SHAPE = [128, 128]
 
 
+# 将张量按块转换为INT8类型，返回量化后的张量和缩放因子
 def per_block_cast_to_int8(
     x: torch.Tensor,
     block_shape: list[int] = DEFAULT_BLOCK_SHAPE,
@@ -231,6 +240,7 @@ def per_block_cast_to_int8(
     return x_scaled_sub, scales
 
 
+# 反量化：将量化张量乘以缩放因子还原为浮点类型
 def dequant(
     t: torch.Tensor,
     scale: torch.Tensor | None,
@@ -248,6 +258,7 @@ def dequant(
         return t.to(out_dtype)
 
 
+# 批量反量化：对批次维度上的每个元素逐个反量化
 def batched_dequant(
     t: torch.Tensor,
     scale: torch.Tensor | None,
@@ -267,6 +278,7 @@ def batched_dequant(
     return t.to(out_dtype)
 
 
+# 带掩码的批量量化矩阵乘法参考实现，支持分块量化和逐token量化
 def native_batched_masked_quant_matmul(
     A: torch.Tensor,
     B: torch.Tensor,

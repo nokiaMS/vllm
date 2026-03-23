@@ -8,6 +8,8 @@ import torch
 from vllm.model_executor.model_loader import get_model_loader
 from vllm.platforms import current_platform
 
+# 测试 TorchAO 量化方法的预量化模型加载、在线量化和权重重载
+
 DTYPE = ["bfloat16"]
 
 TORCHAO_AVAILABLE = importlib.util.find_spec("torchao") is not None

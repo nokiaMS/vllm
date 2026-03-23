@@ -31,6 +31,7 @@ DUMMY_LOGITPROC_MODULE = "tests.v1.logits_processors.utils"
 DUMMY_LOGITPROC_FQCN = f"{DUMMY_LOGITPROC_MODULE}:DummyLogitsProcessor"
 
 
+# [中文注释] 自定义logit处理器来源枚举：定义测试中logit处理器的加载方式（无、入口点、FQCN、类对象）。
 class CustomLogitprocSource(Enum):
     """How to source a logitproc for testing purposes"""
 
@@ -49,6 +50,7 @@ prompts = [
 ]
 
 
+# [中文注释] 虚拟logit处理器：将除target_token外所有token的logit屏蔽，用于测试。
 class DummyLogitsProcessor(LogitsProcessor):
     """Fake logit processor to support unit testing and examples"""
 
@@ -107,6 +109,7 @@ dummy_module = types.ModuleType(DUMMY_LOGITPROC_MODULE)
 dummy_module.DummyLogitsProcessor = DummyLogitsProcessor  # type: ignore
 
 
+# [中文注释] 模拟EntryPoint：模拟importlib.metadata的入口点，用于测试logit处理器发现机制。
 class EntryPoint:
     """Dummy entrypoint class for logitsprocs testing"""
 
@@ -118,6 +121,7 @@ class EntryPoint:
         return DummyLogitsProcessor
 
 
+# [中文注释] 模拟EntryPoints列表：封装入口点集合，模拟entry_points()返回值。
 class EntryPoints(list):
     """Dummy EntryPoints class for logitsprocs testing"""
 
@@ -129,6 +133,7 @@ class EntryPoints(list):
         self.names = [ep.name for ep in eps]
 
 
+# [中文注释] 虚拟按请求logit处理器：为每个请求独立处理logit，测试旧式接口适配。
 class DummyPerReqLogitsProcessor:
     """The request-level logits processor masks out all logits except the
     token id identified by `target_token`"""
@@ -148,6 +153,7 @@ class DummyPerReqLogitsProcessor:
         return logits
 
 
+# [中文注释] 包装的按请求logit处理器：将旧式处理器适配为AdapterLogitsProcessor接口。
 class WrappedPerReqLogitsProcessor(AdapterLogitsProcessor):
     """Example of wrapping a fake request-level logit processor to create a
     batch-level logits processor"""

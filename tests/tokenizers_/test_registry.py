@@ -12,6 +12,7 @@ from vllm.tokenizers.registry import (
 )
 
 
+# [中文注释] 自定义测试分词器，实现TokenizerLike接口用于注册测试
 class TestTokenizer(TokenizerLike):
     @classmethod
     def from_pretrained(
@@ -48,6 +49,7 @@ class TestTokenizer(TokenizerLike):
 
 
 @pytest.mark.parametrize("runner_type", ["generate", "pooling"])
+# [中文注释] 测试resolve_tokenizer_args的幂等性，两次调用应返回相同结果
 def test_resolve_tokenizer_args_idempotent(runner_type):
     tokenizer_mode, tokenizer_name, args, kwargs = resolve_tokenizer_args(
         "facebook/opt-125m",
@@ -59,6 +61,7 @@ def test_resolve_tokenizer_args_idempotent(runner_type):
     )
 
 
+# [中文注释] 测试自定义分词器的注册和加载，验证通过TokenizerRegistry和get_tokenizer两种方式
 def test_customized_tokenizer():
     TokenizerRegistry.register("test_tokenizer", __name__, TestTokenizer.__name__)
 

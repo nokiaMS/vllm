@@ -13,6 +13,7 @@ from ...utils import compare_all_settings
 ATTN_BACKEND = "FLASH_ATTN" if not current_platform.is_rocm() else "ROCM_ATTN"
 
 
+# 测试设置的数据类，包含模型、参数、PP/TP 大小、后端和方法
 @dataclasses.dataclass
 class TestSetting:
     model: str
@@ -97,6 +98,7 @@ class TestSetting:
         # ),
     ],
 )
+# 跨多种编译模式和后端验证模型输出正确性（eager/inductor/stock/vllm_compile）
 def test_compile_correctness(
     test_setting: TestSetting,
 ):

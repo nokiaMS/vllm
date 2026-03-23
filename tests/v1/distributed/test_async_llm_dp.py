@@ -197,6 +197,7 @@ DP_PAUSE_MODEL_MOE = "ibm-research/PowerMoE-3b"
 DP_PAUSE_PROMPT = "This is a test of data parallel pause"
 
 
+# [中文注释] 辅助函数：创建数据并行暂停/恢复测试的引擎参数
 def _get_dp_pause_engine_args(expert_parallel: bool) -> AsyncEngineArgs:
     """Engine args for DP pause tests: MoE+EP when expert_parallel else small Llama."""
     model = DP_PAUSE_MODEL_MOE if expert_parallel else DP_PAUSE_MODEL

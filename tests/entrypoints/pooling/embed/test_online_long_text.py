@@ -8,6 +8,8 @@ text inputs that exceed the model's maximum token length, specifically targeting
 the intfloat/multilingual-e5-small model (max token length: 512).
 """
 
+# [长文本嵌入测试模块：验证超出模型最大 token 长度时的自动分块嵌入处理机制]
+
 import random
 
 import openai
@@ -19,6 +21,7 @@ from vllm.entrypoints.pooling.embed.protocol import EmbeddingResponse
 from vllm.platforms import current_platform
 
 
+# [辅助函数：生成指定词数的随机文本，用于模拟超长输入]
 def _generate_random_text(word_count: int) -> str:
     """Generate random text with approximately the specified word count."""
     # Common English words with focus on verbs and nouns for realistic text
@@ -203,6 +206,7 @@ LONG_TEXT_1500_WORDS = _generate_random_text(1500)
 LONG_TEXT_2500_WORDS = _generate_random_text(2500)
 
 
+# [测试夹具：启动启用分块处理的嵌入服务器，max_model_len=512 以触发分块机制]
 @pytest.fixture(scope="module")
 def server_with_chunked_processing():
     """Start server with automatic chunking processing enabled."""
@@ -231,6 +235,7 @@ def server_with_chunked_processing():
         yield remote_server
 
 
+# [异步客户端夹具：从分块处理服务器获取客户端]
 @pytest_asyncio.fixture
 async def client_with_chunked_processing(server_with_chunked_processing):
     """Create async client with chunking processing support."""
@@ -238,6 +243,7 @@ async def client_with_chunked_processing(server_with_chunked_processing):
         yield async_client
 
 
+# [测试约1500词长文本嵌入：验证超过512 token限制时分块处理的正确性]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_long_text_embedding_1500_chars(
@@ -287,6 +293,7 @@ async def test_long_text_embedding_1500_chars(
     )
 
 
+# [测试约2500词长文本嵌入：验证需要多个分块的长文本嵌入处理]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_long_text_embedding_2500_chars(
@@ -336,6 +343,7 @@ async def test_long_text_embedding_2500_chars(
     )
 
 
+# [测试批量长文本嵌入：验证混合长短文本的批量分块嵌入处理]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_batch_long_text_embedding(
@@ -381,6 +389,7 @@ async def test_batch_long_text_embedding(
     assert embeddings.usage.total_tokens == embeddings.usage.prompt_tokens
 
 
+# [测试分块与常规处理一致性：验证短文本在分块模式下不触发分块且结果正常]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_chunked_vs_normal_consistency(
@@ -421,6 +430,7 @@ async def test_chunked_vs_normal_consistency(
     assert not all(x == 0 for x in embedding_vector)
 
 
+# [测试分块处理响应格式：验证分块后响应结构正确且向量已归一化]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 async def test_chunked_processing_response_format(

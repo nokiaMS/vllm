@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试池化模型的自动前缀缓存支持，验证分类和嵌入任务的缓存命中，
+# 以及非因果模型自动禁用前缀缓存的行为
+
 import pytest
 import torch
 from transformers import AutoModelForSequenceClassification

@@ -7,6 +7,7 @@ import torch
 from vllm.plugins import load_general_plugins
 
 
+# [中文注释] 测试平台插件加载和自定义操作注册，验证DummyDevice平台和自定义算子
 def test_platform_plugins():
     # simulate workload by running an example
     import runpy
@@ -31,6 +32,7 @@ def test_platform_plugins():
     )
 
 
+# [中文注释] 测试自定义out-of-tree算子注册：验证DummyRotaryEmbedding替换和额外属性
 def test_oot_custom_op(default_vllm_config, monkeypatch: pytest.MonkeyPatch):
     # simulate workload by running an example
     load_general_plugins()

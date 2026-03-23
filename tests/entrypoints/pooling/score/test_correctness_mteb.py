@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# [MTEB 评分/重排正确性测试模块：通过 MTEB 基准评估 vLLM score/rerank 端点与 SentenceTransformers 的一致性]
+
 import os
 
 import pytest
@@ -21,6 +24,7 @@ MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 st_main_score = 0.33457
 
 
+# [测试夹具：启动 ms-marco-MiniLM 交叉编码器模型的远程服务器]
 @pytest.fixture(scope="module")
 def server():
     args = ["--runner", "pooling", "--enforce-eager", "--disable-uvicorn-access-log"]
@@ -33,6 +37,7 @@ def server():
         yield remote_server
 
 
+# [测试 MTEB score 评分：比较 vLLM score 端点与 SentenceTransformers 的重排主分数]
 def test_mteb_score(server):
     url = server.url_for("score")
     encoder = ScoreClientMtebEncoder(MODEL_NAME, url)
@@ -47,6 +52,7 @@ def test_mteb_score(server):
     assert st_main_score - vllm_main_score < MTEB_RERANK_TOL
 
 
+# [测试 MTEB rerank 评分：比较 vLLM rerank 端点与 SentenceTransformers 的重排主分数]
 def test_mteb_rerank(server):
     url = server.url_for("rerank")
     encoder = RerankClientMtebEncoder(MODEL_NAME, url)

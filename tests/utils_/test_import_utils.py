@@ -5,10 +5,12 @@ import pytest
 from vllm.utils.import_utils import PlaceholderModule
 
 
+# [中文注释] 辅助函数：创建预期ModuleNotFoundError的上下文管理器
 def _raises_module_not_found():
     return pytest.raises(ModuleNotFoundError, match="No module named")
 
 
+# [中文注释] 测试PlaceholderModule错误处理：验证占位模块在各种操作（调用、属性访问、类型转换）时正确抛出ModuleNotFoundError
 def test_placeholder_module_error_handling():
     placeholder = PlaceholderModule("placeholder_1234")
 

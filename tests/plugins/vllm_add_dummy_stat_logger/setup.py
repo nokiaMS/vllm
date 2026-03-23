@@ -3,6 +3,7 @@
 
 from setuptools import setup
 
+# 虚拟统计日志器插件的安装配置
 setup(
     name="dummy_stat_logger",
     version="0.1",

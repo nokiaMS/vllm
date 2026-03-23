@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试节点计数功能，验证使用 torch.distributed 和 StatelessProcessGroup 时的节点数
 
 import os
 

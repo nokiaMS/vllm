@@ -10,6 +10,7 @@ from vllm.v1.engine.async_llm import AsyncLLM
 from vllm.v1.metrics.loggers import load_stat_logger_plugin_factories
 
 
+# [中文注释] 测试统计日志插件通过entry_points正确发现和实例化
 def test_stat_logger_plugin_is_discovered(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as m:
         m.setenv("VLLM_PLUGINS", "dummy_stat_logger")
@@ -26,6 +27,7 @@ def test_stat_logger_plugin_is_discovered(monkeypatch: pytest.MonkeyPatch):
         assert isinstance(instance, DummyStatLogger)
 
 
+# [中文注释] 测试环境变量为空时不加载任何统计日志插件
 def test_no_plugins_loaded_if_env_empty(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as m:
         m.setenv("VLLM_PLUGINS", "")
@@ -34,6 +36,7 @@ def test_no_plugins_loaded_if_env_empty(monkeypatch: pytest.MonkeyPatch):
         assert factories == []
 
 
+# [中文注释] 测试无效的统计日志插件类型抛出TypeError
 def test_invalid_stat_logger_plugin_raises(monkeypatch: pytest.MonkeyPatch):
     def fake_plugin_loader(group: str):
         assert group == "vllm.stat_logger_plugins"
@@ -52,6 +55,7 @@ def test_invalid_stat_logger_plugin_raises(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.mark.asyncio
+# [中文注释] 集成测试：统计日志插件在AsyncLLM引擎中的加载和注册
 async def test_stat_logger_plugin_integration_with_engine(
     monkeypatch: pytest.MonkeyPatch,
 ):

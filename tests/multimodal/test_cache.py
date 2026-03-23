@@ -82,6 +82,7 @@ def _dummy_items(
         (_dummy_items({"a": {"a1": 100, "a2": 110}, "b": {"b1": 120, "b2": 130}}), 460),  # noqa: E501
     ],
 )
+# [中文注释] 测试多模态缓存项的大小计算
 def test_cache_item_size(item, expected_size):
     cache = MultiModalCache.get_lru_cache(2048, type(item))
 
@@ -196,6 +197,7 @@ def _compare_caches(
 
 
 @pytest.mark.parametrize("is_cached_calls_per_iter", [1, 2, 3])
+# [中文注释] 测试IPC缓存启用/禁用的一致性
 def test_ipc_enable_disable_consistency(is_cached_calls_per_iter):
     cache_size_gb = 1 / (1 << 20)
 
@@ -322,6 +324,7 @@ def _run_test_cache_eviction_lru(
     assert list(p0_cache._cache.order) == expected_hashes
 
 
+# [中文注释] 测试LRU缓存的淘汰策略
 def test_cache_eviction_lru_cache():
     model_config = ModelConfig(
         model="llava-hf/llava-onevision-qwen2-0.5b-ov-hf",
@@ -499,6 +502,7 @@ def _run_test_cache_eviction_shm(
     assert list(p0_cache._shm_cache.key_index.keys()) == expected_hashes
 
 
+# [中文注释] 测试共享内存缓存的淘汰策略
 def test_cache_eviction_shm_cache():
     vllm_config = VllmConfig(
         model_config=ModelConfig(
@@ -514,6 +518,7 @@ def test_cache_eviction_shm_cache():
     _run_test_cache_eviction_shm(sender_cache, receiver_cache, base_item_size=MiB_bytes)
 
 
+# [中文注释] 测试处理器缓存在不同LoRA间的共享
 def test_processor_cache_shared_across_loras():
     """Test that processor cache uses mm_hash to share data across LoRAs."""
     model_config = ModelConfig(

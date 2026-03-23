@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试AutoWeightsLoader自动权重加载器的功能，包括BatchNorm统计量加载、
+# 嵌套模块加载、前缀跳过和子字符串跳过
+
 import pytest
 import torch
 
@@ -9,6 +12,7 @@ from vllm.model_executor.models.utils import AutoWeightsLoader
 pytestmark = pytest.mark.cpu_test
 
 
+# 包含BatchNorm层的简单模块，用于测试权重加载
 class ModuleWithBatchNorm(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -18,6 +22,7 @@ class ModuleWithBatchNorm(torch.nn.Module):
         return self.bn(x)
 
 
+# 包含嵌套BatchNorm模块的模块，用于测试递归权重加载
 class ModuleWithNestedBatchNorm(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -27,6 +32,7 @@ class ModuleWithNestedBatchNorm(torch.nn.Module):
         return self.nested_mod(x)
 
 
+# 测试自动权重加载器能否正确加载BatchNorm的运行统计量
 def test_module_with_batchnorm_can_load():
     """Ensure the auto weight loader can load batchnorm stats."""
     mod = ModuleWithBatchNorm()
@@ -52,6 +58,7 @@ def test_module_with_batchnorm_can_load():
     assert new_mod.bn.num_batches_tracked.item() == 1
 
 
+# 测试自动权重加载器能否正确加载嵌套模块中的BatchNorm统计量
 def test_module_with_child_containing_batchnorm_can_autoload():
     """Ensure the auto weight loader can load nested modules batchnorm stats."""
     mod = ModuleWithNestedBatchNorm()
@@ -83,6 +90,7 @@ def test_module_with_child_containing_batchnorm_can_autoload():
     assert new_mod.nested_mod.bn.num_batches_tracked.item() == 1
 
 
+# 测试自动权重加载器的前缀跳过功能
 def test_module_skip_prefix():
     """Ensure the auto weight loader can skip prefix."""
     mod = ModuleWithNestedBatchNorm()
@@ -119,6 +127,7 @@ def test_module_skip_prefix():
     assert new_mod.nested_mod.bn.num_batches_tracked.item() == 1
 
 
+# 测试自动权重加载器的子字符串跳过功能
 def test_module_skip_substr():
     """Ensure the auto weight loader can skip prefix."""
     mod = ModuleWithNestedBatchNorm()

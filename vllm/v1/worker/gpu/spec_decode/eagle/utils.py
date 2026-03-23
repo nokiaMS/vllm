@@ -6,6 +6,12 @@ from vllm.config import VllmConfig
 from vllm.model_executor.model_loader import get_model
 
 
+# 加载 EAGLE 草稿模型并与目标模型共享权重。
+# 设计思路：
+# 1. 使用 "eagle_head" 标签加载草稿模型，以区分编译后端
+# 2. 共享 embedding 权重：若草稿模型没有自己的 embed_tokens，则直接引用目标模型的
+# 3. 共享 lm_head 权重：若草稿模型没有自己的 lm_head，则直接引用目标模型的
+# 这种共享机制大幅减少了显存占用，因为 embedding 和 lm_head 通常占模型参数的很大比例
 def load_eagle_model(target_model: nn.Module, vllm_config: VllmConfig) -> nn.Module:
     from vllm.compilation.backends import set_model_tag
 

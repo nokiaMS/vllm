@@ -20,6 +20,7 @@ model_config = {
 }
 
 
+# [中文注释] 辅助函数：比较两个浮点数是否在误差范围内相近
 def _float_close(expected: object, result: object):
     assert isinstance(expected, float) and isinstance(result, float), (
         f"{expected=}  or {result=} is not float"
@@ -27,12 +28,14 @@ def _float_close(expected: object, result: object):
     return (expected - result) < 1e-3 or abs(expected / result - 1) < 1e-3
 
 
+# [中文注释] 辅助函数：从字典或对象中获取指定键/属性值
 def _get_attr_or_val(obj: object | dict, key: str):
     if isinstance(obj, dict) and key in obj:
         return obj[key]
     return getattr(obj, key, None)
 
 
+# [中文注释] 验证稀疏嵌入输出的token_id、weight和token与预期值一致
 def _check_sparse_embedding(data, check_tokens=False):
     expected_weights = [
         {"token_id": 32, "weight": 0.0552978515625, "token": "?"},
@@ -61,6 +64,7 @@ def _check_sparse_embedding(data, check_tokens=False):
             )
 
 
+# [中文注释] fixture：启动带BGE-M3稀疏插件的远程OpenAI服务器
 @pytest.fixture(scope="function")
 def server():
     args = [
@@ -84,6 +88,7 @@ def server():
     "return_tokens",
     [True, False],
 )
+# [中文注释] 在线测试BGE-M3稀疏插件：通过API验证稀疏嵌入输出格式
 async def test_bge_m3_sparse_plugin_online(
     server: RemoteOpenAIServer, return_tokens: bool
 ):
@@ -130,6 +135,7 @@ async def test_bge_m3_sparse_plugin_online(
     "return_tokens",
     [True, False],
 )
+# [中文注释] 离线测试BGE-M3稀疏插件：验证单条输入的稀疏嵌入正确性
 def test_bge_m3_sparse_plugin_offline(vllm_runner, return_tokens: bool):
     """Test BGE-M3 sparse plugin in offline mode."""
     prompt = {
@@ -170,6 +176,7 @@ def test_bge_m3_sparse_plugin_offline(vllm_runner, return_tokens: bool):
     assert response.usage.total_tokens == response.usage.prompt_tokens
 
 
+# [中文注释] 离线测试BGE-M3稀疏插件：验证多条输入批量处理
 def test_bge_m3_sparse_plugin_offline_multiple_inputs(vllm_runner):
     """Test BGE-M3 sparse plugin with multiple inputs in offline mode."""
     prompts = {

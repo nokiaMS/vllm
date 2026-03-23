@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 logger = init_logger(__name__)
 
 
+# XPU 设备的模型运行器（V1 版本），继承自 GPU 模型运行器
+# 在初始化时通过 CUDA->XPU API 替换上下文管理器适配 Intel XPU 设备
 class XPUModelRunner(GPUModelRunner):
     """A model runner for XPU devices."""
 
@@ -33,6 +35,7 @@ class XPUModelRunner(GPUModelRunner):
         self.cascade_attn_enabled = False
 
 
+# XPU 设备的模型运行器（V2 版本），继承自 V2 GPU 模型运行器
 class XPUModelRunnerV2(GPUModelRunnerV2):
     """A model runner for XPU devices."""
 
@@ -45,6 +48,9 @@ class XPUModelRunnerV2(GPUModelRunnerV2):
             super().__init__(vllm_config, device)
 
 
+# CUDA->XPU API 替换的上下文管理器
+# 将 torch.cuda 的 Stream、Event、内存查询等 API 临时替换为 XPU 对应实现
+# 使基于 CUDA API 编写的代码能透明运行在 Intel XPU 设备上
 @contextmanager
 def _torch_cuda_wrapper():
     try:

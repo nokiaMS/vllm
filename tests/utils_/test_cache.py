@@ -3,6 +3,7 @@
 from vllm.utils.cache import CacheInfo, LRUCache
 
 
+# [中文注释] LRU缓存测试子类：添加移除计数器以追踪_on_remove回调的调用次数
 class TestLRUCache(LRUCache):
     def _on_remove(self, key, value):
         if not hasattr(self, "_remove_counter"):
@@ -10,6 +11,7 @@ class TestLRUCache(LRUCache):
         self._remove_counter += 1
 
 
+# [中文注释] 测试LRU缓存的完整功能：插入、淘汰、获取、删除、清除、统计和下标操作
 def test_lru_cache():
     cache = TestLRUCache(3)
     assert cache.stat() == CacheInfo(hits=0, total=0)

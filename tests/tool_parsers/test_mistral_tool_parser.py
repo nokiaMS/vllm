@@ -18,12 +18,14 @@ from vllm.tokenizers.mistral import MistralTokenizer
 from vllm.tool_parsers.mistral_tool_parser import MistralToolParser
 
 
+# [中文注释] 加载Mistral v0.3之前版本的分词器夹具
 @pytest.fixture(scope="module")
 def mistral_pre_v11_tokenizer():
     MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
     return get_tokenizer(tokenizer_name=MODEL)
 
 
+# [中文注释] 加载Mistral当前版本分词器夹具（mistral模式）
 @pytest.fixture(scope="module")
 def mistral_tokenizer():
     MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"

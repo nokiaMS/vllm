@@ -8,6 +8,7 @@ from vllm.config.compilation import CompilationMode
 from vllm.platforms import current_platform
 
 
+# 验证默认配置不编译多模态编码器
 def test_compile():
     vllm_config = VllmConfig()
     # Default configuration does not compile mm encoder
@@ -17,6 +18,7 @@ def test_compile():
 # forked needed to workaround https://github.com/vllm-project/vllm/issues/21073
 @pytest.mark.forked
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="Skip if not cuda")
+# 测试 Qwen2.5-VL 视觉子模块被正确编译（期望 35 个模型被识别）
 def test_qwen2_5_vl_compilation(vllm_runner, monkeypatch):
     """Test that Qwen2.5-VL vision submodules are compiled.
 
@@ -51,6 +53,7 @@ def test_qwen2_5_vl_compilation(vllm_runner, monkeypatch):
 # forked needed to workaround https://github.com/vllm-project/vllm/issues/21073
 @pytest.mark.forked
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="Skip if not cuda")
+# 测试关闭 compile_mm_encoder 时视觉子模块不会被编译
 def test_qwen2_5_vl_no_vit_compilation(vllm_runner, monkeypatch):
     """Test that Qwen2.5-VL vision submodules are not compiled when the
     config is passed off
@@ -77,6 +80,7 @@ def test_qwen2_5_vl_no_vit_compilation(vllm_runner, monkeypatch):
 # Requires Cuda and 8 gpus as well
 @pytest.mark.forked
 @pytest.mark.skip(reason="Skipping due to CI resource constraints")
+# 测试 Mllama4 视觉编码器编译（需 8 GPU，当前因 CI 资源跳过）
 def test_mllama4_vit_compilation(vllm_runner, monkeypatch):
     """Test that Mllama4 vision submodules are compiled.
 

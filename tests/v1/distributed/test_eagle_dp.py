@@ -29,6 +29,7 @@ else:
     "See: https://github.com/vllm-project/vllm/issues/27433",
     strict=False,
 )
+# [中文注释] 测试EAGLE推测解码在数据并行下的正确性（与无EAGLE的输出一致）
 async def test_run_eagle_dp(monkeypatch: pytest.MonkeyPatch, attn_backend: str):
     if not current_platform.is_rocm():
         # This test checks that running a model with and without eagle

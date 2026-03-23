@@ -21,6 +21,7 @@ from vllm.forward_context import set_forward_context
 MLP_SIZE = 64
 
 
+# 用于结构化日志测试的简单模型，包含 silly attention 分割点
 @support_torch_compile
 class SimpleModel(nn.Module):
     """A simple model with a splitting op for piecewise compilation."""
@@ -36,6 +37,7 @@ class SimpleModel(nn.Module):
         return x
 
 
+# 捕获 trace_structured 调用的辅助类，用于验证编译产生的日志事件
 class TraceStructuredCapture:
     """Captures trace_structured calls for testing."""
 
@@ -69,6 +71,7 @@ class TraceStructuredCapture:
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
+# 测试编译过程中产生的结构化日志 artifact 数量符合预期
 def test_vllm_structured_logging_artifacts(use_fresh_inductor_cache):
     """Test that all expected vLLM artifacts are logged during compilation."""
     torch.set_default_device("cuda")

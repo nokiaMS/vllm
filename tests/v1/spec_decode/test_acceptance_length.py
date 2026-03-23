@@ -27,6 +27,7 @@ from vllm.v1.metrics.reader import Counter, Vector
 
 
 @dataclass
+# [中文注释] 数据类：EAGLE3模型的测试配置，包含模型路径、草稿模型和注意力后端等参数
 class Eagle3ModelConfig:
     verifier: str
     drafter: str
@@ -223,6 +224,7 @@ def extract_acceptance_metrics(metrics, num_spec_tokens: int) -> dict:
 @pytest.mark.parametrize("num_spec_tokens", [DEFAULT_NUM_SPEC_TOKENS])
 @pytest.mark.parametrize("tp_size", get_tp_size_params())
 @pytest.mark.parametrize("attention_backend", get_attention_backend_params())
+# [中文注释] 回归测试：验证EAGLE3推测解码在MT-Bench数据集上的接受长度达标
 def test_eagle3_acceptance_length(
     model_config: Eagle3ModelConfig,
     num_spec_tokens: int,

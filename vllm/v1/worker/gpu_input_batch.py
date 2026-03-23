@@ -26,6 +26,9 @@ from vllm.v1.utils import copy_slice
 from vllm.v1.worker.block_table import MultiGroupBlockTable
 
 
+# 缓存的请求状态数据类，存储每个请求的完整状态信息，
+# 包括 token ID、采样参数、KV 缓存块映射、LoRA 配置等。
+# 作为请求在 GPU Worker 端的核心状态载体，在批次更新时与 InputBatch 交互。
 @dataclass
 class CachedRequestState:
     req_id: str
@@ -78,6 +81,13 @@ class CachedRequestState:
         return -1
 
 
+# GPU 输入批次管理类，维护当前批次中所有请求的持久化状态。
+# 设计思路：采用"持久化批次"模式，连续步骤间大部分请求保持不变，
+# 仅增量添加/移除请求，避免每步重建批次的开销。
+# 内部维护 CPU 和 GPU 双缓冲的张量（token_ids、采样参数、block table 等），
+# 通过 pinned memory 实现高效的 CPU→GPU 异步拷贝。
+# 支持采样参数（temperature、top_p/k、惩罚项）、LoRA 映射、
+# 投机解码 token 管理以及 logits processor 的批次状态追踪。
 class InputBatch:
     def __init__(
         self,
@@ -307,6 +317,10 @@ class InputBatch:
 
         return new_req_index
 
+    # 将一个新请求添加到持久化批次中。
+    # 复制请求的 token ID、采样参数到对应的 CPU 缓冲区，
+    # 更新 block table、LoRA 映射以及各种采样相关的集合跟踪。
+    # 返回该请求在批次中的索引位置。
     def add_request(
         self,
         request: "CachedRequestState",
@@ -446,6 +460,8 @@ class InputBatch:
 
         return req_index
 
+    # 更新请求的投机解码 token ID，将调度器分配的草稿 token 写入 token_ids_cpu 缓冲区。
+    # 在异步调度场景下，这些 token 作为占位符，后续会被实际采样结果覆盖。
     def update_req_spec_token_ids(
         self, request: CachedRequestState, scheduled_spec_tokens: dict[str, list[int]]
     ) -> None:
@@ -472,6 +488,8 @@ class InputBatch:
         self.token_ids_cpu[req_index, start_index:end_token_index] = spec_token_ids
         cur_spec_token_ids.extend(spec_token_ids)
 
+    # 从持久化批次中移除指定请求，清理其采样参数、LoRA 映射等关联状态。
+    # 移除后必须调用 condense() 来压缩批次中的空洞。
     def remove_request(self, req_id: str) -> int | None:
         """This method must always be followed by a call to condense().
 
@@ -526,6 +544,9 @@ class InputBatch:
         self.bad_words_token_ids.pop(req_index, None)
         return req_index
 
+    # 交换批次中两个请求索引位置的所有状态数据。
+    # 用于注意力后端对批次进行重排序（例如将 decode 和 prefill 请求分开），
+    # 同时记录交换操作以便 logits processor 追踪批次变化。
     def swap_states(self, i1: int, i2: int) -> None:
         old_id_i1 = self._req_ids[i1]
         old_id_i2 = self._req_ids[i2]
@@ -629,6 +650,9 @@ class InputBatch:
                 self.allowed_token_ids_mask_cpu_tensor[i1],
             )
 
+    # 压缩批次中因请求移除而产生的空洞索引。
+    # 算法：将尾部的活跃请求移动到前部的空闲位置，
+    # 保持批次数据的连续性，同时更新所有关联的索引映射。
     def condense(self) -> None:
         """Slide non-empty requests down into lower, empty indices.
 
@@ -759,6 +783,8 @@ class InputBatch:
         del self.req_output_token_ids[num_reqs:]
         del self.spec_token_ids[num_reqs:]
 
+    # 刷新采样元数据，将批次变更应用到 logits processor 并重建 SamplingMetadata。
+    # 在每步的批次更新（添加/移除/压缩）完成后调用。
     def refresh_metadata(self):
         """Apply any batch updates to sampling metadata."""
 
@@ -777,6 +803,8 @@ class InputBatch:
         if batch_update:
             self.sampling_metadata = self._make_sampling_metadata()
 
+    # 构建 SamplingMetadata 对象，将 CPU 端的采样参数张量拷贝到 GPU。
+    # 根据当前批次是否需要 top_p/top_k/惩罚项等，按需执行拷贝以节省带宽。
     def _make_sampling_metadata(self) -> SamplingMetadata:
         num_reqs = self.num_reqs
         if not self.all_greedy:
@@ -897,6 +925,8 @@ class InputBatch:
             prompt_token_ids[i, self.num_prompt_tokens[i] :] = self.vocab_size
         return prompt_token_ids_cpu_tensor.to(device=self.device, non_blocking=True)
 
+    # 根据批次中每个请求的 LoRA 映射，生成 LoRA 激活所需的数据结构。
+    # 返回 prompt 级别和 token 级别的 LoRA ID 映射以及活跃的 LoRA 请求集合。
     def make_lora_inputs(
         self, num_scheduled_tokens: np.ndarray, num_sampled_tokens: np.ndarray
     ) -> tuple[tuple[int, ...], tuple[int, ...], set[LoRARequest]]:
@@ -922,6 +952,8 @@ class InputBatch:
 
         return prompt_lora_mapping, token_lora_mapping, active_lora_requests
 
+    # 在异步调度模式下，保存上一步采样的 token ID 张量及其拷贝就绪事件。
+    # 这些数据用于在下一步的 logits processor 执行前修复 output_token_ids。
     def set_async_sampled_token_ids(
         self,
         sampled_token_ids_cpu: torch.Tensor,
@@ -939,6 +971,8 @@ class InputBatch:
             self.sampled_token_ids_cpu = None
             self.async_copy_ready_event = None
 
+    # 在异步调度模式下，用上一步实际采样的 token ID 替换 output_token_ids 中的占位符。
+    # 等待异步拷贝完成后，将真实 token ID 写入对应位置，供 logits processor 使用。
     def update_async_output_token_ids(self) -> None:
         """
         In async scheduling case, update output_token_ids in sampling metadata

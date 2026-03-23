@@ -31,6 +31,7 @@ if has_deep_ep():
 P = ParamSpec("P")
 
 
+# [中文注释] DeepEP测试的进程组信息数据类，记录world_size、rank、设备等多GPU并行信息
 @dataclasses.dataclass
 class ProcessGroupInfo:
     world_size: int
@@ -85,6 +86,7 @@ def _worker_parallel_launch(
         torch.distributed.destroy_process_group()
 
 
+# [中文注释] 启动DeepEP多GPU并行测试：使用torch spawn在多个rank上执行worker
 def parallel_launch(
     world_size: int,
     worker: Callable[Concatenate[ProcessGroupInfo, P], None],
@@ -110,11 +112,13 @@ def parallel_launch(
 ## DeepEP specific utils
 
 
+# [中文注释] DeepEP高吞吐模式参数，指定本地专家数量
 @dataclasses.dataclass
 class DeepEPHTArgs:
     num_local_experts: int
 
 
+# [中文注释] DeepEP低延迟模式参数，包括最大token数、隐藏层大小、专家数和FP8调度选项
 @dataclasses.dataclass
 class DeepEPLLArgs:
     max_tokens_per_rank: int
@@ -123,6 +127,7 @@ class DeepEPLLArgs:
     use_fp8_dispatch: bool
 
 
+# [中文注释] 创建DeepEP高吞吐All-to-All通信对象，使用NVLink缓冲区
 def make_deepep_ht_a2a(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -151,6 +156,7 @@ def make_deepep_ht_a2a(
     )
 
 
+# [中文注释] 创建DeepEP低延迟All-to-All通信对象，使用RDMA缓冲区
 def make_deepep_ll_a2a(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -183,6 +189,7 @@ def make_deepep_ll_a2a(
     )
 
 
+# [中文注释] 统一创建DeepEP All-to-All通信对象：根据参数选择高吞吐或低延迟模式
 def make_deepep_a2a(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,

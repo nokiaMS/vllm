@@ -13,6 +13,8 @@ from vllm.logger import init_logger
 logger = init_logger(__name__)
 
 
+# GC 调试配置类，解析 VLLM_GC_DEBUG 环境变量
+# 支持三种模式：禁用（"0"）、仅计时（"1"）、计时+统计 top 收集对象（JSON 配置）
 class GCDebugConfig:
     """
     Config for GC Debugger.
@@ -43,6 +45,8 @@ class GCDebugConfig:
         return f"enabled:{self.enabled},top_objects:{self.top_objects}"
 
 
+# GC 调试器，通过注册 GC 回调记录每次垃圾回收的耗时和收集对象信息
+# 在 GC 开始时记录时间和对象快照，在 GC 结束时计算耗时并输出日志
 class GCDebugger:
     """
     Debugger for GC which logs helpful information for GC understanding.
@@ -58,6 +62,7 @@ class GCDebugger:
         # compute top collected objects by object types
         self.gc_top_collected_objects: str = ""
 
+    # 处理 GC 事件回调，phase 为 "start" 或 "stop"
     def handle(self, phase: str, info: dict[str, int]) -> None:
         """
         Handles a GC event (e.g. GC start or GC finish)
@@ -93,6 +98,8 @@ class GCDebugger:
             )
 
 
+# 冻结 GC 堆中的所有对象，应在服务器初始化/预热后调用
+# 先触发三代 GC 收集将静态对象推到最老代，再调用 gc.freeze 减少服务期间的 GC 开销
 def freeze_gc_heap() -> None:
     """
     Freeze all objects tracked by the garbage collector. It should be invoked
@@ -108,6 +115,7 @@ def freeze_gc_heap() -> None:
     gc.freeze()
 
 
+# 条件性地注册 GC 调试回调，当 VLLM_GC_DEBUG 环境变量启用时生效
 def maybe_attach_gc_debug_callback() -> None:
     """
     Attached a callback for GC debug when VLLM_GC_DEBUG is enabled.
@@ -122,6 +130,7 @@ def maybe_attach_gc_debug_callback() -> None:
         gc.callbacks.append(gc_callback)
 
 
+# 获取对象的详细类型字符串，包含容器的大小信息（如有）
 def _compute_detailed_type(o: Any) -> str:
     """
     Detailed object type.
@@ -138,6 +147,7 @@ def _compute_detailed_type(o: Any) -> str:
     return f"{str(type(o))}{size_str}"
 
 
+# 按类型统计 GC 收集的对象并返回出现次数最多的 top 个类型
 def _compute_top_gc_collected_objects(objects: list[Any], top: int) -> str:
     """
     Group collected objects by types.

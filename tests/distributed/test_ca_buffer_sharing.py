@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试自定义 AllReduce 的跨 GPU 共享缓冲区功能（需要 P2P 访问和 torchrun 启动）
 
 # can only run on machines with p2p access across GPUs
 # can only run with torchrun:

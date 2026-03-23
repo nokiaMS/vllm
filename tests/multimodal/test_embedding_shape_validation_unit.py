@@ -16,6 +16,7 @@ from vllm.multimodal.parse import (
 )
 
 
+# [中文注释] 测试图像嵌入基本维度验证：2D/3D张量接受，1D/4D拒绝
 class TestImageEmbedBasicValidation:
     """Test basic ndim validation in image embeddings via ImageEmbeddingItems."""
 
@@ -92,6 +93,7 @@ class TestImageEmbedBasicValidation:
         assert str(expected_hidden_size) in error_msg
 
 
+# [中文注释] 测试音频嵌入基本维度验证：2D张量接受，1D/3D拒绝
 class TestAudioEmbedBasicValidation:
     """Test basic ndim validation in audio embeddings via AudioEmbeddingItems."""
 
@@ -166,6 +168,7 @@ class TestAudioEmbedBasicValidation:
         assert str(expected_hidden_size) in error_msg
 
 
+# [中文注释] 测试形状验证的DoS防护：拒绝不正确形状的嵌入以防止推理崩溃
 class TestShapeValidationDoSPrevention:
     """
     Tests for DoS prevention through shape validation.

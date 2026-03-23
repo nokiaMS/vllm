@@ -27,12 +27,14 @@ from .mk_objects import (
 from .parallel_utils import ProcessGroupInfo, parallel_launch_with_config
 
 
+# [中文注释] 测试结果枚举：PASS（通过）、FAIL（失败）、SKIP（跳过）
 class Result(Enum):
     PASS = 1
     FAIL = 2
     SKIP = 3
 
 
+# [中文注释] 多GPU rank工作函数：在每个rank上运行模块化内核并与参考实现比较结果
 def rank_worker(
     pgi: ProcessGroupInfo,
     vllm_config: VllmConfig,
@@ -69,6 +71,7 @@ def rank_worker(
         torch.testing.assert_close(ref_out, mk_out, atol=3e-2, rtol=3e-2)
 
 
+# [中文注释] 生成特征矩阵：遍历所有MoE内核组合（PrepareFinalize x Expert后端 x 量化配置），运行测试并输出CSV结果
 def make_feature_matrix(csv_file_path: str):
     from dataclasses import asdict
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件提供入口点测试的fixture：示例提示词、token ID、正则表达式、JSON schema、SQL语法和结构化输出选项
 
 import pytest
 

@@ -202,6 +202,7 @@ def _create_weighted_output_token_list(
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("batch_size", [1, 2, 32])
 @pytest.mark.parametrize("presence_penalty", [-2.0, 2.0])
+# [中文注释] 测试采样器的存在惩罚(presence penalty)对重复token的抑制效果
 def test_sampler_presence_penalty(
     device: str, batch_size: int, presence_penalty: float
 ):
@@ -252,6 +253,7 @@ def test_sampler_presence_penalty(
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("batch_size", [1, 2, 32])
 @pytest.mark.parametrize("frequency_penalty", [-2.0, 2.0])
+# [中文注释] 测试采样器的频率惩罚(frequency penalty)对高频token的抑制效果
 def test_sampler_frequency_penalty(
     device: str, batch_size: int, frequency_penalty: float
 ):
@@ -308,6 +310,7 @@ def test_sampler_frequency_penalty(
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("batch_size", [1, 2, 32])
 @pytest.mark.parametrize("repetition_penalty", [0.1, 1.9])
+# [中文注释] 测试采样器的重复惩罚(repetition penalty)对已出现token的抑制效果
 def test_sampler_repetition_penalty(
     device: str, batch_size: int, repetition_penalty: float
 ):
@@ -366,6 +369,7 @@ def test_sampler_repetition_penalty(
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("batch_size", [1, 2, 32])
 @pytest.mark.parametrize("num_allowed_token_ids", [0, 1, 2])
+# [中文注释] 测试采样器的允许token ID掩码功能，确保只采样允许的token
 def test_sampler_allowed_token_ids(
     device: str, batch_size: int, num_allowed_token_ids: int
 ):
@@ -412,6 +416,7 @@ def test_sampler_allowed_token_ids(
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("batch_size", [1, 2, 32])
 @pytest.mark.parametrize("bad_words_lengths", [(1,), (1, 3), (2, 2)])
+# [中文注释] 测试采样器的禁止词功能，确保禁止词不会被采样
 def test_sampler_bad_words(
     device: str, batch_size: int, bad_words_lengths: tuple[int, ...]
 ):

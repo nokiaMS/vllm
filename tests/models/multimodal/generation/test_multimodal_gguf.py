@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试多模态 GGUF 量化模型（如 Gemma3）的推理结果，对比 GGUF 与 HF 原始模型输出
 
 import os
 
@@ -21,6 +22,7 @@ from ....conftest import IMAGE_ASSETS, HfRunner, VllmRunner
 from ...utils import check_logprobs_close
 
 
+# 多模态 GGUF 测试配置，包含原始模型、GGUF 仓库、提示和图片信息
 class GGUFMMTestConfig(NamedTuple):
     original_model: str
     gguf_repo: str
@@ -86,6 +88,7 @@ GEMMA3_CONFIG_PAN_AND_SCAN = GGUFMMTestConfig(
 MODELS_TO_TEST = [GEMMA3_CONFIG, GEMMA3_CONFIG_PAN_AND_SCAN]
 
 
+# 执行多模态 GGUF 模型的推理测试，对比 GGUF 与 HF 的 logprobs
 def run_multimodal_gguf_test(
     hf_runner: type[HfRunner],
     vllm_runner: type[VllmRunner],
@@ -167,6 +170,7 @@ def run_multimodal_gguf_test(
 @pytest.mark.parametrize("dtype", ["bfloat16"])
 @pytest.mark.parametrize("max_tokens", [32])
 @pytest.mark.parametrize("num_logprobs", [10])
+# 测试 Gemma3 多模态 GGUF 量化模型的图像理解能力
 def test_gemma3_mm_gguf(
     hf_runner: type[HfRunner],
     vllm_runner: type[VllmRunner],

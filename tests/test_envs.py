@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试环境变量模块：验证 vllm.envs 的懒加载、缓存机制和受限值环境变量解析]
 
 import os
 from unittest.mock import patch
@@ -17,6 +18,7 @@ from vllm.envs import (
 )
 
 
+# [测试无缓存模式下环境变量的动态读取：修改 os.environ 后立即生效]
 def test_getattr_without_cache(monkeypatch: pytest.MonkeyPatch):
     assert envs.VLLM_HOST_IP == ""
     assert envs.VLLM_PORT is None
@@ -28,6 +30,7 @@ def test_getattr_without_cache(monkeypatch: pytest.MonkeyPatch):
     assert not hasattr(envs.__getattr__, "cache_info")
 
 
+# [测试启用缓存后环境变量值被缓存，后续访问命中缓存]
 def test_getattr_with_cache(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("VLLM_HOST_IP", "1.1.1.1")
     monkeypatch.setenv("VLLM_PORT", "1234")
@@ -58,6 +61,7 @@ def test_getattr_with_cache(monkeypatch: pytest.MonkeyPatch):
     envs.__getattr__ = envs.__getattr__.__wrapped__
 
 
+# [测试缓存启用后再禁用，环境变量能重新同步到最新 os.environ 值]
 def test_getattr_with_reset(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("VLLM_HOST_IP", "1.1.1.1")
     # __getattr__ is not decorated with functools.cache
@@ -78,6 +82,7 @@ def test_getattr_with_reset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert envs.VLLM_HOST_IP == "3.3.3.3"
 
 
+# [测试缓存状态检测函数：多次启用只需一次禁用即可重置]
 def test_is_envs_cache_enabled() -> None:
     assert not envs._is_envs_cache_enabled()
     enable_envs_cache()
@@ -95,6 +100,7 @@ def test_is_envs_cache_enabled() -> None:
     assert not envs._is_envs_cache_enabled()
 
 
+# [测试 env_with_choices 函数：验证单值受限环境变量的默认值、合法值和非法值处理]
 class TestEnvWithChoices:
     """Test cases for env_with_choices function."""
 
@@ -191,6 +197,7 @@ class TestEnvWithChoices:
                 env_func()
 
 
+# [测试 env_list_with_choices 函数：验证逗号分隔列表环境变量的解析、空白处理和校验]
 class TestEnvListWithChoices:
     """Test cases for env_list_with_choices function."""
 
@@ -298,6 +305,7 @@ class TestEnvListWithChoices:
             assert env_func() == ["option1", "option1", "option2"]
 
 
+# [测试 env_set_with_choices 函数：验证逗号分隔集合环境变量的去重和校验逻辑]
 class TestEnvSetWithChoices:
     """Test cases for env_set_with_choices function."""
 
@@ -405,6 +413,7 @@ class TestEnvSetWithChoices:
             assert env_func() == {"option1", "option2"}
 
 
+# [测试 VLLM_CONFIGURE_LOGGING 环境变量的布尔值解析和默认行为]
 class TestVllmConfigureLogging:
     """Test cases for VLLM_CONFIGURE_LOGGING environment variable."""
 

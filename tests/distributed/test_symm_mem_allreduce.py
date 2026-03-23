@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试对称内存 AllReduce 通信及其与数据并行的集成
 
 import queue
 import random

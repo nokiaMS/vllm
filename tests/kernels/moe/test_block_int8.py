@@ -52,6 +52,7 @@ SEEDS = [0]
 
 
 # For test
+# [中文注释] W8A8块INT8 MoE参考实现：使用原生torch逐专家计算INT8块量化矩阵乘法
 def torch_w8a8_block_int8_moe(a, w1, w2, w1_s, w2_s, score, topk, block_shape):
     """This function performs fused moe with block-wise quantization using
     native torch."""
@@ -95,6 +96,7 @@ def setup_cuda():
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("seed", SEEDS)
 @torch.inference_mode()
+# [中文注释] 测试W8A8块INT8融合MoE内核在不同维度和块大小下与参考实现的数值一致性
 def test_w8a8_block_int8_fused_moe(M, N, K, E, topk, block_size, dtype, seed):
     """Tests the fused_moe kernel with W8A8 INT8 block quantization against a
     native torch reference."""

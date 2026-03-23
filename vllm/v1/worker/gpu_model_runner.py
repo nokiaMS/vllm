@@ -215,6 +215,9 @@ AttnMetadataDict: TypeAlias = dict[str, AttentionMetadata]
 PerLayerAttnMetadata: TypeAlias = list[AttnMetadataDict] | AttnMetadataDict
 
 
+# 异步 GPU 模型输出包装器，用于支持异步调度下的执行与输出拷贝重叠。
+# 在独立的 CUDA 流上将采样 token ID 和 logprobs 异步拷贝到 CPU，
+# 调用 get_output() 时等待拷贝完成并解析最终结果（支持投机解码的拒绝采样解析）。
 # Wrapper for ModelRunnerOutput to support overlapped execution.
 class AsyncGPUModelRunnerOutput(AsyncModelRunnerOutput):
     def __init__(
@@ -284,6 +287,9 @@ class AsyncGPUModelRunnerOutput(AsyncModelRunnerOutput):
         return output
 
 
+# 将池化模型的输出从 GPU 异步拷贝到 CPU。
+# 支持部分完成的请求（通过 finished_mask 过滤），
+# 仅拷贝已完成的请求结果以减少不必要的数据传输。
 def _copy_pooler_output_to_cpu(
     raw_pooler_output: PoolerOutput, finished_mask: list[bool]
 ) -> list[torch.Tensor | None]:
@@ -329,6 +335,8 @@ def _copy_pooler_output_to_cpu(
     return pooler_output
 
 
+# 异步 GPU 池化模型输出包装器，类似 AsyncGPUModelRunnerOutput，
+# 但专门处理池化模型（如 embedding 模型）的输出拷贝。
 class AsyncGPUPoolingModelRunnerOutput(AsyncModelRunnerOutput):
     def __init__(
         self,
@@ -367,6 +375,10 @@ class AsyncGPUPoolingModelRunnerOutput(AsyncModelRunnerOutput):
         return self._model_runner_output
 
 
+# execute_model() 和 sample_tokens() 之间传递的临时状态。
+# 在异步调度模式下，execute_model() 完成前向传播后返回 None，
+# 将中间结果（logits、隐藏状态、投机解码元数据等）缓存在此结构中，
+# 供后续的 sample_tokens() 调用使用。
 class ExecuteModelState(NamedTuple):
     """Ephemeral cached state transferred between execute_model() and
     sample_tokens(), after execute_model() returns None."""
@@ -383,6 +395,13 @@ class ExecuteModelState(NamedTuple):
     slot_mappings: dict[str, torch.Tensor] | list[dict[str, torch.Tensor]] | None
 
 
+# GPU 模型运行器，vLLM v1 引擎的核心推理组件。
+# 职责：管理模型加载、输入准备（token 拼接、位置编码、注意力元数据构建）、
+# 前向传播执行、采样/池化、投机解码（N-gram/EAGLE/Medusa/Draft Model）、
+# 多模态编码器执行与缓存、KV 缓存初始化与管理、CUDA Graph 捕获与调度、
+# 以及 EPLB（专家并行负载均衡）。
+# 采用持久化批次（InputBatch）模式，步间增量更新以最小化开销。
+# 通过混入类获得 LoRA、KV 连接器和 EC 连接器的能力。
 class GPUModelRunner(
     LoRAModelRunnerMixin, KVConnectorModelRunnerMixin, ECConnectorModelRunnerMixin
 ):
@@ -1016,6 +1035,10 @@ class GPUModelRunner(
     def _sync_device(self) -> None:
         torch.accelerator.synchronize()
 
+    # 根据调度器输出更新持久化批次和缓存状态。
+    # 处理已完成请求的清理、新请求的添加、运行中请求的状态更新（block ID、token 等），
+    # 投机解码 token 的同步，以及批次的压缩和重排序。
+    # 这是每步推理开始时的关键状态同步步骤。
     def _update_states(self, scheduler_output: "SchedulerOutput") -> None:
         """Update the cached states and the persistent batch with the scheduler
         output.
@@ -1498,6 +1521,10 @@ class GPUModelRunner(
 
         return cu_num_tokens, arange
 
+    # 准备 input_ids GPU 张量。
+    # 常规模式直接从 CPU 拷贝；异步调度模式下需要特殊处理：
+    # 上一步的采样结果可能还在 GPU 上，需用 scatter 操作将其写入正确位置，
+    # 同时处理投机解码的 draft token 拷贝。
     def _prepare_input_ids(
         self,
         scheduler_output: "SchedulerOutput",
@@ -1664,6 +1691,11 @@ class GPUModelRunner(
 
         return encoder_seq_lens, encoder_seq_lens_cpu
 
+    # 准备模型前向传播所需的 GPU 输入张量。
+    # 核心步骤：计算位置编码、构建 token 索引映射、拷贝 input_ids 到 GPU、
+    # 提交 block table 和 slot mapping、构建 query_start_loc 和 seq_lens、
+    # 处理 M-RoPE/XD-RoPE 位置、激活 LoRA 适配器。
+    # 对于投机解码，还计算 draft token 的 logits 索引。
     def _prepare_inputs(
         self,
         scheduler_output: "SchedulerOutput",
@@ -1883,6 +1915,10 @@ class GPUModelRunner(
             spec_decode_metadata,
         )
 
+    # 为每个 KV 缓存组和注意力组构建注意力元数据。
+    # 支持混合架构（Transformer + Mamba）、级联注意力、编码器-解码器交叉注意力、
+    # 微批次切分以及 CUDA Graph 捕获模式。
+    # 通过缓存构建结果并仅更新 block table 来避免重复计算。
     def _build_attention_metadata(
         self,
         num_tokens: int,
@@ -2169,6 +2205,10 @@ class GPUModelRunner(
 
         return cascade_attn_prefix_lens if use_cascade_attn else None
 
+    # 计算级联注意力的公共前缀长度。
+    # 级联注意力将注意力计算分为两个 kernel：公共前缀（双向注意力）和请求独立部分。
+    # 前缀长度必须是 block_size 的倍数，且不超过最小 num_computed_tokens，
+    # 以避免需要 masking 的边界情况。
     def _compute_cascade_attn_prefix_len(
         self,
         num_scheduled_tokens: np.ndarray,
@@ -2362,6 +2402,8 @@ class GPUModelRunner(
 
                 xdrope_pos_ptr += completion_part_len
 
+    # 计算投机解码的元数据：logits 索引、目标/奖励 logits 索引、累积 draft token 数等。
+    # 这些索引用于从模型输出中提取验证 token 和奖励 token 对应的 logits。
     def _calc_spec_decode_metadata(
         self,
         num_draft_tokens: np.ndarray,
@@ -2509,6 +2551,9 @@ class GPUModelRunner(
 
         return mm_hashes, mm_kwargs, mm_lora_refs
 
+    # 执行多模态编码器（视觉/音频等）的前向传播。
+    # 按模态分批处理输入，支持 LoRA 的塔式/连接器映射，
+    # 将编码结果缓存到 encoder_cache 中供后续的注意力层使用。
     def _execute_mm_encoder(
         self, scheduler_output: "SchedulerOutput"
     ) -> list[torch.Tensor]:
@@ -2662,6 +2707,9 @@ class GPUModelRunner(
 
         return encoder_outputs
 
+    # 从编码器缓存中收集当前步骤所需的多模态嵌入。
+    # 根据每个请求的已计算 token 数和调度 token 数，
+    # 确定需要替换为编码器输出的位置，生成 is_mm_embed 掩码。
     def _gather_mm_embeddings(
         self,
         scheduler_output: "SchedulerOutput",
@@ -2886,6 +2934,8 @@ class GPUModelRunner(
             num_valid_physical_experts=old_num_physical_experts,
         )
 
+    # 执行池化模型的后处理：调用模型的 pooler 层对隐藏状态进行池化，
+    # 处理 late interaction（如 ColBERT）的后处理，并构建输出结果。
     def _pool(
         self,
         hidden_states: torch.Tensor,
@@ -3287,6 +3337,8 @@ class GPUModelRunner(
             **model_kwargs,
         )
 
+    # 判断当前批次是否为"统一 decode"模式（所有请求的调度 token 数相同），
+    # 这是 CUDA Graph 调度和注意力后端优化的关键判断条件。
     @staticmethod
     def _is_uniform_decode(
         max_num_scheduled_tokens: int,
@@ -3308,6 +3360,9 @@ class GPUModelRunner(
             else force_uniform_decode
         )
 
+    # 确定批次的执行策略：CUDA Graph 模式选择、padding 到匹配的 graph 大小、
+    # 微批次切分决策，以及序列并行的 token padding。
+    # 返回运行时 CUDA Graph 模式、批次描述符、padding 后的尺寸和微批次切片。
     def _determine_batch_execution_and_padding(
         self,
         num_tokens: int,
@@ -3533,6 +3588,16 @@ class GPUModelRunner(
 
         return slot_mappings_by_gid, slot_mappings_by_layer
 
+    # 模型前向执行的主入口。流程：
+    # 1. 更新持久化批次状态（_update_states）
+    # 2. 准备输入张量（_prepare_inputs）
+    # 3. 执行多模态编码器和嵌入收集
+    # 4. 确定 CUDA Graph 调度策略和 padding
+    # 5. 构建注意力元数据
+    # 6. 执行模型前向传播（_model_forward）
+    # 7. 计算 logits
+    # 在异步调度模式下返回 None，将状态缓存到 execute_model_state 供 sample_tokens 使用。
+    # 在流水线并行的非末级 rank 返回 IntermediateTensors。
     @torch.inference_mode()
     def execute_model(
         self,
@@ -3866,6 +3931,10 @@ class GPUModelRunner(
         self.kv_connector_output = kv_connector_output
         return None
 
+    # 采样步骤：从 execute_model 缓存的 logits 中采样 token。
+    # 处理结构化输出的 grammar bitmask 应用、投机解码的拒绝采样、
+    # prompt logprobs 计算、异步输出拷贝、以及草稿 token 的生成。
+    # 返回 ModelRunnerOutput（包含采样 token ID、logprobs、KV 连接器输出等）。
     @torch.inference_mode
     def sample_tokens(
         self, grammar_output: "GrammarOutput | None"
@@ -4221,6 +4290,9 @@ class GPUModelRunner(
         sampled_count_event.synchronize()
         return counts_cpu[: prev_sampled_token_ids.shape[0]].tolist()
 
+    # 投机解码的 draft token 生成入口。
+    # 根据配置的投机解码方法（N-gram/EAGLE/Medusa/Draft Model 等），
+    # 利用主模型的隐藏状态或输出 token 提议候选 draft token。
     def propose_draft_token_ids(
         self,
         scheduler_output: "SchedulerOutput",
@@ -4483,6 +4555,10 @@ class GPUModelRunner(
             new_config = update_config(config, config_overrides)
             setattr(self, config_name, new_config)
 
+    # 加载模型权重和相关组件。流程：
+    # 通过模型加载器加载权重（支持张量并行分片和量化），
+    # 初始化 LoRA 层、投机解码 draft 模型、EPLB 状态，
+    # 设置 KV 缓存共享层、中间张量缓冲区，以及 CUDA Graph 包装器。
     @instrument(span_name="Loading (GPU)")
     def load_model(self, load_dummy_weights: bool = False) -> None:
         """
@@ -4664,6 +4740,8 @@ class GPUModelRunner(
 
         return None
 
+    # 热重载模型权重：支持在运行时从新的检查点加载权重，
+    # 可选择性地更新模型配置中的生成参数（如 temperature）。
     def reload_weights(
         self,
         weights_iterator: Iterable[tuple[str, torch.Tensor]] | None = None,
@@ -4948,6 +5026,9 @@ class GPUModelRunner(
             )
         )
 
+    # 使用虚拟输入执行模型前向传播，用于 torch.compile 预热、
+    # CUDA Graph 捕获、内存 profiling 以及内核调优。
+    # 支持多种配置：统一 decode、微批次、LoRA 激活等。
     @torch.inference_mode()
     def _dummy_run(
         self,
@@ -5464,6 +5545,8 @@ class GPUModelRunner(
         max_task = max(output_size.items(), key=lambda x: x[1])[0]
         return self._dummy_pooler_run_task(hidden_states, max_task)
 
+    # 内存 profiling 运行：使用最大 batch size 的虚拟输入执行前向传播，
+    # 测量模型的峰值 GPU 内存使用量，包括多模态编码器的内存开销。
     def profile_run(self) -> None:
         # Profile with multimodal encoder & encoder cache.
         if self.supports_mm_inputs:
@@ -5601,6 +5684,9 @@ class GPUModelRunner(
         logger.debug("Cleaned up profiling KV cache and CUDA graphs")
 
     @torch.inference_mode()
+    # 估算 CUDA Graph 捕获所需的 GPU 内存。
+    # 通过对少量代表性 batch size 进行试捕获并测量内存增长，
+    # 外推出全部 graph 的内存开销，用于更精确的 KV 缓存内存规划。
     def profile_cudagraph_memory(self) -> int:
         with set_current_vllm_config(self.vllm_config):
             self._init_minimal_kv_cache_for_profiling()
@@ -5701,6 +5787,9 @@ class GPUModelRunner(
 
         return int(total_estimate)
 
+    # CUDA Graph 捕获：对配置的 batch size 列表（从大到小）捕获前向传播的 CUDA Graph。
+    # 支持 piecewise（分段）和 full（完整）两种模式，以及微批次的 graph 捕获。
+    # 返回实际消耗的 CUDA Graph 内存量。
     @instrument(span_name="Capture model")
     def capture_model(self) -> int:
         if self.compilation_config.cudagraph_mode == CUDAGraphMode.NONE:
@@ -5846,6 +5935,9 @@ class GPUModelRunner(
             torch.accelerator.synchronize()
         self.maybe_remove_all_loras(self.lora_config)
 
+    # 初始化注意力后端：为每个 KV 缓存组选择合适的注意力后端实现，
+    # 创建 AttentionGroup 并关联 KV 缓存规格和层名称。
+    # 支持混合架构中不同层使用不同的注意力后端。
     def initialize_attn_backend(self, kv_cache_config: KVCacheConfig) -> None:
         """
         Initialize the attention backends and attention metadata builders.
@@ -6394,6 +6486,8 @@ class GPUModelRunner(
                         stride=(hidden_size, 2 * hidden_size, *kv_cache.stride()[2:]),
                     )
 
+    # 分配和初始化 KV 缓存张量，支持统一布局（跨层连续存储）和非统一布局。
+    # 将张量绑定到各注意力层，处理 Mamba 状态初始化和 FP8 缩放因子。
     def initialize_kv_cache_tensors(
         self, kv_cache_config: KVCacheConfig, kernel_block_sizes: list[int]
     ) -> dict[str, torch.Tensor]:
@@ -6477,6 +6571,9 @@ class GPUModelRunner(
                 else:
                     break
 
+    # KV 缓存初始化的主入口：设置注意力后端、分配 KV 缓存张量、
+    # 绑定缓存到注意力层、初始化 Mamba 状态（混合架构），
+    # 以及重建 InputBatch（如果 block size 发生变化）。
     def initialize_kv_cache(self, kv_cache_config: KVCacheConfig) -> None:
         """
         Initialize KV cache based on `kv_cache_config`.
@@ -6607,6 +6704,9 @@ class GPUModelRunner(
                 KVCacheGroupSpec(layer_names=layer_names, kv_cache_spec=spec)
             )
 
+    # 获取每个注意力层的 KV 缓存规格，用于 KV 缓存管理器的初始化。
+    # 遍历模型的所有注意力层，根据注意力类型（全注意力、滑动窗口、
+    # 分块局部注意力、交叉注意力、Mamba 等）生成对应的 KVCacheSpec。
     def get_kv_cache_spec(self) -> dict[str, KVCacheSpec]:
         """
         Generates the KVCacheSpec by parsing the kv cache format from each
@@ -6714,6 +6814,7 @@ class GPUModelRunner(
                     stats.num_encoder_calls += 1
 
 
+# 编码器前向传播的按请求计时统计，用于可观测性监控。
 @dataclass
 class EncoderTimingStats:
     """Per-request timing statistics for encoder forward pass."""

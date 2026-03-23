@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 Whisper 模型转录 API：基本转录、批量、流式、beam search、采样参数、时间戳和语言检测]
 
 # imports for structured outputs tests
 import asyncio
@@ -31,6 +32,7 @@ async def whisper_client(server):
 
 
 @pytest.mark.asyncio
+# [测试 Whisper 基本音频转录]
 async def test_basic_audio(whisper_client, mary_had_lamb):
     # Based on https://github.com/openai/openai-cookbook/blob/main/examples/Whisper_prompting_guide.ipynb.
     transcription = await whisper_client.audio.transcriptions.create(
@@ -48,6 +50,7 @@ async def test_basic_audio(whisper_client, mary_had_lamb):
 
 
 @pytest.mark.asyncio
+# [测试 Whisper 批量音频转录：两个请求并发执行]
 async def test_basic_audio_batched(mary_had_lamb, winning_call, whisper_client):
     transcription = whisper_client.audio.transcriptions.create(
         model=MODEL_NAME,
@@ -74,6 +77,7 @@ async def test_basic_audio_batched(mary_had_lamb, winning_call, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试无效语言参数应返回 BadRequest 错误]
 async def test_bad_requests(mary_had_lamb, whisper_client):
     # invalid language
     with pytest.raises(openai.BadRequestError):
@@ -83,6 +87,7 @@ async def test_bad_requests(mary_had_lamb, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试长音频（10 倍重复）转录：验证重复次数和总时长]
 async def test_long_audio_request(mary_had_lamb, whisper_client):
     mary_had_lamb.seek(0)
     audio, sr = librosa.load(mary_had_lamb)
@@ -109,6 +114,7 @@ async def test_long_audio_request(mary_had_lamb, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试损坏的音频文件应返回 400 错误]
 async def test_invalid_audio_file(whisper_client):
     """Corrupted audio should surface as HTTP 400."""
     invalid_audio = io.BytesIO(b"not a valid audio file")
@@ -126,6 +132,7 @@ async def test_invalid_audio_file(whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试 Whisper 模型不支持 chat/completions 端点应返回 NotFound]
 async def test_completion_endpoints(whisper_client):
     # text to text model
     with pytest.raises(openai.NotFoundError):
@@ -139,6 +146,7 @@ async def test_completion_endpoints(whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试流式转录响应与非流式结果一致]
 async def test_streaming_response(winning_call, whisper_client):
     transcription = ""
     res_no_stream = await whisper_client.audio.transcriptions.create(
@@ -165,6 +173,7 @@ async def test_streaming_response(winning_call, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试流式转录的 usage 统计选项]
 async def test_stream_options(winning_call, whisper_client):
     res = await whisper_client.audio.transcriptions.create(
         model=MODEL_NAME,
@@ -187,6 +196,7 @@ async def test_stream_options(winning_call, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试极端采样参数产生与贪婪解码不同的转录结果]
 async def test_sampling_params(mary_had_lamb, whisper_client):
     """
     Compare sampling with params and greedy sampling to assert results
@@ -220,6 +230,7 @@ async def test_sampling_params(mary_had_lamb, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试转录提示不会导致原始内容被遗漏]
 async def test_audio_prompt(mary_had_lamb, whisper_client):
     prompt = "This is a speech, recorded in a phonograph."
     # Prompts should not omit the part of original prompt while transcribing.
@@ -246,6 +257,7 @@ async def test_audio_prompt(mary_had_lamb, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试 verbose_json 格式转录包含时间戳和段落信息]
 async def test_audio_with_timestamp(mary_had_lamb, whisper_client):
     transcription = await whisper_client.audio.transcriptions.create(
         model=MODEL_NAME,
@@ -261,6 +273,7 @@ async def test_audio_with_timestamp(mary_had_lamb, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试 max_completion_tokens 参数限制转录输出长度]
 async def test_audio_with_max_tokens(whisper_client, mary_had_lamb):
     transcription = await whisper_client.audio.transcriptions.create(
         model=MODEL_NAME,
@@ -301,6 +314,7 @@ async def test_audio_with_max_tokens(whisper_client, mary_had_lamb):
     ],
     ids=["english", "italian"],
 )
+# [测试未指定语言时的自动语言检测]
 async def test_language_auto_detect(
     whisper_client, fixture_name, expected_lang, expected_text, request
 ):
@@ -320,6 +334,7 @@ async def test_language_auto_detect(
 
 
 @pytest.mark.asyncio
+# [测试单束 beam search 与贪婪解码结果一致]
 async def test_whisper_beam_search_single_beam(mary_had_lamb, whisper_client):
     """Test beam search with encoder-decoder model (Whisper) on transcriptions with
     one beam aligns with greedy decoding.
@@ -349,6 +364,7 @@ async def test_whisper_beam_search_single_beam(mary_had_lamb, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试多束 beam search 返回最佳转录结果]
 async def test_whisper_beam_search_multibeam(mary_had_lamb, whisper_client):
     """Test n>1 for beam search returns one transcription (best beam)."""
     transcription = await whisper_client.audio.transcriptions.create(
@@ -373,6 +389,7 @@ async def test_whisper_beam_search_multibeam(mary_had_lamb, whisper_client):
 
 
 @pytest.mark.asyncio
+# [测试流式与 beam search 同时使用应返回 BadRequest 错误]
 async def test_stream_with_beams_raises(winning_call, whisper_client):
     """Test that stream=True + beam search raises bad request for now."""
     with pytest.raises(openai.BadRequestError):

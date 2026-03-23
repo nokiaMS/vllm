@@ -25,6 +25,7 @@ def reset_default_device():
     torch.set_default_device(original_device)
 
 
+# [中文注释] 测试top-k实现的等价性：纯top-k与top-k+top-p(p=1.0)结果一致
 def test_topk_impl_equivalence():
     torch.set_default_device(DEVICE)
     generator = Generator(device=DEVICE).manual_seed(33)
@@ -54,6 +55,7 @@ def test_topk_impl_equivalence():
     "needs investigation of tolerance threshold or "
     "interface differences between Python and FlashInfer implementations"
 )
+# [中文注释] 测试FlashInfer的top-k/top-p采样实现与Python实现的结果一致性
 def test_flashinfer_sampler():
     """
     This test verifies that the FlashInfer top-k and top-p sampling
@@ -129,6 +131,7 @@ def test_flashinfer_sampler():
 
 
 @pytest.mark.skipif(CUDA_DEVICE is None, reason="CUDA not available")
+# [中文注释] 测试类：验证Triton内核实现的top-k/top-p采样与PyTorch实现的一致性
 class TestTritonTopkTopp:
     """Tests for the Triton top-k/top-p kernel."""
 

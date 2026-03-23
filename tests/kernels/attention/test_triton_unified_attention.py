@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Triton统一注意力内核在预填充和解码阶段的正确性（支持FP8量化）
 
 
 import pytest
@@ -31,6 +32,7 @@ NUM_BLOCKS = [32768, 2048]
 SEQ_THRESHOLD_3D_VALUES = [0, 8]
 
 
+# 基于PyTorch的分页注意力参考实现（支持滑动窗口和softcap）
 def ref_paged_attn(
     query: torch.Tensor,
     key_cache: torch.Tensor,
@@ -89,6 +91,7 @@ def ref_paged_attn(
     return torch.cat(outputs, dim=0)
 
 
+# 测试Triton统一注意力内核在预填充+解码混合场景下与参考实现的一致性（支持FP8/softcap/滑动窗口）
 @pytest.mark.parametrize(
     "seq_lens", [[(1, 1328), (5, 18), (129, 463)], [(1, 523), (1, 37), (1, 2011)]]
 )
@@ -221,6 +224,7 @@ def test_triton_unified_attn(
     )
 
 
+# 测试Triton统一注意力内核在FP16输入FP8输出（带output_scale）下的正确性
 @pytest.mark.parametrize(
     "seq_lens",
     [

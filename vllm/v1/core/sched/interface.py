@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from vllm.v1.structured_output import StructuredOutputManager
 
 
+# [中文注释] Scheduler 暂停状态枚举。
+#   UNPAUSED — 正常调度
+#   PAUSED_NEW — 不调度新请求（等待队列冻结），已在运行的请求继续
+#   PAUSED_ALL — 完全暂停，不调度任何请求
 class PauseState(enum.IntEnum):
     """Scheduler pause state.
 
@@ -33,6 +37,17 @@ class PauseState(enum.IntEnum):
     PAUSED_ALL = 2
 
 
+# [中文注释] Scheduler 抽象接口（定义 Engine Core 所需的调度器契约）。
+#   核心方法：
+#     schedule() — 每步调用，返回 SchedulerOutput（哪些请求处理多少 token）
+#     update_from_output() — 模型推理后更新状态（处理生成 token、检查停止条件）
+#     add_request() / finish_requests() — 管理请求生命周期
+#     get_grammar_bitmask() — 结构化输出的语法约束 bitmask
+#     update_draft_token_ids() — 投机解码的 draft token 更新
+#   设计理念：没有"prefill 阶段"和"decode 阶段"的区分，
+#     每个请求只有 num_computed_tokens 和 num_tokens_with_spec，
+#     调度器每步让 computed 追赶 total，统一覆盖 chunked prefill、
+#     prefix caching、speculative decoding 等场景。
 class SchedulerInterface(ABC):
     @abstractmethod
     def __init__(

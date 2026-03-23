@@ -19,6 +19,7 @@ from .utils import (
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 辅助函数：创建匹配token数回调，用于模拟不同请求的外部token匹配结果。
 def _make_get_num_new_matched_tokens(
     req_num_new_matched_tokens: dict[str, int],
     async_load: bool,
@@ -30,6 +31,7 @@ def _make_get_num_new_matched_tokens(
     return get_num_new_matched_tokens
 
 
+# [中文注释] 测试夹具：创建fail策略调度器，用于测试错误传播场景。
 @pytest.fixture
 def fail_scheduler():
     """scheduler with kv_load_failure_policy='fail'"""
@@ -38,6 +40,7 @@ def fail_scheduler():
     return create_scheduler(vllm_config)
 
 
+# [中文注释] 测试用例：验证同步加载时invalid_block_ids与fail策略导致请求以FINISHED_ERROR结束。
 def test_error_propagation_sync_load(fail_scheduler: Scheduler):
     """test invalid_block_ids with fail policy -> FINISHED_ERROR (sync load)"""
     num_prompt_blocks = 100
@@ -92,6 +95,7 @@ def test_error_propagation_sync_load(fail_scheduler: Scheduler):
     assert len(fail_scheduler.running) == 0
 
 
+# [中文注释] 测试用例：验证异步加载时invalid_block_ids与fail策略导致请求以FINISHED_ERROR结束。
 def test_error_propagation_async_load(fail_scheduler: Scheduler):
     """test invalid_block_ids with fail policy -> FINISHED_ERROR (async load)"""
     num_prompt_blocks = 100

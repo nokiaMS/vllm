@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试ROCm平台上AITER Flash Attention后端的变长分页KV缓存注意力计算正确性
 
 
 import pytest
@@ -27,6 +28,7 @@ QDTYPES = [None]
 NUM_BLOCKS = [32768, 2048]
 
 
+# 分页注意力的参考实现，用于与AITER后端的输出进行对比验证
 def ref_paged_attn(
     query: torch.Tensor,
     key_cache: torch.Tensor,
@@ -85,6 +87,7 @@ def ref_paged_attn(
     return torch.cat(outputs, dim=0)
 
 
+# 测试AITER Flash Attention在变长序列和分页KV缓存下的计算精度
 @pytest.mark.skipif(not current_platform.is_rocm(), reason="Only ROCm is supported")
 @pytest.mark.parametrize(
     "seq_lens", [[(10, 1328), (5, 18), (129, 463)], [(8, 523), (24, 37), (3, 2011)]]

@@ -105,6 +105,7 @@ AITER_KERNEL_GROUPSHAPE_COMBINATIONS = [
 ]
 
 
+# RMSNorm+Quant 融合测试模型，支持多种量化 kernel 和分组形状
 class TestModel(torch.nn.Module):
     def __init__(
         self,
@@ -253,6 +254,7 @@ class TestModel(torch.nn.Module):
         )
 
 
+# 通用的融合测试辅助函数，比较融合前后输出并验证图中的操作替换
 def _run_fusion_test(
     model,
     fusion_pass,
@@ -304,6 +306,7 @@ def _run_fusion_test(
 @pytest.mark.skipif(
     not current_platform.is_cuda_alike(), reason="Only test on CUDA and ROCm"
 )
+# 测试 RMSNorm+Quant 融合 pass 在多种 kernel/分组/精度组合下的正确性
 def test_fusion_rmsnorm_quant(
     dtype,
     hidden_size,
@@ -386,6 +389,7 @@ def test_fusion_rmsnorm_quant(
     (not current_platform.is_rocm() or not IS_AITER_FOUND),
     reason="Only test on ROCm with aiter package installed",
 )
+# 测试 ROCm AITER 的 RMSNorm+Quant 融合 pass（仅 ROCm + aiter）
 def test_aiter_fusion_rmsnorm_quant(
     dtype: torch.dtype,
     hidden_size: int,

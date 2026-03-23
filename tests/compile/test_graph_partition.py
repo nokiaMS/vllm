@@ -14,6 +14,7 @@ from vllm.compilation.passes.fx_utils import find_op_nodes
 from . import silly_attention  # noqa: F401
 
 
+# 测试 getitem 操作被移动到生产者子图，避免元组跨子图传递
 def test_getitem_moved_to_producer_subgraph():
     """
     Test that getitem operations are moved to the same subgraph as their input,
@@ -69,6 +70,7 @@ def test_getitem_moved_to_producer_subgraph():
     assert torch.allclose(output_original, output_split), "Output mismatch"
 
 
+# 测试元组被多个分割操作消费时 getitem 被正确移动，避免元组输入
 def test_no_tuple_inputs_with_multiple_consumers():
     """
     Test that when a tuple is consumed by multiple split operations,
@@ -128,6 +130,7 @@ def test_no_tuple_inputs_with_multiple_consumers():
     assert torch.allclose(output_original, output_split), "Output mismatch after split"
 
 
+# 测试连续的分割操作被合并到同一子图中
 def test_consecutive_ops_in_split():
     """
     Test that consecutive splitting operations are grouped into the same subgraph
@@ -186,12 +189,14 @@ def test_consecutive_ops_in_split():
     ] + ["output"]
 
 
+# 获取子图中的空分配节点
 def _get_empty_nodes(split_item):
     return [
         node for node in split_item.graph.graph.nodes if _is_empty_allocation_node(node)
     ]
 
 
+# 过滤包含空分配节点的子图列表
 def _subgraphs_with_empty_nodes(split_items, *, is_splitting_graph):
     return [
         split_item
@@ -201,6 +206,7 @@ def _subgraphs_with_empty_nodes(split_items, *, is_splitting_graph):
     ]
 
 
+# 测试仅含空分配的子图在前驱为分割操作子图时不被合并
 def test_empty_only_partition_stays_separate_after_splitting_predecessor():
     """
     Empty-only subgraphs should not be merged when the only predecessor is
@@ -238,6 +244,7 @@ def test_empty_only_partition_stays_separate_after_splitting_predecessor():
     assert torch.allclose(output_original, output_split), "Output mismatch after split"
 
 
+# 测试仅含空分配的子图在有非分割前驱时被正确合并
 def test_empty_only_partition_is_merged():
     """
     Empty-only subgraphs should still be merged when a non-splitting predecessor
@@ -284,6 +291,7 @@ def test_empty_only_partition_is_merged():
     assert torch.allclose(output_original, output_split), "Output mismatch after split"
 
 
+# 测试 Dynamo 图中以内置函数形式出现的 empty_like 也能被合并
 def test_builtin_empty_only_partition_is_merged():
     """
     In Dynamo graphs, torch.empty/empty_like may appear as builtin call targets

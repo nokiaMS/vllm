@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Llama-4-Maverick MoE 模型：创建缩减版模型并验证推理、注意力规格和 RoPE 配置
 """
 Create a reduced-layer version of the Maverick model for testing purposes.
 
@@ -35,6 +36,7 @@ PROMPTS: list[str] = [
 ]
 
 
+# 使用完整 Maverick 模型进行推理服务测试
 def run_maverick_serving(model: str):
     """Test Llama-4-Maverick model with vLLM LLM class using CLI equivalent
     options with reduced layers.
@@ -90,6 +92,7 @@ def get_rope_layers_config(model_path: str) -> list[int]:
     return no_rope_layers
 
 
+# 创建缩减层数的 Maverick 模型，用于快速测试
 def create_reduced_maverick_model(
     original_model_name: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     output_dir: str = "/tmp/reduced_maverick",
@@ -174,6 +177,7 @@ def create_reduced_maverick_model(
         raise
 
 
+# 基于原始配置创建缩减的模型配置（减少层数、专家数、隐藏维度）
 def create_reduced_config(
     original_config: Any, text_layers: int, num_experts: int, vision_layers: int
 ) -> dict[str, Any]:
@@ -553,6 +557,7 @@ def save_weights_to_safetensors(
     )
 
 
+# 验证交错 RoPE 层的注意力规格是否正确（FullAttention vs ChunkedLocalAttention）
 def check_attention_spec_interleaved_rope(
     llm: LLM,
     num_attention_layers: int,
@@ -601,6 +606,7 @@ def run_reduced_model(llm: LLM, should_profile: bool = False) -> None:
 @pytest.mark.parametrize("enforce_eager", [True, False])
 @pytest.mark.parametrize("tp,ep", [(2, True)])
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
+# 测试缩减版 Maverick 模型的创建、注意力规格验证和推理生成
 def test_dummy_maverick(
     monkeypatch,
     original_model_name: str,

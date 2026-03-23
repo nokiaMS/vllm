@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试提取隐藏状态功能，验证token_embed任务跳过前缀缓存读取但仍可写入缓存
+
 import pytest
 import torch
 

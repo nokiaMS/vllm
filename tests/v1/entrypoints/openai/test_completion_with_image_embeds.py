@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试使用预计算图像嵌入进行聊天补全，支持不同数据类型（half/float16/float32）
 
 import json
 
@@ -52,6 +53,7 @@ async def client_with_image_embeds(server_with_image_embeds):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("dtype", [torch.half, torch.float16, torch.float32])
+# [中文注释] 测试将base64编码的图像嵌入作为输入进行聊天补全
 async def test_completions_with_image_embeds(
     client_with_image_embeds: openai.AsyncOpenAI,
     model_name: str,

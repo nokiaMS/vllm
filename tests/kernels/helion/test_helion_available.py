@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# Helion内核可用性冒烟测试：验证Helion库已安装且能编译和运行简单内核
 """
 Tests for Helion kernel availability and basic functionality.
 
@@ -23,6 +24,7 @@ import helion.language as hl
 import torch
 
 
+# 冒烟测试：编译并运行一个简单的Helion向量加法内核
 def test_helion_kernel_compilation_smoke():
     """Smoke test: compile and run a simple Helion kernel."""
 

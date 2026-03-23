@@ -22,6 +22,7 @@ DP_SIZE = int(os.getenv("DP_SIZE", "2"))
 TP_SIZE = int(os.getenv("TP_SIZE", "1"))
 
 
+# [中文注释] 管理类：为外部负载均衡器测试管理多个数据并行vLLM服务器实例
 class ExternalLBServerManager:
     """Manages data parallel vLLM server instances for external
     load balancer testing."""
@@ -166,6 +167,7 @@ def _get_parallel_config(server: RemoteOpenAIServer):
     return vllm_config["parallel_config"]
 
 
+# [中文注释] 测试外部负载均衡器模式下服务器信息和DP配置的正确性
 def test_external_lb_server_info(server_manager):
     servers = server_manager.servers
     api_server_count = server_manager.api_server_count

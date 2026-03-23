@@ -18,10 +18,12 @@ from .utils import (
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 辅助函数：获取调度器中等待请求的总数。
 def _num_waiting_requests(scheduler) -> int:
     return len(scheduler.waiting) + len(scheduler.skipped_waiting)
 
 
+# [中文注释] 测试用例：验证远程prefill的基本生命周期（调度、KV发送、完成）。
 def test_basic_lifecycle():
     """Test lifecycle of a remote prefill."""
 
@@ -143,6 +145,7 @@ def test_basic_lifecycle():
     assert_scheduler_empty(scheduler)
 
 
+# [中文注释] 测试用例：验证交替处理多个远程prefill请求的生命周期。
 def test_interleaved_lifecycle():
     """Test Remote Prefills Work Well With Other Requests."""
 
@@ -242,6 +245,7 @@ def test_interleaved_lifecycle():
     assert_scheduler_empty(scheduler)
 
 
+# [中文注释] 测试用例：验证远程prefill不会产生虚假的前缀缓存。
 def test_no_spurious_prefix_caching():
     """
     With P/D, blocks can be allocated but uncomputed for
@@ -312,6 +316,7 @@ def test_no_spurious_prefix_caching():
         assert block._block_hash is None
 
 
+# [中文注释] 测试用例：验证提示词长度恰好填满完整块时的远程prefill行为。
 def test_full_block_prompt():
     """Test that we handle a prompt that is the full block size."""
 
@@ -387,6 +392,7 @@ def test_full_block_prompt():
     assert_scheduler_empty(scheduler)
 
 
+# [中文注释] 测试用例：验证接收完成后无法再次调度的约束。
 def test_cannot_schedule_after_recv():
     """
     Test that we can handle no schedule after recv due to not
@@ -490,6 +496,7 @@ def test_cannot_schedule_after_recv():
     assert_scheduler_empty(scheduler)
 
 
+# [中文注释] 测试用例：验证无法接收KV数据时的错误处理。
 def test_cannot_recv():
     """
     Test that we can handle no schedule KV block transfer due to not

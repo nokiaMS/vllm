@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 SSL 证书热刷新功能，验证证书/密钥/CA 文件变更时自动重新加载，
+# 以及停止刷新器后不再响应文件变更
+
 import asyncio
 import tempfile
 from pathlib import Path
@@ -10,6 +14,7 @@ import pytest
 from vllm.entrypoints.ssl import SSLCertRefresher
 
 
+# 模拟 SSL 上下文，追踪证书链和 CA 的加载次数
 class MockSSLContext(SSLContext):
     def __init__(self):
         self.load_cert_chain_count = 0
@@ -32,15 +37,18 @@ class MockSSLContext(SSLContext):
         self.load_ca_count += 1
 
 
+# 辅助函数：创建临时文件并返回路径
 def create_file() -> str:
     with tempfile.NamedTemporaryFile(dir="/tmp", delete=False) as f:
         return f.name
 
 
+# 辅助函数：触碰文件以更新修改时间，触发刷新器检测
 def touch_file(path: str) -> None:
     Path(path).touch()
 
 
+# 测试 SSL 证书刷新器的完整生命周期：文件变更触发重载、停止后不再响应
 @pytest.mark.asyncio
 async def test_ssl_refresher():
     ssl_context = MockSSLContext()

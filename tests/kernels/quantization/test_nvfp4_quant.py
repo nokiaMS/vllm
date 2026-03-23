@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试NVFP4量化操作（scaled_fp4_quant）的正确性（需要Blackwell SM100+）
 import pytest
 import torch
 
@@ -70,6 +71,7 @@ E2M1_TO_FLOAT32 = [
 BLOCK_SIZE = 16
 
 
+# 将打包的FP4 uint8数据解包为浮点数张量
 def cast_from_fp4(x, m, n):
     # The fp4 values are packed in uint8 as [v_1st | v_2nd]
     v_2nd = x & 0xF
@@ -80,6 +82,7 @@ def cast_from_fp4(x, m, n):
     return out
 
 
+# 将浮点数张量模拟量化为FP4精度（E2M1格式）
 def cast_to_fp4(x):
     sign = torch.sign(x)
     x = torch.abs(x)
@@ -94,6 +97,7 @@ def cast_to_fp4(x):
     return x * sign
 
 
+# 安全求倒数，零值返回0
 def get_reciprocal(x):
     if isinstance(x, torch.Tensor):
         return torch.where(x == 0, torch.tensor(0.0, dtype=x.dtype), 1.0 / x)
@@ -103,6 +107,7 @@ def get_reciprocal(x):
         raise TypeError("Input must be a float, int, or a torch.Tensor.")
 
 
+# NVFP4量化的Python参考实现
 def ref_nvfp4_quant(x, global_scale):
     assert global_scale.dtype == torch.float32
     assert x.ndim == 2
@@ -118,6 +123,7 @@ def ref_nvfp4_quant(x, global_scale):
     return cast_to_fp4(clipped_x), scale.squeeze(-1)
 
 
+# 将swizzle布局的缩放因子恢复为线性布局
 def recover_swizzled_scales(scale, m, n):
     round_up = lambda x, y: (x + y - 1) // y * y
     rounded_m = round_up(m, 128)
@@ -130,6 +136,7 @@ def recover_swizzled_scales(scale, m, n):
     return result[:m, :scale_n]
 
 
+# 测试NVFP4量化内核与参考实现在对齐形状下的一致性
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("shape", SHAPES)
 @pytest.mark.parametrize("seed", SEEDS)
@@ -159,6 +166,7 @@ def test_quantize_to_fp4(
     torch.testing.assert_close(scale_ans, scale_ref)
 
 
+# 测试NVFP4量化内核在非对齐（需要填充）形状下的正确性
 @pytest.mark.parametrize("pad_shape", PAD_SHAPES)
 @torch.inference_mode()
 def test_quantize_to_fp4_padded(pad_shape: tuple[int, int]) -> None:
@@ -181,6 +189,7 @@ def test_quantize_to_fp4_padded(pad_shape: tuple[int, int]) -> None:
     torch.testing.assert_close(scale_ans, scale_ref)
 
 
+# 测试NVFP4量化在禁用缩放因子swizzle布局时的正确性
 @pytest.mark.parametrize("pad_shape", PAD_SHAPES)
 @torch.inference_mode()
 def test_quantize_to_fp4_padded_no_sf_swizzled(pad_shape: tuple[int, int]) -> None:

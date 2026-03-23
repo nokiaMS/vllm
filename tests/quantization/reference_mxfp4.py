@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import torch
 
+# MXFP4 量化的参考实现：提供纯 PyTorch 的量化/反量化函数用于正确性验证
+
 BFLOAT16_EXP_BIAS = 127
 BFLOAT16_MANTISSA_BITS = 7
 BFLOAT16_EXP_BITS = 8

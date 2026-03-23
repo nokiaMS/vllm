@@ -5,6 +5,7 @@ from unittest import TestCase
 from vllm.v1.outputs import LogprobsLists
 
 
+# 测试 LogprobsLists 的切片功能，验证按请求索引切片后数据的正确性
 class TestLogprobsLists(TestCase):
     def setUp(self):
         self.logprobsLists = LogprobsLists(

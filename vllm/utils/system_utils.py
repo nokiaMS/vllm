@@ -22,15 +22,20 @@ from vllm.ray.lazy_utils import is_in_ray_actor
 
 from .platform_utils import cuda_is_initialized, xpu_is_initialized
 
+# 系统工具模块：提供环境变量管理、文件路径生成、进程管理、日志装饰、
+# 资源限制调整以及动态库查找等操作系统层面的实用功能
+
 logger = init_logger(__name__)
 
 CYAN = "\033[0;36m"
 RESET = "\033[0;0m"
 
 
+# [中文注释] ==================== 环境变量工具 ====================
 # Environment variable utilities
 
 
+# 批量更新环境变量，当覆盖已有值时记录警告日志
 def update_environment_variables(envs_dict: dict[str, str]):
     """Update multiple environment variables with logging."""
     for k, v in envs_dict.items():
@@ -44,6 +49,7 @@ def update_environment_variables(envs_dict: dict[str, str]):
         os.environ[k] = v
 
 
+# 临时设置环境变量的上下文管理器，退出时自动恢复原值
 @contextlib.contextmanager
 def set_env_var(key: str, value: str) -> Iterator[None]:
     """Temporarily set an environment variable."""
@@ -58,6 +64,8 @@ def set_env_var(key: str, value: str) -> Iterator[None]:
             os.environ[key] = old
 
 
+# 在文件描述符层面抑制 stdout 输出的上下文管理器，
+# 用于屏蔽 C 库的打印信息；DEBUG 模式下不抑制
 @contextlib.contextmanager
 def suppress_stdout():
     """
@@ -91,9 +99,12 @@ def suppress_stdout():
         os.close(devnull_fd)
 
 
+# [中文注释] ==================== 文件路径工具 ====================
 # File path utilities
 
 
+# 通过递增整数生成唯一文件路径；注意存在 TOCTOU 竞态条件，
+# 调用方应使用原子操作（如 'x' 模式打开）来确保线程安全
 def unique_filepath(fn: Callable[[int], Path]) -> Path:
     """Generate a unique file path by trying incrementing integers.
 
@@ -109,9 +120,12 @@ def unique_filepath(fn: Callable[[int], Path]) -> Path:
         i += 1
 
 
+# [中文注释] ==================== 进程管理工具 ====================
 # Process management utilities
 
 
+# 同步 HIP/CUDA 设备可见性环境变量（仅 ROCm 平台需要），
+# 确保子进程继承一致的 GPU 可见性配置
 def _sync_visible_devices_env_vars():
     """Sync HIP/CUDA visibility env vars before spawning (ROCm only)."""
 
@@ -123,6 +137,8 @@ def _sync_visible_devices_env_vars():
     _sync_hip_cuda_env_vars()
 
 
+# 检测是否需要强制使用 spawn 多进程启动方式（而非 fork）；
+# 在 Ray actor 内、CUDA/XPU 已初始化、WSL 环境下必须使用 spawn
 def _maybe_force_spawn():
     """Check if we need to force the use of the `spawn` multiprocessing start
     method.
@@ -160,6 +176,8 @@ def _maybe_force_spawn():
         os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
 
+# 获取多进程上下文，根据环境条件自动选择 spawn 或 fork 方式，
+# 并在 ROCm 平台上同步 GPU 可见性环境变量
 def get_mp_context():
     """Get a multiprocessing context with a particular method (spawn or fork).
     By default we follow the value of the VLLM_WORKER_MULTIPROC_METHOD to
@@ -176,6 +194,7 @@ def get_mp_context():
     return multiprocessing.get_context(mp_method)
 
 
+# 设置当前进程的标题（在 ps/top 中可见），格式为 "前缀::名称_后缀"
 def set_process_title(
     name: str,
     suffix: str = "",
@@ -193,6 +212,8 @@ def set_process_title(
     setproctitle.setproctitle(f"{prefix}::{name}")
 
 
+# 为文件输出流添加带颜色的进程名和 PID 前缀，实现日志装饰；
+# 通过替换 write 方法，在每行开头自动插入前缀信息
 def _add_prefix(file: TextIO, worker_name: str, pid: int) -> None:
     """Add colored prefix to file output for log decoration."""
     is_tty = hasattr(file, "isatty") and file.isatty()
@@ -229,6 +250,7 @@ def _add_prefix(file: TextIO, worker_name: str, pid: int) -> None:
     file.write = write_with_prefix  # type: ignore[method-assign]
 
 
+# 为 stdout 和 stderr 添加进程名与 PID 前缀装饰，便于多进程日志区分
 def decorate_logs(process_name: str | None = None) -> None:
     """Decorate stdout/stderr with process name and PID prefix."""
     # Respect VLLM_CONFIGURE_LOGGING environment variable
@@ -243,6 +265,7 @@ def decorate_logs(process_name: str | None = None) -> None:
     _add_prefix(sys.stderr, process_name, pid)
 
 
+# 递归终止指定进程及其所有子进程，先杀子进程再杀父进程，使用 SIGKILL 强制终止
 def kill_process_tree(pid: int):
     """
     Kills all descendant processes of the given pid by sending SIGKILL.
@@ -268,9 +291,12 @@ def kill_process_tree(pid: int):
         os.kill(pid, signal.SIGKILL)
 
 
+# [中文注释] ==================== 资源工具 ====================
 # Resource utilities
 
 
+# 调整文件描述符的软限制（ulimit -n），防止高并发场景下出现
+# "Too many open files" 错误；Windows 平台跳过
 # Adapted from: https://github.com/sgl-project/sglang/blob/v0.4.1/python/sglang/srt/utils.py#L630
 def set_ulimit(target_soft_limit: int = 65535):
     if sys.platform.startswith("win"):
@@ -296,6 +322,8 @@ def set_ulimit(target_soft_limit: int = 65535):
             )
 
 
+# 通过读取 /proc/self/maps 查找当前进程已加载的共享库路径，
+# 用于在运行时定位如 libcudart 等动态库的实际位置
 def find_loaded_library(lib_name: str) -> str | None:
     """
     According to according to https://man7.org/linux/man-pages/man5/proc_pid_maps.5.html,

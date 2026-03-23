@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试基于 Transformers 后端的 LoRA 模型推理正确性
 
 import pytest
 

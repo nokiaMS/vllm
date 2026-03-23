@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [回归测试：VLM 模型的 /tokenize 端点必须正确展开图片占位符]
 """
 Regression test: ``/tokenize`` must expand image placeholders for VLM models.
 
@@ -35,6 +36,7 @@ def server():
         yield remote_server
 
 
+# [测试聊天分词正确展开图片占位符：stop_sign.jpg 应产生 1451 个 token]
 def test_tokenize_chat_expands_image_placeholders(
     server: RemoteOpenAIServer,
     local_asset_server,

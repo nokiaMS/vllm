@@ -9,6 +9,7 @@ from vllm.v1.kv_offload.worker.worker import (
 )
 
 
+# [中文注释] 加载/存储规格1：模拟支持提交成功/失败和异步成功/失败配置的存储介质。
 class LoadStoreSpec1(LoadStoreSpec):
     def __init__(
         self,
@@ -29,6 +30,7 @@ class LoadStoreSpec1(LoadStoreSpec):
         return f"{self.medium()}: {id(self)}"
 
 
+# [中文注释] 加载/存储规格2：简单的第二种存储介质类型。
 class LoadStoreSpec2(LoadStoreSpec):
     @staticmethod
     def medium() -> str:
@@ -38,6 +40,7 @@ class LoadStoreSpec2(LoadStoreSpec):
         return f"{self.medium()}: {id(self)}"
 
 
+# [中文注释] 卸载处理器1到2：处理从介质1到介质2的异步传输，包括异常和失败模拟。
 class OffloadingHandler1To2(OffloadingHandler):
     def __init__(self):
         self.transfers: dict[int, LoadStoreSpec1] = {}
@@ -70,6 +73,7 @@ class OffloadingHandler1To2(OffloadingHandler):
                 assert spec.finished
 
 
+# [中文注释] 卸载处理器2到1：处理从介质2到介质1的反向传输。
 class OffloadingHandler2To1(OffloadingHandler):
     def __init__(self):
         self.transfers: dict[int, LoadStoreSpec1] = {}
@@ -97,6 +101,7 @@ class OffloadingHandler2To1(OffloadingHandler):
                 assert spec.finished
 
 
+# [中文注释] 测试用例：验证OffloadingWorker使用两个处理器进行双向传输，包括异常和失败场景。
 def test_offloading_worker():
     """
     Tests OffloadingWorker with 2 handlers.

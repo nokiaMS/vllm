@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 大型聊天服务测试，覆盖 GPT-OSS/Harmony 集成、mock 引擎单元测试、工具选择验证等
+
 import asyncio
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -148,6 +151,7 @@ async def gptoss_speculative_client(gptoss_speculative_server):
         yield async_client
 
 
+# GPT-OSS 模型聊天功能的集成测试
 class TestGPTOSSChat:
     @pytest.mark.asyncio
     async def test_gpt_oss_chat_tool_call_streaming(
@@ -462,6 +466,7 @@ class TestGPTOSSChat:
         assert len(msg.tool_calls) == 0
 
 
+# GPT-OSS 投机解码模式的聊天测试
 class TestGPTOSSSpeculativeChat:
     @pytest.mark.asyncio
     async def test_gpt_oss_speculative_reasoning_leakage(
@@ -621,12 +626,14 @@ async def _async_serving_chat_init():
     return serving_completion
 
 
+# 测试 OpenAIServingChat 的异步初始化
 def test_async_serving_chat_init():
     serving_completion = asyncio.run(_async_serving_chat_init())
     assert serving_completion.chat_template == CHAT_TEMPLATE
 
 
 @pytest.mark.asyncio
+# 测试聊天服务返回正确的模型名称
 async def test_serving_chat_returns_correct_model_name():
     mock_engine = MagicMock(spec=AsyncLLM)
     mock_engine.errored = False
@@ -657,6 +664,7 @@ async def test_serving_chat_returns_correct_model_name():
 
 
 @pytest.mark.asyncio
+# 测试聊天服务正确设置 max_tokens 参数
 async def test_serving_chat_should_set_correct_max_tokens():
     mock_engine = MagicMock(spec=AsyncLLM)
     mock_engine.errored = False
@@ -814,6 +822,7 @@ async def test_serving_chat_should_set_correct_max_tokens():
 
 
 @pytest.mark.asyncio
+# 测试 Mistral token ID 提示的验证逻辑
 async def test_serving_chat_mistral_token_ids_prompt_is_validated():
     """Regression test: when the Mistral tokenizer path returns token IDs
     directly, we must still apply input length + max_tokens validation.
@@ -854,6 +863,7 @@ async def test_serving_chat_mistral_token_ids_prompt_is_validated():
 
 
 @pytest.mark.asyncio
+# 测试过长的 Mistral token ID 提示被拒绝
 async def test_serving_chat_mistral_token_ids_prompt_too_long_is_rejected():
     """Regression test: MistralTokenizer token-id prompts must still enforce
     the max context length for the input itself (token_num >= max_model_len).
@@ -895,6 +905,7 @@ async def test_serving_chat_mistral_token_ids_prompt_too_long_is_rejected():
 
 
 @pytest.mark.asyncio
+# 测试聊天服务正确加载生成配置
 async def test_serving_chat_could_load_correct_generation_config():
     mock_model_config = MockModelConfig()
     mock_model_config.diff_sampling_param = {
@@ -944,6 +955,7 @@ async def test_serving_chat_could_load_correct_generation_config():
 
 @pytest.mark.parametrize("model_type", ["gpt_oss", "any"])
 @pytest.mark.asyncio
+# 测试聊天服务正确设置缓存盐值
 async def test_serving_chat_did_set_correct_cache_salt(model_type):
     mock_model_config = MockModelConfig()
     mock_model_config.hf_config.model_type = model_type
@@ -996,6 +1008,7 @@ async def test_serving_chat_did_set_correct_cache_salt(model_type):
 
 
 @pytest.mark.asyncio
+# 测试数据并行场景下的 rank 提取
 async def test_serving_chat_data_parallel_rank_extraction():
     """Test that data_parallel_rank is properly extracted from header and
     passed to engine."""
@@ -1071,6 +1084,7 @@ async def test_serving_chat_data_parallel_rank_extraction():
     assert mock_engine.generate.call_args.kwargs["data_parallel_rank"] is None
 
 
+# Harmony 格式聊天服务的单元测试（消息渲染、工具调用、推理等）
 class TestServingChatWithHarmony:
     """
     These tests ensure Chat Completion requests are being properly converted into
@@ -1725,6 +1739,7 @@ class TestServingChatWithHarmony:
 
 
 @pytest.mark.asyncio
+# 测试无工具解析器时 tool_choice 的验证逻辑
 async def test_tool_choice_validation_without_parser():
     """Test that tool_choice='required' or named tool without tool_parser
     returns an appropriate error message."""
@@ -1793,6 +1808,7 @@ async def test_tool_choice_validation_without_parser():
     assert "--tool-call-parser" in response_named.error.message
 
 
+# 测试流式工具调用参数的剩余 delta 创建逻辑
 class TestCreateRemainingArgsDelta:
     """Tests for _create_remaining_args_delta helper function.
 

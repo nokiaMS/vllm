@@ -92,6 +92,7 @@ def supported_schema():
         "unsupported_object_schemas",
     ],
 )
+# [中文注释] 参数化测试：验证xgrammar不支持的JSON Schema特性能被正确检测
 def test_unsupported_json_features_by_type(schema_type, request):
     schemas = request.getfixturevalue(schema_type)
     for schema in schemas:
@@ -100,6 +101,7 @@ def test_unsupported_json_features_by_type(schema_type, request):
         )
 
 
+# [中文注释] 测试xgrammar支持的JSON Schema特性不会被误报为不支持
 def test_supported_json_features(supported_schema):
     assert not has_xgrammar_unsupported_json_features(supported_schema), (
         "Schema should be supported"

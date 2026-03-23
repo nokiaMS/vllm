@@ -17,6 +17,7 @@ TC_END_ID = 2
 EOS_ID = 99
 
 
+# [中文注释] 最小化伪分词器：用于MiniMax-M2工具解析器单元测试
 class FakeTokenizer:
     """Minimal fake tokenizer for unit tests."""
 

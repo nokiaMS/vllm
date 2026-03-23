@@ -22,6 +22,7 @@ from tests.v1.logits_processors.utils import (
 from tests.v1.logits_processors.utils import entry_points as fake_entry_points
 
 
+# [中文注释] 辅助函数：启动vLLM服务器并注入虚拟logit处理器入口点。
 def _server_with_logitproc_entrypoint(
     env_dict: dict[str, str] | None,
     model: str,
@@ -45,6 +46,7 @@ def _server_with_logitproc_entrypoint(
     main.main()
 
 
+# [中文注释] 辅助函数：启动vLLM服务器并通过FQCN注入虚拟logit处理器模块。
 def _server_with_logitproc_fqcn(
     env_dict: dict[str, str] | None,
     model: str,
@@ -62,6 +64,7 @@ def _server_with_logitproc_fqcn(
 
 
 @pytest.fixture(scope="module")
+# [中文注释] 测试夹具：提供默认的服务器启动参数（精度、最大模型长度、最大序列数）。
 def default_server_args():
     return [
         # use half precision for speed and memory savings in CI environment
@@ -77,6 +80,7 @@ def default_server_args():
 @pytest.fixture(
     scope="function", params=[[], ["--logits-processors", DUMMY_LOGITPROC_FQCN]]
 )
+# [中文注释] 测试夹具：以两种配置启动服务器（FQCN指定logit处理器 或 入口点注入）。
 def server(default_server_args, request, monkeypatch):
     """Consider two server configurations:
     (1) --logits-processors cli arg specifies dummy logits processor via fully-
@@ -102,6 +106,7 @@ def server(default_server_args, request, monkeypatch):
 
 
 @pytest_asyncio.fixture
+# [中文注释] 测试夹具：创建异步OpenAI客户端连接到测试服务器。
 async def client(server):
     async with server.get_async_client() as async_client:
         yield async_client
@@ -125,6 +130,7 @@ api_keyword_args = {
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试用例：验证在线OpenAI兼容服务器上自定义logit处理器的行为，交替激活/不激活。
 async def test_custom_logitsprocs(client: openai.AsyncOpenAI, model_name: str):
     """Test custom logitsprocs when starting OpenAI server from CLI
 
@@ -176,6 +182,7 @@ async def test_custom_logitsprocs(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试用例：验证传入无效自定义logit处理器参数时请求被正确拒绝。
 async def test_invalid_custom_logitsproc_arg(
     client: openai.AsyncOpenAI, model_name: str
 ):

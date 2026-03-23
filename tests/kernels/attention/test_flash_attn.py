@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试vLLM Flash Attention在变长序列和分页KV缓存下的正确性（支持FA2/FA3和FP8量化）
 
 
 import pytest
@@ -34,6 +35,7 @@ SOFT_CAPS = [None]
 SLIDING_WINDOWS = [None, 256]
 
 
+# 基于PyTorch的分页注意力参考实现，支持滑动窗口和softcap
 def ref_paged_attn(
     query: torch.Tensor,
     key_cache: torch.Tensor,
@@ -92,6 +94,7 @@ def ref_paged_attn(
     return torch.cat(outputs, dim=0)
 
 
+# 测试Flash Attention变长序列分页KV注意力在FA2/FA3和FP8量化下的正确性
 @pytest.mark.parametrize("use_out", [True, False])
 @pytest.mark.parametrize(
     "seq_lens", [[(1, 1328), (5, 18), (129, 463)], [(1, 523), (1, 37), (1, 2011)]]

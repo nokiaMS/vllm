@@ -123,6 +123,7 @@ TEST_CASES = [
 tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
 
 
+# [中文注释] 参数化测试Granite推理提取：使用文本标记"Here is my thought/response"分隔推理和回复
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,
@@ -311,6 +312,7 @@ STREAMING_SUBCASES = [
 ]
 
 
+# [中文注释] 测试Granite流式解析的子场景：验证不同delta分割点的流式推理提取
 @pytest.mark.parametrize("param_dict", STREAMING_SUBCASES)
 def test_streaming_subcases(param_dict):
     # Get all of the token IDs

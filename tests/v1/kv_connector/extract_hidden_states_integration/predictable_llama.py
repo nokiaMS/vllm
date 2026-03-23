@@ -18,6 +18,7 @@ from vllm.model_executor.models.llama import LlamaForCausalLM
 from vllm.sequence import IntermediateTensors
 
 
+# [中文注释] 可预测的Llama模型，用于测试隐藏状态提取。每一层输出值等于该层索引号，确保结果可预测。
 class PredictableLlamaModel(nn.Module, EagleModelMixin):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
@@ -100,6 +101,7 @@ class PredictableLlamaModel(nn.Module, EagleModelMixin):
         return set()
 
 
+# [中文注释] 可预测的LlamaForCausalLM子类，重写_init_model以使用PredictableLlamaModel替代真实模型，跳过权重加载。
 class PredictableLlamaForCausalLM(LlamaForCausalLM):
     """Predictable Llama model for testing.
 

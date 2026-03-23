@@ -23,7 +23,19 @@ if TYPE_CHECKING:
     from vllm.v1.core.sched.output import GrammarOutput, SchedulerOutput
     from vllm.v1.outputs import ModelRunnerOutput
 
+# ============================================================================
+# Ray 工具模块
+# 本文件提供了 Ray 分布式执行器所需的工具类和辅助函数，包括：
+#   1. RayWorkerWrapper：Ray Actor 的 Worker 封装类，处理设备设置、
+#      方法执行、Compiled DAG 中的前向推理等。
+#   2. FutureWrapper：将 Ray ObjectRef 适配为标准 Future 接口。
+#   3. initialize_ray_cluster()：初始化 Ray 集群并创建放置组（Placement Group），
+#      确保 GPU 资源被正确分配到各 Worker。
+#   4. 放置组验证和等待函数：确保资源就绪且分布合理。
+# ============================================================================
+
 logger = init_logger(__name__)
+# 放置组就绪的最大等待时间（秒）
 PG_WAIT_TIMEOUT = 1800
 
 try:
@@ -39,6 +51,12 @@ try:
 
         available_resources_per_node = _state._available_resources_per_node
 
+    # RayWorkerWrapper：Ray Actor 中运行的 Worker 封装。
+    # 继承 WorkerWrapperBase，额外处理以下 Ray 特有逻辑：
+    #   - rank 调整（Ray Actor 创建顺序可能与目标 rank 不一致）
+    #   - CUDA 设备设置（Compiled DAG 在后台线程执行，需手动设置设备）
+    #   - execute_model_ray：在 Compiled DAG 中执行模型前向，
+    #     处理 PP 中间张量的传递和多模态特征的裁剪
     class RayWorkerWrapper(WorkerWrapperBase):
         """Ray wrapper for vllm.worker.Worker, allowing Worker to be
         lazily initialized after Ray sets CUDA_VISIBLE_DEVICES."""
@@ -104,6 +122,9 @@ try:
 
                 self.compiled_dag_cuda_device_set = True
 
+        # Compiled DAG 中的模型执行入口：
+        # 处理 PP 中间张量的输入/输出，对非末端 PP 阶段传递 IntermediateTensors，
+        # 对末端阶段返回 ModelRunnerOutput。首个 PP 阶段会裁剪多模态特征以减少传输。
         def execute_model_ray(
             self,
             execute_model_input: tuple["SchedulerOutput", "GrammarOutput"]
@@ -177,6 +198,9 @@ except ImportError as e:
     RayWorkerWrapper = None  # type: ignore
 
 
+# FutureWrapper：将 Ray ObjectRef 适配为标准 concurrent.futures.Future 接口。
+# 支持可选的 KVOutputAggregator 来聚合多 Worker 输出。
+# 当无聚合器时仅返回首个 Worker 的结果。
 class FutureWrapper(Future):
     """A wrapper around Ray output reference to meet the interface
     of .execute_model(): The top level (core busy loop) expects .result() api
@@ -213,6 +237,9 @@ def assert_ray_available():
         )
 
 
+# 验证放置组的资源分配是否合理：
+# 1. 警告 TP Worker 分布在多个节点上的情况（可能导致性能下降）
+# 2. 检查驱动节点是否在放置组中（必须满足）
 def _verify_bundles(
     placement_group: "PlacementGroup", parallel_config: ParallelConfig, device_str: str
 ):
@@ -266,6 +293,7 @@ def _verify_bundles(
             )
 
 
+# 等待放置组就绪：使用指数退避策略轮询，超时后提供详细的错误诊断信息
 def _wait_until_pg_ready(current_placement_group: "PlacementGroup"):
     """Wait until a placement group is ready.
 
@@ -331,6 +359,7 @@ def _wait_until_pg_ready(current_placement_group: "PlacementGroup"):
             ) from None
 
 
+# 等待放置组被移除：用于资源回收时确保放置组已完全释放
 def _wait_until_pg_removed(current_placement_group: "PlacementGroup"):
     ray.util.remove_placement_group(current_placement_group)
     s = time.time()
@@ -349,6 +378,11 @@ def _wait_until_pg_removed(current_placement_group: "PlacementGroup"):
         time.sleep(wait_interval)
 
 
+# 初始化 Ray 集群并创建放置组：
+# 1. 连接或启动 Ray 实例
+# 2. 创建或复用放置组，按 PACK 策略尽量将 Worker 放在同一节点
+# 3. 验证资源分配的合理性
+# 4. 将放置组引用保存到 parallel_config 中供后续使用
 def initialize_ray_cluster(
     parallel_config: ParallelConfig,
     ray_address: str | None = None,
@@ -484,6 +518,7 @@ def initialize_ray_cluster(
     parallel_config.placement_group = current_placement_group
 
 
+# 获取 Ray 集群中的 TPU 节点数量
 def get_num_tpu_nodes() -> int:
     from ray._private.accelerators import TPUAcceleratorManager
 
@@ -494,6 +529,7 @@ def get_num_tpu_nodes() -> int:
     return total_tpus // tpus_per_node
 
 
+# 获取当前放置组中涉及的节点数量
 def get_num_nodes_in_placement_group() -> int:
     pg_table = ray.util.placement_group_table()
     current_pg = ray.util.get_current_placement_group()

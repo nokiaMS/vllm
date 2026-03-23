@@ -21,6 +21,7 @@ from vllm.model_executor.layers.layernorm import RMSNorm
 from vllm.model_executor.layers.utils import rocm_unquantized_gemm
 
 
+# ROCm AITER 激活 padding 融合测试模型（RMSNorm + pad 融合为 triton kernel）
 class TestModel(torch.nn.Module):
     def __init__(
         self,
@@ -76,6 +77,7 @@ class TestModel(torch.nn.Module):
     not is_aiter_found_and_supported(),
     reason="Only test on ROCm with AITER installed and supported",
 )
+# 测试 ROCm AITER 的 RMSNorm+Add+Pad 融合 pass 正确性
 def test_fuse_act_padding(
     dtype: torch.dtype,
     num_layers: int,

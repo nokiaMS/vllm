@@ -99,6 +99,11 @@ from vllm.v1.worker.lora_model_runner_mixin import LoRAModelRunnerMixin
 logger = init_logger(__name__)
 
 
+# GPU 模型运行器，vLLM v1 引擎的核心组件，负责在 GPU 上执行模型推理。
+# 设计思路：统一处理所有模型类型（文本/多模态、生成/池化），通过组合模式将
+# 特定功能（采样、投机解码、LoRA、KV 连接器等）委托给专门的子组件。
+# 主要流程：execute_model 准备输入并执行前向传播 -> sample_tokens 执行采样并更新状态。
+# 支持流水线并行（PP）、数据并行（DP）、解码上下文并行（DCP）和 CUDA 图优化。
 class GPUModelRunner(LoRAModelRunnerMixin):
     def __init__(self, vllm_config: VllmConfig, device: torch.device):
         self.vllm_config = vllm_config
@@ -263,6 +268,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             tasks.extend(PoolingRunner.get_supported_tasks(self.model))
         return tuple(tasks)
 
+    # 加载模型权重到 GPU，初始化模型相关组件（LoRA、投机解码器、模型状态、池化运行器等）。
     def load_model(self, *args, **kwargs) -> None:
         time_before_load = time.perf_counter()
         with DeviceMemoryProfiler() as m:
@@ -314,6 +320,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
     def get_kv_cache_spec(self):
         return get_kv_cache_spec(self.vllm_config)
 
+    # 初始化 KV 缓存：创建块表（block table）、注意力后端、KV 缓存张量和 KV 连接器。
+    # 块表用于管理分页式 KV 缓存的物理块到逻辑块的映射。
     def initialize_kv_cache(self, kv_cache_config: KVCacheConfig) -> None:
         kv_cache_config = deepcopy(kv_cache_config)
         self.kv_cache_config = kv_cache_config
@@ -365,6 +373,9 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         )
         self.kv_connector = get_kv_connector(self.vllm_config, kv_caches_dict)
 
+    # 虚拟运行：用于内存分析（profiling）和 CUDA 图捕获。
+    # 创建假的调度输出执行前向传播，不会实际处理请求。
+    # 在 DP 场景下也用于同步各 rank。
     @torch.inference_mode()
     def _dummy_run(
         self,
@@ -477,6 +488,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         assert self.pooling_runner is not None
         self.pooling_runner.dummy_pooler_run(hidden_states)
 
+    # 内存分析运行：执行最大 token 数的虚拟前向传播和采样/池化，
+    # 以确定模型在最大负载下的 GPU 显存使用量。
     @torch.inference_mode()
     def profile_run(self) -> None:
         hidden_states, sample_hidden_states = self._dummy_run(
@@ -511,6 +524,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         # NOTE(woosuk): It is TBD whether we keep this API or not.
         return 0
 
+    # 捕获 CUDA 图：预录制模型前向传播的 CUDA 操作序列，避免运行时的 CPU 开销。
+    # 返回 CUDA 图占用的显存大小。不支持流水线并行场景。
     @torch.inference_mode()
     def capture_model(self) -> int:
         if not self.cudagraph_manager.needs_capture():
@@ -559,6 +574,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         )
         return cuda_graph_size
 
+    # 清理已完成和被抢占的请求：从请求状态、编码器缓存、prompt logprobs、LoRA 状态中移除。
     def finish_requests(self, scheduler_output: SchedulerOutput) -> None:
         finished_req_ids = scheduler_output.finished_req_ids
         preempted_req_ids = scheduler_output.preempted_req_ids
@@ -577,6 +593,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             for mm_hash in scheduler_output.free_encoder_mm_hashes:
                 self.encoder_cache.free_encoder_cache(mm_hash)
 
+    # 添加新请求：初始化请求状态、编码器缓存、模型状态、块表、LoRA 和采样参数。
+    # 所有新请求的状态先暂存，最后批量写入以减少内存传输次数。
     def add_requests(self, scheduler_output: SchedulerOutput) -> None:
         for new_req_data in scheduler_output.scheduled_new_reqs:
             assert new_req_data.prompt_token_ids is not None
@@ -616,6 +634,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         if self.sampler is not None:
             self.sampler.apply_staged_writes()
 
+    # 更新已有请求：为现有请求追加新分配的 KV 缓存块。
     def update_requests(self, scheduler_output: SchedulerOutput) -> None:
         # Add new blocks for the existing requests.
         reqs = scheduler_output.scheduled_cached_reqs
@@ -626,6 +645,10 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                     req_index, req_new_block_ids, overwrite=False
                 )
 
+    # 准备模型输入：根据调度输出构建 InputBatch。
+    # 关键步骤：1) 按 token 数排序请求（decode 优先于 prefill）；2) 构建索引映射；
+    # 3) 计算 query_start_loc；4) 准备 prefill 输入和位置编码；
+    # 5) 组合采样/草稿 token 并生成 logits 索引。
     def prepare_inputs(
         self, scheduler_output: SchedulerOutput, batch_desc: BatchExecutionDescriptor
     ) -> InputBatch:
@@ -765,6 +788,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             has_structured_output_reqs=scheduler_output.has_structured_output_requests,
         )
 
+    # 准备注意力计算所需的块表和槽映射，用于分页式 KV 缓存的索引。
     def prepare_attn(
         self, input_batch: InputBatch
     ) -> tuple[tuple[torch.Tensor, ...], torch.Tensor]:
@@ -792,6 +816,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         )
         return block_tables, slot_mappings
 
+    # 采样流程：从隐藏状态计算 logits，可选地应用语法约束，然后执行采样或拒绝采样。
+    # 对于投机解码场景使用 rejection_sampler，否则使用普通 sampler。
     def sample(
         self,
         hidden_states: torch.Tensor,
@@ -837,6 +863,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         )
         return sampler_output, num_sampled, num_rejected
 
+    # 后处理：更新请求状态（已计算 token 数、采样 token 记录、频率惩罚计数等）。
+    # 同时更新 prefill 阶段的计算进度。
     def postprocess(
         self,
         input_batch: InputBatch,
@@ -871,6 +899,11 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             computed_prefill, self.req_states.prefill_len.np, out=computed_prefill
         )
 
+    # 模型前向传播的核心方法。
+    # 流程：1) 更新请求状态（finish/add/update）；2) 确定批次描述和 CUDA 图模式；
+    # 3) 准备输入和注意力元数据；4) 处理多模态嵌入；5) 执行模型前向传播；
+    # 6) 处理 KV 连接器的前后钩子。
+    # 对于非最后 PP rank 返回 IntermediateTensors，最后 rank 将状态存入 execute_model_state 供后续采样使用。
     @torch.inference_mode()
     def execute_model(
         self,
@@ -1059,6 +1092,10 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         assert isinstance(hidden_states, torch.Tensor)
         return None
 
+    # 采样 token 方法，在 execute_model 之后调用。
+    # 非最后 PP rank：通过 pp_receive 接收广播的采样结果并更新本地状态。
+    # 最后 PP rank：执行采样、广播结果、计算 prompt logprobs、构建输出，
+    # 并在投机解码场景下生成草稿 token。支持异步调度模式。
     @torch.inference_mode()
     def sample_tokens(
         self, grammar_output: GrammarOutput | None
@@ -1161,6 +1198,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
     def take_draft_token_ids(self) -> DraftTokenIds | None:
         return self.draft_tokens_handler.get_draft_tokens()
 
+    # 池化方法，用于 embedding 模型，在 execute_model 之后调用。
+    # 从隐藏状态中提取池化特征（如句向量），构建输出并更新请求状态。
     @torch.inference_mode()
     def pool(self) -> AsyncPoolingOutput | ModelRunnerOutput | None:
         if self.execute_model_state is None:
@@ -1217,6 +1256,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         )
 
 
+# execute_model 的输出状态，用于在 execute_model 和后续的 sample_tokens/pool 之间传递数据。
+# 包含输入批次、注意力元数据、隐藏状态、KV 连接器输出等。
 class ExecuteModelState(NamedTuple):
     input_batch: InputBatch
     attn_metadata: dict[str, Any] | None

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试Marlin量化GEMM内核在不同量化位宽和分组大小下的正确性
 """Tests for the marlin kernel.
 
 Run `pytest tests/kernels/quantization/test_marlin_gemm.py`.
@@ -133,12 +134,14 @@ DENSE_MARLIN_QUANT_TEST_CONFIGS = [
 ]
 
 
+# 计算输出与参考输出的平均相对差异
 def compute_max_diff(output, output_ref):
     return torch.mean(torch.abs(output - output_ref)) / torch.mean(
         torch.abs(output_ref)
     )
 
 
+# 生成指定形状的CUDA随机数据
 def rand_data(shape, dtype=torch.float16):
     return torch.randn(shape, dtype=dtype, device="cuda")
 
@@ -147,6 +150,7 @@ def rand_data(shape, dtype=torch.float16):
     not is_quant_method_supported("gptq_marlin"),
     reason="Marlin is not supported on this GPU type.",
 )
+# 测试Marlin INT4到FP8的预处理（无零点）
 def test_marlin_int4_fp8_preprocess_without_zp():
     qweight_unpacked = torch.randint(
         0, 16, size=(2048, 2048), dtype=torch.int32, device="cuda"
@@ -169,6 +173,7 @@ def test_marlin_int4_fp8_preprocess_without_zp():
     not is_quant_method_supported("gptq_marlin"),
     reason="Marlin is not supported on this GPU type.",
 )
+# 测试Marlin INT4到FP8的AWQ格式预处理（带零点）
 def test_marlin_int4_fp8_preprocess_awq():
     group_size = 128
 
@@ -205,6 +210,7 @@ def test_marlin_int4_fp8_preprocess_awq():
 @pytest.mark.parametrize("act_order", ACT_ORDER_OPTS)
 @pytest.mark.parametrize("is_a_8bit", [True, False])
 @pytest.mark.parametrize("nk_factors", MARLIN_REPACK_NK_FACTORS)
+# 测试GPTQ权重到Marlin格式的重打包正确性
 def test_gptq_marlin_repack(
     k_chunk, n_chunk, quant_type, act_order, is_a_8bit, nk_factors
 ):
@@ -274,6 +280,7 @@ def test_gptq_marlin_repack(
 @pytest.mark.parametrize("quant_type", query_marlin_supported_quant_types(True))
 @pytest.mark.parametrize("is_a_8bit", [True, False])
 @pytest.mark.parametrize("nk_factors", MARLIN_REPACK_NK_FACTORS)
+# 测试AWQ权重到Marlin格式的重打包正确性
 def test_awq_marlin_repack(k_chunk, n_chunk, quant_type, is_a_8bit, nk_factors):
     n_factor, k_factor = nk_factors
 
@@ -313,6 +320,7 @@ def test_awq_marlin_repack(k_chunk, n_chunk, quant_type, is_a_8bit, nk_factors):
     torch.testing.assert_close(marlin_q_w_1, marlin_q_w_2)
 
 
+# 生成Marlin GEMM的有效测试参数组合（过滤不兼容配置）
 def marlin_generate_valid_test_cases():
     all_combinations = itertools.product(
         DENSE_MARLIN_QUANT_TEST_CONFIGS,
@@ -402,6 +410,7 @@ def marlin_generate_valid_test_cases():
     ),
     marlin_generate_valid_test_cases(),
 )
+# 测试Marlin量化GEMM在多种量化类型、分组大小和矩阵尺寸下的正确性
 def test_marlin_gemm(
     a_type,
     b_type,
@@ -523,6 +532,7 @@ def test_marlin_gemm(
     assert max_diff < 0.04
 
 
+# 测试Marlin GEMM在非连续子集输入张量上的正确性
 def test_marlin_gemm_subset_input():
     quant_type = scalar_types.uint4b8
     group_size = 128
@@ -572,6 +582,7 @@ def test_marlin_gemm_subset_input():
 
 
 @pytest.mark.parametrize("size_m", [1, 256])
+# 测试Marlin GEMM带偏置项的计算正确性
 def test_marlin_gemm_with_bias(size_m):
     quant_type = scalar_types.uint4b8
     group_size = 128

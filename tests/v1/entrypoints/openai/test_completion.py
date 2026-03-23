@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试OpenAI Completion API：单次/批量补全、logprobs、流式输出、并行采样、echo和结构化输出错误处理
 
 
 import openai  # use the official client for correctness check
@@ -54,6 +55,7 @@ async def client(server):
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试单次文本补全和token ID补全
 async def test_single_completion(client: openai.AsyncOpenAI, model_name: str) -> None:
     completion = await client.completions.create(
         model=model_name, prompt="Hello, my name is", max_tokens=5, temperature=0.0
@@ -223,6 +225,7 @@ async def test_prompt_logprobs_completion(
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试流式补全输出与非流式输出一致性
 async def test_completion_streaming(
     client: openai.AsyncOpenAI, model_name: str
 ) -> None:
@@ -256,6 +259,7 @@ async def test_completion_streaming(
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试并行采样（n>1）非流式模式下返回多个唯一补全
 async def test_parallel_no_streaming(client: openai.AsyncOpenAI, model_name: str):
     """Parallel sampling without streaming.
     A single request output contains a list of completions.
@@ -305,6 +309,7 @@ async def test_parallel_no_streaming(client: openai.AsyncOpenAI, model_name: str
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试并行采样（n>1）流式模式下token按索引分配到各补全
 async def test_parallel_streaming(client: openai.AsyncOpenAI, model_name: str):
     """Streaming for parallel sampling.
     The tokens from multiple samples, are flattened into a single stream,
@@ -523,6 +528,7 @@ async def test_completion_stream_options(client: openai.AsyncOpenAI, model_name:
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试批量补全请求：文本和token ID输入、n>1、流式批量
 async def test_batch_completions(client: openai.AsyncOpenAI, model_name: str):
     # test both text and token IDs
     for prompts in (["Hello, my name is"] * 2, [[0, 0, 0, 0, 0]] * 2):

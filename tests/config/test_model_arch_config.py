@@ -55,6 +55,7 @@ SPECULATIVE_MODELS = [
 ]
 
 
+# [中文注释] 从测试目录加载模型架构配置的基准真值JSON文件
 def _load_groundtruth(filename: str) -> dict:
     """Load groundtruth JSON from the test directory."""
     groundtruth_path = Path(__file__).parent / filename
@@ -62,6 +63,7 @@ def _load_groundtruth(filename: str) -> dict:
         return json.load(f)
 
 
+# [中文注释] 断言模型架构配置的各项属性（架构、类型、隐藏维度、注意力头数等）与预期值匹配
 def _assert_model_arch_config(
     model_config, expected: dict, check_head_size: bool = True
 ):
@@ -95,6 +97,7 @@ def _assert_model_arch_config(
         assert model_arch_config.head_size == expected["head_size"]
 
 
+# [中文注释] 断言ModelConfig的方法返回值（词表大小、隐藏维度、KV头数等）与预期值匹配
 def _assert_model_config_methods(
     model_config, expected: dict, check_head_size: bool = True
 ):
@@ -114,6 +117,7 @@ def _assert_model_config_methods(
 
 
 @pytest.mark.parametrize("model", BASE_MODELS_TO_TEST)
+# [中文注释] 参数化测试多种基础模型的架构配置是否与基准真值一致
 def test_base_model_arch_config(model: str):
     """Test model architecture config for base models."""
     groundtruth = _load_groundtruth("base_model_arch_groundtruth.json")
@@ -130,6 +134,7 @@ def test_base_model_arch_config(model: str):
 @pytest.mark.parametrize(
     "target_model,draft_model,trust_remote_code", SPECULATIVE_MODELS
 )
+# [中文注释] 参数化测试推测解码草稿模型的架构配置是否与基准真值一致
 def test_draft_model_arch_config(
     target_model: str, draft_model: str, trust_remote_code: bool
 ):

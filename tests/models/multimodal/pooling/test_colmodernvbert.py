@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 ColModernVBERT 多模态迟交互检索模型的文本/图像逐标记嵌入和相关性评分
 """Tests for ColModernVBERT multimodal late-interaction model.
 
 ColModernVBERT combines SigLIP vision encoder + ModernBERT text encoder

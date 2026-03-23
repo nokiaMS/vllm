@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试融合SiLU激活+FP8量化内核silu_and_mul_quant的正确性，
+# 验证CUDA融合实现与分步参考实现在不同token数、隐藏层大小和数据类型下的输出一致性
 import pytest
 import torch
 
@@ -18,6 +20,7 @@ CUDA_DEVICES = [
 ]
 
 
+# 参考实现：先执行SiLU*Mul激活，再进行FP8量化
 def ref_impl(
     silu_and_mul: SiluAndMul, x: torch.Tensor, scale: torch.Tensor
 ) -> torch.Tensor:
@@ -26,6 +29,7 @@ def ref_impl(
     return out
 
 
+# 融合内核实现：一步完成SiLU*Mul激活和FP8量化
 def ops_impl(x: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     out_shape = (x.shape[0], x.shape[1] // 2)
     out = torch.empty(out_shape, dtype=current_platform.fp8_dtype(), device=x.device)
@@ -40,6 +44,7 @@ def ops_impl(x: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @torch.inference_mode()
+# 测试融合SiLU*Mul+FP8量化内核与分步参考实现的数值一致性
 def test_silu_and_mul(
     default_vllm_config,
     num_tokens: int,

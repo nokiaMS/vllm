@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# NVTX PyTorch 钩子模块
+# 利用 NVIDIA NVTX（NVIDIA Tools Extension）为 PyTorch 模型的每一层自动注入
+# 性能标记（range markers），以便在 Nsight Systems 等工具中进行逐层性能分析。
+# 核心设计：通过 PyTorch 的 forward_pre_hook 和 forward_hook 机制，
+# 在每层前向推理前后分别 push/pop NVTX 标记，标记中携带输入/输出张量维度和层参数信息。
 
 from contextlib import contextmanager
 
@@ -7,6 +12,8 @@ import torch
 import torch.cuda.nvtx as nvtx
 
 
+# 递归遍历嵌套的列表/元组结构，收集其中所有 Tensor 的维度信息
+# 返回一个二维列表，每个元素是一个 Tensor 的 shape
 def print_tensor(tensor_obj, prefix, tensor_list=None):
     """Descends iterators that contains Tensors and prints the Tensor.
     Recursive function that descends iterator type arguments until
@@ -24,6 +31,9 @@ def print_tensor(tensor_obj, prefix, tensor_list=None):
     return tensor_list
 
 
+# 提取 PyTorch 模块的静态参数（如卷积核大小、步长、填充等）
+# 针对 LLM/VLM 中常见的层类型（Conv、Pool、Linear、BatchNorm、Embedding 等）
+# 分别提取其关键超参数，用于写入 NVTX 标记以辅助性能分析
 def process_layer_params(module_obj):
     """Extract the static parameters from LLM and VLM relevant layer types"""
     param_info = {}
@@ -135,6 +145,9 @@ def process_layer_params(module_obj):
     return param_info
 
 
+# 构造 NVTX 标记字典并推入标记栈
+# 将模块名、可训练参数维度、输入/输出张量维度、静态参数等信息
+# 打包为字典格式，通过 nvtx.range_push 写入性能分析时间线
 def construct_marker_dict_and_push(
     module_name, module_obj, in_tensor, kwargs=None, out_tensor=None
 ):
@@ -170,12 +183,16 @@ def construct_marker_dict_and_push(
     nvtx.range_push("{}".format(marker_dict))
 
 
+# 结果持有器，用于在上下文管理器内部存储前向推理的输出结果
 class ResultHolder:
     """Holder for storing results from within a context manager."""
 
     result = None
 
 
+# 逐层 NVTX 标记上下文管理器
+# 进入时 push 输入标记，退出时 pop 输入标记并额外 push/pop 输出标记，
+# 从而在 Nsight 时间线上为每层生成配对的输入/输出标记段
 @contextmanager
 def layerwise_nvtx_marker_context(module_name, module_obj, in_tensor=None, kwargs=None):
     """Context manager for NVTX markers that automatically pushes on enter
@@ -213,6 +230,10 @@ def layerwise_nvtx_marker_context(module_name, module_obj, in_tensor=None, kwarg
         nvtx.range_pop()
 
 
+# PyTorch 前向钩子管理类
+# 遍历模型所有子模块并注册 forward_pre_hook 和 forward_hook，
+# 在每层前向推理前后自动插入 NVTX 标记，实现无侵入式的逐层性能分析。
+# 跳过 Identity、Dropout 等轻量级模块以减少分析开销。
 class PytHooks:
     """This module contains all the code needed to enable forward hooks
     in a pytorch network.

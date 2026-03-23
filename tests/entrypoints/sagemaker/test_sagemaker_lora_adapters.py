@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 SageMaker 端点的 LoRA 适配器管理：加载、卸载、无效路径处理、
+# 带适配器的推理调用以及批量加载卸载
+
 import openai  # use the official async_client for correctness check
 import pytest
 import requests

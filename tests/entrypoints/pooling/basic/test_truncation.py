@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# [在线截断测试模块：通过 OpenAI 兼容 API 验证 embeddings 端点的 truncate_prompt_tokens 参数行为]
+
 from typing import Any
 
 import openai
@@ -27,6 +30,7 @@ input = """Immerse yourself in the enchanting chronicle of calculus, a
     field."""
 
 
+# [测试夹具：启动远程 OpenAI 兼容服务器，使用 all-MiniLM-L12-v2 模型]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -47,12 +51,14 @@ def server():
         yield remote_server
 
 
+# [异步客户端夹具：从远程服务器获取异步 OpenAI 客户端]
 @pytest_asyncio.fixture
 async def client(server):
     async with server.get_async_client() as async_client:
         yield async_client
 
 
+# [测试较小截断尺寸：验证截断后 prompt_tokens 等于指定的截断值]
 @pytest.mark.asyncio
 async def test_smaller_truncation_size(client: openai.AsyncOpenAI):
     truncation_size = 10
@@ -67,6 +73,7 @@ async def test_smaller_truncation_size(client: openai.AsyncOpenAI):
     assert response["usage"]["prompt_tokens"] == truncation_size
 
 
+# [测试过大截断尺寸：验证截断值超过 max_model_len 时返回 400 错误]
 @pytest.mark.asyncio
 async def test_bigger_truncation_size(client: openai.AsyncOpenAI):
     truncation_size = max_model_len + 1
@@ -90,6 +97,7 @@ async def test_bigger_truncation_size(client: openai.AsyncOpenAI):
     assert error_details["message"] == expected_message
 
 
+# [测试最大截断尺寸：验证 truncation_size=-1 时截断到 max_model_len]
 @pytest.mark.asyncio
 async def test_max_truncation_size(client: openai.AsyncOpenAI):
     truncation_size = -1

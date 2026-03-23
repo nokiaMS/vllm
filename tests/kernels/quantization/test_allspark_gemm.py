@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试AllSpark GEMM量化内核在不同量化类型和矩阵大小下的正确性
 import pytest
 import torch
 
@@ -16,6 +17,7 @@ from vllm.scalar_type import scalar_types
 from vllm.utils.platform_utils import num_compute_units
 
 
+# 检查当前GPU是否在指定的计算能力范围内以支持AllSpark内核
 def is_gptq_allspark_supported(min_capability: int, max_capability: int) -> bool:
     if not current_platform.is_cuda():
         return False
@@ -43,16 +45,19 @@ DTYPES = [torch.float16, torch.bfloat16]
 HAS_ZP_OPTS = [False, True]
 
 
+# 计算输出与参考输出之间的平均相对差异
 def compute_max_diff(output, output_ref):
     return torch.mean(torch.abs(output - output_ref)) / torch.mean(
         torch.abs(output_ref)
     )
 
 
+# 生成指定形状和类型的随机CUDA张量
 def rand_data(shape, dtype=torch.float16):
     return torch.randn(shape, dtype=dtype, device="cuda")
 
 
+# 测试AllSpark Ampere W8A16 GEMM在多种矩阵形状和量化配置下的正确性
 @pytest.mark.skipif(
     not is_gptq_allspark_supported(80, 89),
     reason="AllSpark Ampere kernel is not supported on this GPU type.",

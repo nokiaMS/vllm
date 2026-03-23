@@ -27,6 +27,9 @@ else:
     Request = object
 
 
+# [中文注释] NewRequestData — 首次调度的新请求数据（发送给 worker 缓存）。
+#   包含 prompt_token_ids、多模态特征、采样参数、block_ids 等完整信息。
+#   后续步骤只发送增量 diff（通过 CachedRequestData），减少通信开销。
 @dataclass
 class NewRequestData:
     req_id: str
@@ -106,6 +109,10 @@ class NewRequestData:
         )
 
 
+# [中文注释] CachedRequestData — 已缓存请求的增量更新数据。
+#   仅包含与上一步的差异：new_token_ids（PP 场景）、new_block_ids、num_computed_tokens 等。
+#   resumed_req_ids 标记被抢占后恢复的请求（其 block_ids 是完整替换而非追加）。
+#   all_token_ids 仅包含上一步未被调度的请求的完整 token 列表（用于 connector 同步）。
 @dataclass
 class CachedRequestData:
     req_ids: list[str]
@@ -175,6 +182,16 @@ class CachedRequestData:
         )
 
 
+# [中文注释] SchedulerOutput — 单步调度的完整输出，传递给 model runner。
+#   核心字段：
+#     scheduled_new_reqs — 新请求的完整数据
+#     scheduled_cached_reqs — 已缓存请求的增量数据
+#     num_scheduled_tokens — 每个请求本步调度的 token 数
+#     scheduled_spec_decode_tokens — 投机解码的 draft token
+#     scheduled_encoder_inputs — 需要编码器处理的多模态输入索引
+#     num_common_prefix_blocks — 公共前缀 block 数（用于 cascade attention）
+#     finished_req_ids — 上一步到本步之间结束的请求 ID（通知 worker 释放缓存）
+#     kv_connector_metadata / ec_connector_metadata — KV/EC 传输元数据
 @dataclass
 class SchedulerOutput:
     # list of the requests that are scheduled for the first time.
@@ -253,6 +270,9 @@ class SchedulerOutput:
         )
 
 
+# [中文注释] GrammarOutput — 结构化输出的语法约束 bitmask。
+#   structured_output_request_ids: 使用结构化输出的请求 ID 列表
+#   grammar_bitmask: 对应的 int32 bitmask 数组（行顺序与 request_ids 一致）
 @dataclass
 class GrammarOutput:
     # ids of structured output requests.

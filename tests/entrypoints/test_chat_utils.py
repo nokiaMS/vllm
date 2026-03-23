@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试聊天消息解析工具函数（parse_chat_messages / parse_chat_messages_async），
+# 验证单图/多图/音频/视频/嵌入等多模态内容的解析、UUID 追踪和交错模式处理
+
 import warnings
 from collections.abc import Mapping
 from typing import Literal
@@ -31,6 +34,7 @@ QWEN25OMNI_MODEL_ID = "Qwen/Qwen2.5-Omni-7B"
 MISTRAL_MODEL_ID = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
 
 
+# 创建 Kimi K2.5 模型配置 fixture，限制最多 2 张图片
 @pytest.fixture(scope="function")
 def kimi_k2_5_model_config():
     return ModelConfig(
@@ -43,6 +47,7 @@ def kimi_k2_5_model_config():
     )
 
 
+# 创建 Phi-3.5 视觉模型配置 fixture
 @pytest.fixture(scope="function")
 def phi3v_model_config():
     return ModelConfig(
@@ -55,6 +60,7 @@ def phi3v_model_config():
     )
 
 
+# 创建 Phi-3.5 视觉模型配置 fixture（启用多模态交错模式）
 @pytest.fixture(scope="function")
 def phi3v_model_config_mm_interleaved():
     return ModelConfig(
@@ -68,6 +74,7 @@ def phi3v_model_config_mm_interleaved():
     )
 
 
+# 创建 Phi-3.5 视觉模型配置 fixture（启用图像嵌入模式）
 @pytest.fixture(scope="function")
 def phi3v_model_config_image_embeds():
     return ModelConfig(
@@ -81,6 +88,7 @@ def phi3v_model_config_image_embeds():
     )
 
 
+# 创建 Qwen2.5-Omni 模型配置 fixture（启用图像嵌入模式）
 @pytest.fixture(scope="function")
 def qwen25omni_model_config_image_embeds():
     return ModelConfig(

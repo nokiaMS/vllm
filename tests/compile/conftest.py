@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 编译测试的 pytest 共享 fixture 定义
+
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +11,7 @@ import pytest
 from vllm.platforms.interface import DeviceCapability
 
 
+# 提供模拟 CUDA 平台的 fixture，用于测试不同设备能力下的编译行为
 @pytest.fixture
 def mock_cuda_platform():
     """

@@ -6,6 +6,12 @@ import torch
 from vllm.v1.worker.gpu.buffer_utils import StagedWriteTensor, UvaBackedTensor
 
 
+# 请求状态管理类，维护所有活跃请求的核心状态数据。
+# 设计思路：使用预分配的固定大小数组（按 max_num_reqs 分配），通过空闲索引池管理请求槽位。
+# 包含的状态数据：all_token_ids（所有 token ID）、prompt_len/prefill_len（区分用户提示长度
+# 和实际送入模型的长度）、total_len（当前总长度）、num_computed_tokens（已计算 token 数）、
+# last_sampled_tokens（最后采样的 token）、draft_tokens（投机解码草稿 token）等。
+# 使用 UVA（统一虚拟寻址）技术来节省 GPU 显存，all_token_ids 等大张量存储在主机端。
 class RequestState:
     def __init__(
         self,
@@ -93,6 +99,8 @@ class RequestState:
     def num_reqs(self) -> int:
         return len(self.req_id_to_index)
 
+    # 添加新请求：从空闲索引池分配槽位，初始化该请求的所有状态数据。
+    # 使用 stage_write 延迟写入机制，需要调用 apply_staged_writes 才会真正生效。
     def add_request(
         self,
         req_id: str,
@@ -116,6 +124,7 @@ class RequestState:
         self.num_computed_prefill_tokens[req_idx] = num_computed_tokens
         self.num_computed_tokens.stage_write_elem(req_idx, num_computed_tokens)
 
+    # 将所有暂存的写入操作一次性应用到 GPU 张量和 UVA 内存中，减少零散的内存传输。
     def apply_staged_writes(self) -> None:
         self.prompt_len.copy_to_uva()
         self.prefill_len.copy_to_uva()
@@ -123,6 +132,7 @@ class RequestState:
         self.all_token_ids.apply_write()
         self.num_computed_tokens.apply_write()
 
+    # 移除请求：释放该请求占用的槽位索引，归还到空闲索引池。
     def remove_request(self, req_id: str) -> None:
         req_idx = self.req_id_to_index.pop(req_id, None)
         if req_idx is None:
@@ -131,6 +141,7 @@ class RequestState:
         self.index_to_req_id.pop(req_idx, None)
         self.free_indices.append(req_idx)
 
+    # 检查当前批次中是否有请求仍处于 prefill 阶段（已计算 token 数 < prefill 长度）。
     def any_prefills(self, idx_mapping_np: np.ndarray) -> bool:
         return np.any(
             self.num_computed_prefill_tokens[idx_mapping_np]

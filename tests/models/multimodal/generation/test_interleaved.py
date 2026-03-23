@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试交错与非交错多模态提示的区别，验证模态标记顺序对生成结果的影响
 
 import pytest
 
@@ -10,6 +11,7 @@ from vllm.multimodal.image import convert_image_mode
 models = ["llava-hf/llava-onevision-qwen2-0.5b-ov-hf"]
 
 
+# 构建包含多模态占位符的基础提示模板
 def base_prompt(modalities_str: str) -> str:
     return f"<|im_start|>user {modalities_str}\nDescribe what you see from these items.<|im_end|><|im_start|>assistant\n"  # noqa: E501
 
@@ -22,6 +24,7 @@ NONINTERLEAVED_PROMPT = base_prompt("<image><image><video>\n")
 @pytest.mark.parametrize("model", models)
 @pytest.mark.parametrize("dtype", ["float16"])
 @pytest.mark.parametrize("max_tokens", [128])
+# 测试交错模态与非交错模态输入生成不同但有效的结果
 def test_models(vllm_runner, model, dtype: str, max_tokens: int) -> None:
     """
     This is a simple test to check if interleaved and non-interleaved prompts

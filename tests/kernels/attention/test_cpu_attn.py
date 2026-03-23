@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试CPU注意力后端在不同ISA指令集（vec/amx/vec16/neon）下的计算正确性
 
 import functools
 import math
@@ -39,6 +40,7 @@ SEQ_LENS = [  # (q_len, kv_len)
 ]
 
 
+# 获取当前CPU支持的注意力ISA指令集（amx/vec/neon）
 def get_attn_isa(
     block_size: int | None = None,
     dtype: torch.dtype | None = None,
@@ -54,6 +56,7 @@ def get_attn_isa(
             return "vec"
 
 
+# 缓存随机张量生成以避免重复耗时计算
 # rand number generation takes too much time, cache rand tensors
 @functools.lru_cache(maxsize=128, typed=False)
 def tensor_cache(
@@ -65,6 +68,7 @@ def tensor_cache(
     return tensor
 
 
+# 计算ALiBi（线性偏置注意力）的斜率向量
 def _get_alibi_slopes(total_num_heads: int) -> torch.Tensor:
     closest_power_of_2 = 2 ** math.floor(math.log2(total_num_heads))
     base = torch.tensor(
@@ -89,6 +93,7 @@ def _get_alibi_slopes(total_num_heads: int) -> torch.Tensor:
     return slopes.float()
 
 
+# 基于PyTorch的分页注意力参考实现，支持滑动窗口、softcap、ALiBi和sink注意力
 def ref_paged_attn(
     query: torch.Tensor,
     key_cache: torch.Tensor,
@@ -178,6 +183,7 @@ def ref_paged_attn(
     return torch.cat(outputs, dim=0)
 
 
+# 核心测试辅助函数：验证CPU分页KV缓存注意力在有无KV分割时与参考实现的一致性
 @torch.inference_mode()
 def varlen_with_paged_kv(
     seq_lens: list[tuple[int, int]],
@@ -350,6 +356,7 @@ def varlen_with_paged_kv(
     )
 
 
+# 测试vec ISA指令集下的变长分页KV注意力
 @pytest.mark.parametrize("seq_lens", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -389,6 +396,7 @@ def test_varlen_with_paged_kv_normal_vec(
     )
 
 
+# 测试AMX ISA指令集下的变长分页KV注意力（需要AMX硬件支持）
 @pytest.mark.parametrize("seq_lens", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -431,6 +439,7 @@ def test_varlen_with_paged_kv_normal_amx(
     )
 
 
+# 测试vec16 ISA指令集下的变长分页KV注意力
 @pytest.mark.parametrize("seq_lens", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES_VEC16)
@@ -470,6 +479,7 @@ def test_varlen_with_paged_kv_normal_vec16(
     )
 
 
+# 测试ARM NEON ISA指令集下的变长分页KV注意力（需要ARM CPU）
 @pytest.mark.parametrize("seq_lens", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -513,6 +523,7 @@ def test_varlen_with_paged_kv_normal_neon(
     )
 
 
+# 测试启用softcap（logits截断）时的变长分页KV注意力
 @pytest.mark.parametrize("seq_lens", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", [96])
@@ -552,6 +563,7 @@ def test_varlen_with_paged_kv_softcap(
     )
 
 
+# 测试启用ALiBi位置编码时的变长分页KV注意力
 @pytest.mark.parametrize("seq_lens", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", [96])
@@ -591,6 +603,7 @@ def test_varlen_with_paged_kv_alibi(
     )
 
 
+# 测试启用sink注意力时的变长分页KV注意力
 @pytest.mark.parametrize("seq_lens", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", [96])

@@ -15,6 +15,7 @@ from .common import Config, RankTensors, WeightTensors, make_modular_kernel
 from .parallel_utils import ProcessGroupInfo, parallel_launch_with_config
 
 
+# [中文注释] 对模块化内核进行性能分析：执行预热后使用torch.profiler生成Chrome trace文件
 def do_profile(
     fn: Callable,
     fn_kwargs: dict[Any, Any],
@@ -43,6 +44,7 @@ def do_profile(
     )
 
 
+# [中文注释] 对指定配置的模块化MoE内核进行性能分析
 def profile_modular_kernel(
     pgi: ProcessGroupInfo,
     vllm_config: VllmConfig,
@@ -76,6 +78,7 @@ def profile_modular_kernel(
     do_profile(mk.apply, mk_kwargs, pgi, config)
 
 
+# [中文注释] 每个rank的性能分析工作函数：遍历不同的M和topk值进行内核性能分析
 def rank_worker(
     pgi: ProcessGroupInfo,
     vllm_config: VllmConfig,
@@ -105,6 +108,7 @@ def rank_worker(
         profile_modular_kernel(pgi, vllm_config, cfgx, weights, rank_tensors)
 
 
+# [中文注释] 主运行函数：创建权重和配置，启动多GPU并行性能分析
 def run(config: Config):
     weights: WeightTensors = WeightTensors.make(config)
     vllm_config, env_dict = config.make_env_data()

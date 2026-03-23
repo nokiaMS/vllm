@@ -27,6 +27,12 @@ from vllm.v1.worker.utils import AttentionGroup
 logger = init_logger(__name__)
 
 
+# EAGLE 推测解码器：实现基于 EAGLE/EAGLE2/EAGLE3/MTP 的推测解码。
+# 核心设计思路：
+# 1. 使用轻量级草稿模型（共享目标模型的 embedding 和 lm_head）预测多个后续 token
+# 2. 每步采用 Gumbel 采样生成草稿 token，通过位置相关的随机种子保证与目标采样的一致性
+# 3. 支持 CUDA Graph 加速多步解码阶段，使用预分配的固定大小缓冲区避免动态内存分配
+# 4. 为避免 CPU-GPU 同步，将 eagle 的输入大小与目标模型保持一致（包含被拒绝位置的填充）
 class EagleSpeculator:
     def __init__(self, vllm_config: VllmConfig, device: torch.device):
         self.vllm_config = vllm_config
@@ -86,9 +92,11 @@ class EagleSpeculator:
             vllm_config, device, cudagraph_mode, self.draft_tokens
         )
 
+    # 加载 EAGLE 草稿模型，共享目标模型的 embedding 和 lm_head 权重
     def load_model(self, target_model: nn.Module) -> None:
         self.model = load_eagle_model(target_model, self.vllm_config)
 
+    # 设置注意力相关组件：模型状态、KV 缓存配置、注意力分组和块表
     def set_attn(
         self,
         model_state: ModelState,
@@ -101,6 +109,8 @@ class EagleSpeculator:
         self.attn_groups = attn_groups
         self.block_tables = block_tables
 
+    # 运行 EAGLE 草稿模型的单步前向推理，返回最后一层隐藏状态和中间隐藏状态。
+    # 对于 MTP 方法两者相同，对于 EAGLE 方法返回两个不同的张量。
     @torch.inference_mode()
     def run_model(
         self,
@@ -132,6 +142,9 @@ class EagleSpeculator:
             last_hidden_states, hidden_states = ret_hidden_states
         return last_hidden_states, hidden_states
 
+    # 多步草稿生成：迭代运行 EAGLE 模型生成 num_speculative_steps 个草稿 token。
+    # 每步执行：模型前向 -> 计算 logits -> Gumbel 采样 -> 更新输入缓冲区和 slot mapping。
+    # 第一步的草稿 token 在 propose() 中生成，此处从第二步开始。
     def generate_draft(
         self,
         num_reqs: int,
@@ -187,6 +200,7 @@ class EagleSpeculator:
                         idx_mapping, query_start_loc, pos, num_tokens_padded
                     )
 
+    # 捕获 EAGLE 多步解码的 CUDA Graph，在模型初始化时调用以加速后续推理
     def capture_model(self) -> None:
         if self.num_speculative_steps == 1:
             return
@@ -201,6 +215,13 @@ class EagleSpeculator:
             progress_bar_desc="Capturing eagle CUDA graphs",
         )
 
+    # EAGLE 推测解码的主入口：生成所有推测步的草稿 token。
+    # 流程：
+    # 1. 准备隐藏状态（EAGLE3 融合多层辅助隐藏状态，EAGLE 直接使用最后一层）
+    # 2. 构建 EAGLE 输入（将目标模型的 input_ids 右移一位，用最新采样 token 补齐）
+    # 3. Prefill 阶段以 eager 模式运行，生成第一个草稿 token
+    # 4. 多步 Decode 阶段尝试使用 CUDA Graph 加速，否则回退到 eager 模式
+    # 5. 跨 DP 等级同步批大小信息
     @torch.inference_mode()
     def propose(
         self,
@@ -381,6 +402,10 @@ class EagleSpeculator:
         return self.draft_tokens[:num_reqs]
 
 
+# 准备 EAGLE prefill 阶段输入的 Triton 内核：
+# 将目标模型的 input_ids 右移一位（因为 EAGLE 需要预测下一个 token），
+# 用最新采样的 token（或分块预填充的下一个 token）填充末尾位置，
+# 同时处理被拒绝 token 导致的查询长度缩减，并记录每个请求的最后 token 索引。
 @triton.jit
 def _prepare_eagle_inputs_kernel(
     last_token_indices_ptr,
@@ -434,6 +459,8 @@ def _prepare_eagle_inputs_kernel(
         tl.store(eagle_positions_ptr + query_start + block, target_pos, mask=mask)
 
 
+# 准备 EAGLE prefill 阶段的输入：启动 Triton 内核构建 eagle 的 input_ids 和 positions，
+# 返回每个请求最后 token 的索引（用于后续提取隐藏状态进行采样）
 def prepare_eagle_inputs(
     input_buffers: InputBuffers,
     input_batch: InputBatch,
@@ -469,6 +496,10 @@ def prepare_eagle_inputs(
     return last_token_indices
 
 
+# 准备 EAGLE decode 阶段输入的 Triton 内核：
+# 将第一步草稿 token 写入 input_ids，拷贝对应位置的隐藏状态，
+# 计算新的 position 和 seq_len（考虑被拒绝 token 的影响并限制在 max_model_len 内），
+# 最后一个 program 负责填充 query_start_loc 和 seq_lens 的 padding 区域以适配 CUDA Graph。
 @triton.jit
 def _prepare_eagle_docode_kernel(
     draft_tokens_ptr,
@@ -538,6 +569,7 @@ def _prepare_eagle_docode_kernel(
     tl.store(seq_lens_ptr + req_idx, seq_len)
 
 
+# 准备 EAGLE decode 阶段的输入：启动 Triton 内核将 prefill 阶段的输出转换为 decode 所需的格式
 def prepare_eagle_decode(
     draft_tokens: torch.Tensor,
     output_hidden_states: torch.Tensor,
@@ -571,6 +603,9 @@ def prepare_eagle_decode(
     )
 
 
+# 更新 EAGLE 多步解码中每一步输入的 Triton 内核：
+# 将上一步的草稿 token 和隐藏状态写入下一步的输入缓冲区，
+# 递增 position 和 seq_len（限制在 max_model_len 内防止越界访问）
 @triton.jit
 def _update_eagle_inputs_kernel(
     input_ids_ptr,
@@ -617,6 +652,8 @@ def _update_eagle_inputs_kernel(
     tl.store(seq_lens_ptr + req_idx, seq_len)
 
 
+# 更新 EAGLE 多步解码的输入：在 generate_draft 循环中每步调用，
+# 将当前步的输出传递为下一步的输入
 def update_eagle_inputs(
     draft_tokens: torch.Tensor,
     output_hidden_states: torch.Tensor,

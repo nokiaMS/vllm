@@ -48,6 +48,7 @@ ROCM_DETERMINISM_KWARGS: dict = (
 )
 
 
+# [中文注释] 测试夹具：创建带有分块预填充和前缀缓存参数化的vLLM模型实例
 @pytest.fixture(
     scope="module",
     # Parameterize APC
@@ -73,12 +74,14 @@ def vllm_model(vllm_runner, request) -> Generator[VllmRunner, None, None]:
         yield vllm_model
 
 
+# [中文注释] 测试夹具：创建HuggingFace参考模型实例，用于与vLLM输出进行对比验证
 @pytest.fixture(scope="module")
 def hf_model(hf_runner) -> Generator[HfRunner, None, None]:
     with hf_runner(MODEL, dtype=DTYPE) as hf_model:
         yield hf_model
 
 
+# [中文注释] 辅助函数：将logprobs配置重复扩展到与测试提示数量一致
 def _repeat_logprob_config(
     test_prompts,
     logprob_prompt_logprob_list: BatchLogprobsSpecType,
@@ -127,6 +130,7 @@ def _repeat_logprob_config(
     return logprob_prompt_logprob_list
 
 
+# [中文注释] 辅助函数：运行vLLM生成并与HuggingFace参考输出对比验证logprobs的正确性
 def _run_and_validate(
     vllm_model: VllmRunner,
     test_prompts: list[str],
@@ -294,6 +298,7 @@ def _run_and_validate(
     "batch_logprobs_composition", [NONE, SAMPLE, PROMPT, SAMPLE_PROMPT]
 )
 @pytest.mark.parametrize("temperature", [0.0, 2.0])
+# [中文注释] 测试V1引擎的采样logprobs和提示logprobs功能，与HF参考实现对比
 def test_get_logprobs_and_prompt_logprobs(
     hf_model,
     vllm_model,
@@ -377,6 +382,7 @@ def test_get_logprobs_and_prompt_logprobs(
         )
 
 
+# [中文注释] 测试超过最大logprobs限制时是否正确抛出错误
 def test_max_logprobs():
     """vLLM v1 engine should fail a request with `logprobs > max_logprobs`
     Should also fail for `prompt_logprobs > max_logprobs`
@@ -398,6 +404,7 @@ def test_max_logprobs():
             runner.generate(["Hello world"], sampling_params=bad_sampling_params)
 
 
+# [中文注释] 测试logprobs为None时生成输出不包含logprobs信息
 def test_none_logprobs(vllm_model, example_prompts):
     """Engine should return `logprobs` and `prompt_logprobs` as `None`
 
@@ -426,6 +433,7 @@ def test_none_logprobs(vllm_model, example_prompts):
         assert results_logprobs_none[i].prompt_logprobs is None
 
 
+# [中文注释] 测试logprobs为0时生成输出仅包含采样token的logprob
 def test_zero_logprobs(vllm_model, example_prompts):
     """Engine should return sampled token and prompt token logprobs
 
@@ -458,6 +466,7 @@ def test_zero_logprobs(vllm_model, example_prompts):
         assert len(prompt_token_ids) == len(prompt_logprobs)
 
 
+# [中文注释] 测试请求全部词汇表logprobs时的正确性
 def test_all_logprobs(example_prompts):
     """Engine should return all vocabulary logprobs and prompt logprobs
 
@@ -492,6 +501,7 @@ def test_all_logprobs(example_prompts):
 
 
 @pytest.mark.parametrize("logprobs_mode", get_args(LogprobsMode))
+# [中文注释] 测试不同logprobs模式(原始logprobs等)下的行为正确性
 def test_logprobs_mode(logprobs_mode: LogprobsMode):
     """Test with LLM engine with different logprobs_mode.
     For logprobs, we should have non-positive values.
@@ -532,6 +542,7 @@ def test_logprobs_mode(logprobs_mode: LogprobsMode):
         cleanup_dist_env_and_memory()
 
 
+# [中文注释] 测试类：验证LogprobsProcessor的UTF-8解码修正逻辑，处理不完整字节序列导致的替换字符问题
 class TestCorrectDecodedToken:
     """Unit tests for _correct_decoded_token method in LogprobsProcessor.
 
@@ -819,6 +830,7 @@ class TestCorrectDecodedToken:
         assert result == ' "'
 
 
+# [中文注释] 集成测试：验证token验证逻辑在真实模型上的正确性
 def test_verify_tokens_integration():
     """Integration test for _verify_tokens with real model.
 
@@ -863,6 +875,7 @@ def test_verify_tokens_integration():
                     )
 
 
+# [中文注释] 测试真实模型上UTF-8边界情况的logprobs解码正确性
 def test_utf8_edge_cases_with_real_model():
     """Test various UTF-8 edge cases with a real model.
 
@@ -909,6 +922,7 @@ def test_utf8_edge_cases_with_real_model():
                     )
 
 
+# [中文注释] 测试解码修正逻辑不会改变有效token的解码结果
 def test_correct_decoded_token_preserves_valid_tokens():
     """Test that valid tokens (not ending with �) are not modified.
 
@@ -996,6 +1010,7 @@ def test_correct_decoded_token_preserves_valid_tokens():
         ),
     ],
 )
+# [中文注释] 测试推测解码(speculative decoding)场景下logprobs的正确性
 def test_spec_decode_logprobs(
     logprobs_mode: LogprobsMode,
     model_setup: tuple[str, str, dict, int],
@@ -1115,6 +1130,7 @@ def test_spec_decode_logprobs(
         assert ref_logprob.decoded_token == spec_logprob.decoded_token
 
 
+# [中文注释] 测试分块预填充和抢占场景下提示logprobs的正确性
 def test_prompt_logprobs_with_chunking_and_preemption():
     """Test that prompt logprobs are correctly returned when using
     both chunked prefill and preemption.

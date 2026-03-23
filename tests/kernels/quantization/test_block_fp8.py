@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试块级FP8量化矩阵乘法的正确性（含CUTLASS、DeepGEMM、Triton和FlashInfer实现）
 
 # Adapted from https://github.com/sgl-project/sglang/pull/2575
 import itertools
@@ -57,11 +58,13 @@ SEEDS = [0]
 pytest.importorskip("torch.cuda")
 
 
+# 设置CUDA为默认设备的测试夹具
 @pytest.fixture(autouse=True)
 def setup_cuda():
     torch.set_default_device("cuda")
 
 
+# 测试逐token分组FP8量化在不同形状和列优先/TMA对齐配置下的正确性
 @pytest.mark.skipif(
     current_platform.is_fp8_fnuz(),
     reason="This platform supports e4m3fnuz, not e4m3fn.",
@@ -102,6 +105,7 @@ def test_per_token_group_quant_fp8(
             assert scale.stride()[-1] == get_tma_aligned_size(num_tokens, 4)
 
 
+# 测试Triton块级FP8矩阵乘法与原生参考实现的数值一致性
 @pytest.mark.parametrize(
     "M,N,K,block_size,out_dtype,seed",
     itertools.product(M, N, K, BLOCK_SIZE, OUT_DTYPES, SEEDS),
@@ -135,6 +139,7 @@ def test_w8a8_block_fp8_matmul(M, N, K, block_size, out_dtype, seed):
     assert rel_diff < 0.001
 
 
+# 测试CUTLASS块级FP8矩阵乘法（含非对齐维度如DSV3 kv_a_proj_with_mqa场景）
 @pytest.mark.skipif(
     not current_platform.is_cuda(), reason="CUTLASS only supported on CUDA platform."
 )
@@ -182,6 +187,7 @@ def test_w8a8_block_fp8_cutlass_matmul():
     assert rel_diff < 0.001
 
 
+# 测试DeepGEMM块级FP8矩阵乘法在TMA对齐下的正确性
 @pytest.mark.skipif(
     current_platform.is_fp8_fnuz(),
     reason="This platform supports e4m3fnuz, not e4m3fn.",
@@ -230,6 +236,7 @@ def test_w8a8_block_fp8_deep_gemm_matmul(M, N, K, block_size, out_dtype, seed):
     assert rel_diff < 0.001
 
 
+# 测试FlashInfer块级FP8矩阵乘法（需要SM90+和FlashInfer支持）
 @pytest.mark.skipif(
     current_platform.is_fp8_fnuz(),
     reason="This platform supports e4m3fnuz, not e4m3fn.",

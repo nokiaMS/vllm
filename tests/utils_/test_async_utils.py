@@ -8,6 +8,7 @@ import pytest
 from vllm.utils.async_utils import merge_async_iterators
 
 
+# [中文注释] 模拟异步迭代器：持续生成项目直到被取消，用于测试合并逻辑
 async def _mock_async_iterator(idx: int):
     try:
         while True:
@@ -17,6 +18,7 @@ async def _mock_async_iterator(idx: int):
         print(f"iterator {idx} cancelled")
 
 
+# [中文注释] 测试merge_async_iterators：验证多个异步迭代器合并后能正确取消和清理
 @pytest.mark.asyncio
 async def test_merge_async_iterators():
     iterators = [_mock_async_iterator(i) for i in range(3)]

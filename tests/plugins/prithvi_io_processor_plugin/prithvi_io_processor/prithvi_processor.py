@@ -28,6 +28,8 @@ from .types import DataModuleConfig, ImagePrompt, ImageRequestOutput
 
 logger = init_logger(__name__)
 
+# Prithvi 地理空间模型的多模态数据处理器：读取 GeoTIFF 影像并进行预处理/后处理
+
 NO_DATA = -9999
 NO_DATA_FLOAT = 0.0001
 OFFSET = 0

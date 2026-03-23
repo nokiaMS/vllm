@@ -22,6 +22,7 @@ from vllm.v1.spec_decode.metadata import SpecDecodeMetadata
 DEVICE = current_platform.device_type
 
 
+# [中文注释] 测试夹具：创建拒绝采样器实例，用于推测解码的token验证
 @pytest.fixture
 def rejection_sampler():
     mock_sampler = Mock(spec=Sampler)
@@ -130,6 +131,7 @@ def create_sampling_metadata(
 
 
 ########################### Tests for Greedy Sampling ###################
+# [中文注释] 测试贪心模式下草稿token与目标模型完全匹配时全部被接受
 def test_perfect_match(rejection_sampler):
     """Test when output tokens perfectly match speculated tokens"""
     spec_tokens = [[1, 2, 3]]
@@ -151,6 +153,7 @@ def test_perfect_match(rejection_sampler):
     assert torch.equal(output.sampled_token_ids, expected)
 
 
+# [中文注释] 测试贪心模式下草稿token提前不匹配时正确截断
 def test_early_mismatch(rejection_sampler):
     """Test when there's an early mismatch in tokens"""
     spec_tokens = [[1, 2, 3]]
@@ -176,6 +179,7 @@ def test_early_mismatch(rejection_sampler):
     assert torch.equal(output.sampled_token_ids, expected)
 
 
+# [中文注释] 测试批量多序列场景下拒绝采样的正确性
 def test_multiple_sequences(rejection_sampler):
     """Test handling multiple sequences of speculated tokens"""
     spec_tokens = [[1, 2], [3]]
@@ -201,6 +205,7 @@ def test_multiple_sequences(rejection_sampler):
     assert torch.equal(output.sampled_token_ids, expected)
 
 
+# [中文注释] 测试单token序列的拒绝采样行为
 def test_single_token_sequence(rejection_sampler):
     """Test handling sequences with single token"""
     spec_tokens = [[1]]
@@ -222,6 +227,7 @@ def test_single_token_sequence(rejection_sampler):
     assert torch.equal(output.sampled_token_ids, expected)
 
 
+# [中文注释] 测试空序列输入的拒绝采样行为
 def test_empty_sequence(rejection_sampler):
     """Test handling empty sequence of speculated tokens"""
     spec_tokens: list[list[int]] = [[]]
@@ -243,6 +249,7 @@ def test_empty_sequence(rejection_sampler):
     assert torch.equal(output.sampled_token_ids, expected)
 
 
+# [中文注释] 测试多个不匹配位置的拒绝采样截断行为
 def test_multiple_mismatches(rejection_sampler):
     """Test handling multiple sequences with mismatches"""
     spec_tokens = [[1, 2, 3], [4, 5, 6]]
@@ -285,6 +292,7 @@ def test_multiple_mismatches(rejection_sampler):
         ),  # Mixed matches
     ],
 )
+# [中文注释] 参数化测试：验证多种草稿token与目标token组合下的拒绝采样结果
 def test_parametrized_cases(rejection_sampler, spec_tokens, output_tokens, expected):
     """Parametrized test for various matching scenarios"""
     metadata = create_sampling_metadata(all_greedy=True)
@@ -311,6 +319,7 @@ def test_parametrized_cases(rejection_sampler, spec_tokens, output_tokens, expec
 @pytest.mark.parametrize("batch_size", [1, 4, 8])
 @pytest.mark.parametrize("frac_seeded", [0.0, 0.5])
 @pytest.mark.parametrize("n_rep", [20])
+# [中文注释] 测试设置随机种子后拒绝采样结果的确定性和可重复性
 def test_deterministic_when_seeded(
     rejection_sampler,
     k: int,
@@ -364,6 +373,7 @@ def test_deterministic_when_seeded(
                 assert torch.equal(results[j][i], results[0][i])
 
 
+# [中文注释] 测试拒绝采样的输出分布是否近似目标模型分布
 def test_rejection_sampling_approximates_target_distribution():
     """Verify rejection sampling approximates target distribution,
     despite sampling from a potentially distinct draft distribution.
@@ -636,6 +646,7 @@ def _test_masked_logits(
 
 
 @pytest.mark.parametrize("top_k", [1, 5, 99])
+# [中文注释] 测试带top-k约束的拒绝采样正确性
 def test_top_k(rejection_sampler, top_k):
     """Test rejection sampling with top-k sampling"""
     vocab_size = 100
@@ -678,6 +689,7 @@ def test_top_k(rejection_sampler, top_k):
 
 
 @pytest.mark.parametrize("top_p", [0.5, 0.9, 0.99])
+# [中文注释] 测试带top-p约束的拒绝采样正确性
 def test_top_p(rejection_sampler, top_p):
     """Test rejection sampling with top-p sampling"""
     vocab_size = 100
@@ -721,6 +733,7 @@ def test_top_p(rejection_sampler, top_p):
 
 
 ########################### Tests for Logit Processors ###################
+# [中文注释] 测试带频率惩罚的拒绝采样正确性
 def test_frequency_penalties(rejection_sampler):
     """Test rejection sampling with frequency penalties"""
     spec_tokens = [[1, 1, 1], [], [1, 1, 1]]
@@ -758,6 +771,7 @@ def test_frequency_penalties(rejection_sampler):
     assert torch.equal(output.sampled_token_ids, expected)
 
 
+# [中文注释] 测试带禁止词约束的拒绝采样正确性
 def test_bad_words(rejection_sampler):
     """Test rejection sampling with bad words constraints.
 
@@ -801,6 +815,7 @@ def test_bad_words(rejection_sampler):
     assert torch.equal(output.sampled_token_ids, expected)
 
 
+# [中文注释] 测试带允许token ID约束的拒绝采样正确性
 def test_allowed_token_ids(rejection_sampler):
     """Test rejection sampling with allowed token ids"""
     spec_tokens = [[1, 2, 10], [10, 5, 3], [7, 10, 12]]
@@ -852,6 +867,7 @@ def test_allowed_token_ids(rejection_sampler):
 @pytest.mark.parametrize("vocab_size", [100, 8192, 10000])
 @pytest.mark.parametrize("max_spec_len", [1, 3])
 @pytest.mark.parametrize("no_draft_probs", [True, False])
+# [中文注释] 测试恢复token采样函数的正确性（拒绝后的重新采样）
 def test_sample_recovered_tokens(
     batch_size: int, vocab_size: int, max_spec_len: int, no_draft_probs: bool
 ):

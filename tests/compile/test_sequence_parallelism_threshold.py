@@ -10,6 +10,7 @@ from vllm.compilation.passes.fusion.sequence_parallelism import (
 )
 
 
+# 测试序列并行阈值计算函数在不同设备能力和配置下的行为
 class TestGetSequenceParallelismThreshold:
     """Tests for get_sequence_parallelism_threshold function."""
 

@@ -39,12 +39,32 @@ else:
 if TYPE_CHECKING:
     from ray.util.placement_group import PlacementGroup
 
+# ============================================================================
+# Ray 分布式执行器模块（RayDistributedExecutor）
+# 本文件实现了基于 Ray 框架的分布式执行后端，适用于多节点多卡的大规模部署场景。
+#
+# 核心架构：
+#   1. RayDistributedExecutor：主控端，负责初始化 Ray 集群、创建 Ray Actor Worker、
+#      构建 Compiled DAG（编译图）实现高性能的分布式推理流水线。
+#   2. RayWorkerWrapper（定义在 ray_utils.py）：Ray Actor 封装，每个 Actor 内部
+#      持有一个 WorkerWrapperBase 实例完成实际计算。
+#   3. 通信机制：使用 Ray Compiled DAG 将 PP 阶段的数据流编译为高效的执行图，
+#      中间张量可通过 NCCL 或共享内存传输，避免序列化开销。
+#   4. execute_model/sample_tokens 采用两阶段设计：execute_model 仅暂存调度输出，
+#      sample_tokens 触发实际的 DAG 执行，支持前向/采样解耦。
+#   5. collective_rpc 通过 Ray remote call 实现，支持同步和非阻塞模式。
+# ============================================================================
+
 logger = init_logger(__name__)
 
+# 预创建的已完成 Future，用于 execute_model 在非阻塞模式下立即返回 None
 COMPLETED_NONE_FUTURE: Future[ModelRunnerOutput | None] = Future()
 COMPLETED_NONE_FUTURE.set_result(None)
 
 
+# Ray Worker 元数据：记录每个 Worker 的 Actor 引用、创建时的 rank 和排序后调整的 rank。
+# 由于 Ray Actor 的创建顺序可能与期望的 rank 不一致，
+# 需要在创建完所有 Worker 后重新排序并调整 rank。
 @dataclass
 class RayWorkerMetaData:
     """
@@ -59,6 +79,9 @@ class RayWorkerMetaData:
     ip: str = ""
 
 
+# RayDistributedExecutor：基于 Ray 的分布式执行器实现。
+# 通过 Ray Compiled DAG 实现 PP/TP 并行下的高效模型推理，
+# 支持自动放置组管理、nsight 性能分析、动态扩缩容等高级功能。
 class RayDistributedExecutor(Executor):
     """Ray-based distributed executor"""
 
@@ -76,6 +99,7 @@ class RayDistributedExecutor(Executor):
     uses_ray: bool = True
     supports_pp: bool = True
 
+    # 初始化 Ray 执行器：连接 Ray 集群 → 创建 Worker Actor → 配置 KV 连接器。
     def _init_executor(self) -> None:
         self.forward_dag: ray.dag.CompiledDAG | None = None
 
@@ -157,6 +181,11 @@ class RayDistributedExecutor(Executor):
     def _get_env_vars_to_be_updated(self):
         return self._env_vars_for_all_workers
 
+    # 创建 Ray Worker Actor 并完成初始化：
+    # 1. 根据放置组为每个 Worker 分配 GPU 资源
+    # 2. 按照"驱动节点优先、同节点聚合"的策略排序 Worker
+    # 3. 设置环境变量（CUDA_VISIBLE_DEVICES 等）并初始化分布式通信
+    # 4. 构建 pp_tp_workers 二维列表用于后续 Compiled DAG 构建
     def _init_workers_ray(self, placement_group: "PlacementGroup", **ray_remote_kwargs):
         num_gpus = envs.VLLM_RAY_PER_WORKER_GPUS
 
@@ -412,6 +441,9 @@ class RayDistributedExecutor(Executor):
         ):
             self.shutdown()
 
+    # execute_model 的两阶段设计：
+    # 如果模型需要采样，则暂存 scheduler_output 并返回 None（延迟到 sample_tokens 执行）；
+    # 如果不需要采样（如无调度 token 或 pooling 模式），则直接执行 DAG。
     def execute_model(  # type: ignore[override]
         self,
         scheduler_output: SchedulerOutput,
@@ -456,6 +488,9 @@ class RayDistributedExecutor(Executor):
 
         return self._execute_dag(scheduler_output, grammar_output, non_block)
 
+    # 执行 Compiled DAG：首次调用时编译 DAG，后续直接执行。
+    # 有 KV 连接器时需要收集所有 Worker 输出并聚合；
+    # 无连接器时仅从输出 Worker 获取结果。
     def _execute_dag(
         self,
         scheduler_output: SchedulerOutput,
@@ -487,6 +522,8 @@ class RayDistributedExecutor(Executor):
         # Return a future that will aggregate outputs from all workers
         return FutureWrapper(refs, self.kv_output_aggregator)
 
+    # collective_rpc 的 Ray 实现：通过 Ray remote call 在所有 Worker Actor 上执行方法。
+    # 方法可以是字符串或 cloudpickle 序列化的可调用对象。
     def collective_rpc(  # type: ignore[override]
         self,
         method: str | Callable,
@@ -514,6 +551,7 @@ class RayDistributedExecutor(Executor):
 
         return ray.get(ray_worker_outputs, timeout=timeout)
 
+    # 检查 Ray Compiled Graph 相关依赖是否满足版本要求和安装状态
     def _check_ray_cgraph_installation(self):
         import importlib.metadata
 
@@ -544,6 +582,10 @@ class RayDistributedExecutor(Executor):
                 "Run `pip install ray[cgraph]` and check cupy installation."
             )
 
+    # 构建并编译 Ray DAG 执行图：
+    # 将 PP 各阶段的 TP Worker 组按流水线连接，输入从第一个 PP 阶段流入，
+    # 输出从最后一个 PP 阶段流出。中间张量可通过 NCCL 或共享内存传输。
+    # 编译后的 DAG 消除了 Python 解释器开销，实现接近原生 NCCL 的通信延迟。
     def _compiled_ray_dag(self, enable_asyncio: bool):
         assert self.parallel_config.use_ray
         self._check_ray_cgraph_installation()

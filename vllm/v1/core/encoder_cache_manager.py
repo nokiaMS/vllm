@@ -14,6 +14,17 @@ if TYPE_CHECKING:
 logger = init_logger(__name__)
 
 
+# [中文注释] 多模态编码器输出缓存管理器（用于 vision-language 等多模态模型）。
+#   按 mm_hash 缓存编码器输出，支持跨请求共享相同多模态数据的 embedding。
+#   内存管理采用引用计数 + LRU 驱逐策略：
+#     cached: dict[mm_hash → set[request_id]] — 每个缓存项被哪些请求引用
+#     freeable: OrderedDict[mm_hash → num_embeds] — 引用为 0 可回收的项（FIFO 驱逐）
+#     freed: list[mm_hash] — 已驱逐的项（通知 worker 释放实际内存）
+#   关键流程：
+#     check_and_update_cache() — 检查缓存命中并更新引用
+#     can_allocate() — 检查空间是否足够，不够则驱逐 freeable 中最老的项
+#     allocate() — 分配缓存空间（逻辑上，不分配物理内存）
+#     free() — 请求结束时释放引用，引用归零的项进入 freeable
 class EncoderCacheManager:
     """Manages caching of encoder outputs for multimodal models in vLLM V1.
 
@@ -266,6 +277,10 @@ class EncoderCacheManager:
         return freed
 
 
+# [中文注释] 计算多模态编码器的计算预算和缓存空间预算。
+#   compute budget = max(max_num_encoder_input_tokens, max_tokens_per_mm_item)
+#   cache size = max(encoder_cache_size, max_tokens_per_mm_item)
+#   确保至少能容纳一个最大的多模态输入项。
 def compute_mm_encoder_budget(
     scheduler_config: "SchedulerConfig",
     mm_max_toks_per_item: Mapping[str, int],
@@ -320,6 +335,11 @@ def compute_mm_encoder_budget(
 # use the manager for scheduling purposes. Encoder-decoder models will eventually
 # utilize the cache and this class will fold into EncoderCacheManager, as
 # differences with MM models shrink.
+# [中文注释] 编码器-解码器模型的简化缓存管理器（如 Whisper）。
+#   不支持跨请求共享缓存（check_and_update_cache 总是返回 False）。
+#   使用 allocated/to_free 双缓冲机制延迟释放：
+#     allocated → 本步骤分配的 → 下一步变为 to_free → 再下一步实际释放
+#   这样确保 model runner 在执行完当前步骤后才释放编码器输出。
 class EncoderDecoderCacheManager(EncoderCacheManager):
     def __init__(self, cache_size: int):
         self.cache_size = cache_size

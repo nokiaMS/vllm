@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 回归测试：验证 Qwen3-VL 处理器中基于帧数的时间戳计算修复
 """Regression tests for Qwen3-VL processor.
 
 Covers the fix for num_frames-based timestamp calculation

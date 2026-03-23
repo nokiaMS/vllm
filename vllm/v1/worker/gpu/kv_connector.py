@@ -27,6 +27,10 @@ if TYPE_CHECKING:
     from vllm.v1.core.sched.output import SchedulerOutput
 
 
+# KV 缓存连接器基类，定义了 GPUModelRunner 使用的 KV 传输接口。
+# 默认实现为空操作（no-op），当不需要跨实例 KV 缓存传输时使用。
+# 提供 pre_forward（前向传播前加载 KV）、post_forward（前向传播后保存 KV）、
+# no_forward（无需前向传播时的处理）和 set_disabled（禁用/启用）等方法。
 class KVConnector:
     """KVConnector interface used by GPUModelRunner."""
 
@@ -45,6 +49,9 @@ class KVConnector:
         pass
 
 
+# 活跃的 KV 连接器实现，用于跨实例的 KV 缓存传输（如分离式 prefill/decode 架构）。
+# 在 pre_forward 中启动 KV 加载，在 post_forward 中等待保存完成并收集传输状态。
+# 通过 set_disabled 可在预热等场景下临时禁用 KV 传输。
 class ActiveKVConnector(KVConnector):
     def __init__(
         self, vllm_config: VllmConfig, kv_caches_dict: dict[str, torch.Tensor]
@@ -124,6 +131,8 @@ class ActiveKVConnector(KVConnector):
 NO_OP_KV_CONNECTOR = KVConnector()
 
 
+# 工厂函数：根据是否配置了 KV 传输组来创建对应的 KV 连接器。
+# 未配置时返回 no-op 连接器，避免不必要的开销。
 def get_kv_connector(
     vllm_config: VllmConfig, kv_caches_dict: dict[str, torch.Tensor]
 ) -> KVConnector:

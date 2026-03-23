@@ -13,6 +13,7 @@ from vllm.plugins.io_processors.interface import IOProcessor
 from vllm.renderers import BaseRenderer
 
 
+# [中文注释] 最小化IOProcessor实现，作为Mock插件入口点的目标
 class DummyIOProcessor(IOProcessor):
     """Minimal IOProcessor used as the target of the mocked plugin entry point."""
 
@@ -33,6 +34,7 @@ class DummyIOProcessor(IOProcessor):
         raise NotImplementedError
 
 
+# [中文注释] fixture：模拟importlib入口点，注册DummyIOProcessor为插件
 @pytest.fixture
 def my_plugin_entry_points():
     """Patch importlib.metadata.entry_points to expose a single 'my_plugin'
@@ -48,6 +50,7 @@ def my_plugin_entry_points():
         yield
 
 
+# [中文注释] 测试加载不存在的插件时抛出ValueError
 def test_loading_missing_plugin():
     vllm_config = VllmConfig()
     renderer = MagicMock(spec=BaseRenderer)
@@ -57,6 +60,7 @@ def test_loading_missing_plugin():
         )
 
 
+# [中文注释] 测试通过plugin_from_init参数加载IOProcessor插件
 def test_loading_plugin(my_plugin_entry_points):
     # Plugin name supplied via plugin_from_init.
     vllm_config = MagicMock(spec=VllmConfig)
@@ -69,6 +73,7 @@ def test_loading_plugin(my_plugin_entry_points):
     assert isinstance(result, DummyIOProcessor)
 
 
+# [中文注释] 测试从模型hf_config加载不存在的插件时抛出ValueError
 def test_loading_missing_plugin_from_model_config():
     # Build a mock VllmConfig whose hf_config advertises a plugin name,
     # exercising the model-config code path without loading a real model.
@@ -83,6 +88,7 @@ def test_loading_missing_plugin_from_model_config():
         get_io_processor(vllm_config, renderer=renderer)
 
 
+# [中文注释] 测试从模型hf_config自动发现并加载IOProcessor插件
 def test_loading_plugin_from_model_config(my_plugin_entry_points):
     # Plugin name supplied via the model's hf_config.
     mock_hf_config = MagicMock()

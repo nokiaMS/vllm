@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试前缀缓存功能：对比启用和禁用前缀缓存时的 KV 缓存管理器行为
 """Compare the with and without prefix caching."""
 
 import copy

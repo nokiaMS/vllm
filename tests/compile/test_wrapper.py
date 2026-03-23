@@ -16,6 +16,7 @@ from vllm.config import (
 )
 
 
+# 根据输入大小执行不同运算的模块，用于测试 NoGuards 包装器
 class MyMod(torch.nn.Module):
     def forward(self, x: torch.Tensor, cache: torch.Tensor | None = None):
         if x.size()[0] >= 4:
@@ -24,6 +25,7 @@ class MyMod(torch.nn.Module):
             return x * 100
 
 
+# TorchCompileWithNoGuardsWrapper 的测试包装器
 class MyWrapper(TorchCompileWithNoGuardsWrapper):
     def __init__(self, model):
         self.model = model
@@ -34,6 +36,7 @@ class MyWrapper(TorchCompileWithNoGuardsWrapper):
         return self.model(x)
 
 
+# 测试 TorchCompileWithNoGuardsWrapper 在不同编译模式下的行为
 @pytest.mark.parametrize("use_bytecode_hook", [True, False])
 def test_torch_compile_wrapper(use_bytecode_hook, monkeypatch):
     """Test basic functionality of TorchCompileWithNoGuardsWrapper."""

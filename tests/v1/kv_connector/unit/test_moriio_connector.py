@@ -43,6 +43,7 @@ aiter_available = importlib.util.find_spec("aiter") is not None
 mori_available = importlib.util.find_spec("mori") is not None
 
 
+# [中文注释] 辅助函数：检查系统是否有可用的RDMA设备。
 def _rdma_available() -> bool:
     """Check if RDMA devices are available."""
     try:
@@ -61,6 +62,7 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture
+# [中文注释] 测试夹具：模拟并行组环境，设置TP=1和当前设备。
 def mock_parallel_groups():
     """Mock tensor/data parallel group functions for single-rank tests."""
     mock_group = MagicMock()
@@ -84,6 +86,7 @@ def mock_parallel_groups():
         yield mock_group
 
 
+# [中文注释] 辅助函数：为请求设置KV传输参数，包括远程主机和端口。
 def _setup_kv_transfer_request(request, remote_host="127.0.0.1", fake_port=4789):
     """Setup KV transfer parameters for a request."""
     request.kv_transfer_params.update(
@@ -99,6 +102,7 @@ def _setup_kv_transfer_request(request, remote_host="127.0.0.1", fake_port=4789)
     return request
 
 
+# [中文注释] 模拟的MoRIIO封装器：在无真实ROCm环境下模拟MoRIIO RDMA操作。
 class FakeMoRIIOWrapper:
     # A fake MoRIIOWrapper for testing purposes
     def __init__(self, *args, **kwargs):
@@ -168,6 +172,7 @@ class FakeMoRIIOWrapper:
         pass
 
 
+# [中文注释] 测试用MoRIIO连接器Worker：使用FakeMoRIIOWrapper替代真实RDMA实现。
 class FakeMoRIIOConnectorWorker(MoRIIOConnectorWorker):
     # Define a fake remote engine id for testing
     REMOTE_ENGINE_ID = "remote_engine"
@@ -178,6 +183,7 @@ class FakeMoRIIOConnectorWorker(MoRIIOConnectorWorker):
         super().__init__(*args, **kwargs)
 
 
+# [中文注释] 辅助函数：创建MoRIIO测试专用的VllmConfig配置。
 def create_vllm_config(
     model: str = "facebook/opt-125m",
     max_num_seqs: int = 16,
@@ -224,6 +230,7 @@ def create_vllm_config(
 
 
 @pytest.fixture
+# [中文注释] 测试夹具：创建read模式的MoRIIO连接器worker实例。
 def moriio_read_mode():
     """Force the connector into read mode via env for tests."""
     os.environ["VLLM_MORIIO_CONNECTOR_READ_MODE"] = "True"
@@ -232,6 +239,7 @@ def moriio_read_mode():
     os.environ.pop("VLLM_MORIIO_CONNECTOR_READ_MODE", None)
 
 
+# [中文注释] 测试用例：验证write模式下本地块ID被正确保存。
 def test_write_mode_saves_local_block_ids():
     """Write mode records local block ids in MoRIIOConnectorMetadata.reqs_to_save."""
 
@@ -287,6 +295,7 @@ def test_write_mode_saves_local_block_ids():
         assert block_id == block.block_id, f"{block_id} != {block.block_id}"
 
 
+# [中文注释] 测试用例：验证分块prefill的write模式下本地块ID被正确保存。
 def test_write_mode_with_chunked_prefill_saves_local_block_ids():
     """Write mode with chunked prefill still records correct local block ids."""
     # Setup Scheduler and Request
@@ -341,6 +350,7 @@ def test_write_mode_with_chunked_prefill_saves_local_block_ids():
         assert block_id == block.block_id, f"{block_id} != {block.block_id}"
 
 
+# [中文注释] 测试用例：验证read模式下远程块ID被正确加载。
 def test_read_mode_loads_remote_block_ids(moriio_read_mode):
     """Read mode loads remote block ids into local cache mapping."""
 
@@ -407,6 +417,7 @@ def test_read_mode_loads_remote_block_ids(moriio_read_mode):
     not aiter_available, reason="Requires aiter package for ROCm FlashAttention backend"
 )
 @pytest.mark.skipif(not rdma_available, reason="No RDMA devices available")
+# [中文注释] 测试用例：验证register_kv_caches正确注册KV缓存并启动handshake。
 def test_register_kv_caches(mock_parallel_groups):
     """Test that MoRIIOConnector.register_kv_caches correctly registers kv caches."""
     ROLE = "kv_consumer"
@@ -503,6 +514,7 @@ def test_register_kv_caches(mock_parallel_groups):
     not aiter_available, reason="Requires aiter package for ROCm FlashAttention backend"
 )
 @pytest.mark.skipif(not rdma_available, reason="No RDMA devices available")
+# [中文注释] 测试用例：验证MoRIIO handshake返回正确的元数据。
 def test_moriio_handshake_returns_metadata(mock_parallel_groups):
     """MoRIIO handshake socket returns valid agent metadata over ZMQ."""
 

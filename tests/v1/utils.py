@@ -9,6 +9,7 @@ from tests.utils import RemoteOpenAIServer
 # Prometheus metrics utilities for testing
 
 
+# 从 /metrics 端点获取并解析 Prometheus 指标，返回按指标名和标签分组的字典
 def get_prometheus_metrics(server: RemoteOpenAIServer) -> dict[str, dict[str, float]]:
     """Fetch and parse Prometheus metrics from the /metrics endpoint.
 
@@ -66,6 +67,7 @@ def get_prometheus_metrics(server: RemoteOpenAIServer) -> dict[str, dict[str, fl
         return {}
 
 
+# 从 Prometheus 指标中提取每个引擎的请求计数
 def get_engine_request_counts(metrics: dict[str, dict[str, float]]) -> dict[str, float]:
     """Extract request counts per engine from Prometheus metrics.
 
@@ -91,6 +93,7 @@ def get_engine_request_counts(metrics: dict[str, dict[str, float]]) -> dict[str,
     return engine_counts
 
 
+# 通过 Prometheus 指标检查数据并行模式下请求是否均衡分配到各引擎
 def check_request_balancing(server: RemoteOpenAIServer, dp_size: int):
     """Check request balancing via Prometheus metrics if dp_size > 1.
 

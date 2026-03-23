@@ -61,9 +61,30 @@ from vllm.v1.executor.abstract import Executor, FailureCallback
 from vllm.v1.outputs import AsyncModelRunnerOutput, DraftTokenIds, ModelRunnerOutput
 from vllm.v1.worker.worker_base import WorkerWrapperBase
 
+# ============================================================================
+# 多进程执行器模块（MultiprocExecutor）
+# 本文件实现了基于 Python multiprocessing 的分布式执行后端，是 vLLM 在单机多卡
+# 场景下的默认高性能执行方案。
+#
+# 核心架构：
+#   1. MultiprocExecutor（主进程端）：负责创建和管理 Worker 子进程，通过共享内存
+#      消息队列（MessageQueue）广播调度指令并收集执行结果。
+#   2. WorkerProc（子进程端）：每个 GPU 对应一个 WorkerProc 进程，内部运行
+#      WorkerWrapperBase 完成实际的模型加载和推理计算。
+#   3. 通信机制：使用基于共享内存的 MessageQueue 实现零拷贝的高效 RPC 通信，
+#      支持广播（主进程→所有 Worker）和汇报（Worker→主进程）两个方向。
+#   4. 支持流水线并行（PP）和张量并行（TP），通过 output_rank 优化只从
+#      最后一个流水线阶段的首个 TP Worker 收集输出。
+#   5. 异步调度：支持非阻塞 RPC 调用，通过 FutureWrapper 和队列实现
+#      请求流水线化，避免主进程阻塞等待。
+# ============================================================================
+
 logger = init_logger(__name__)
 
 
+# FutureWrapper 扩展了标准 Future，实现了按队列顺序排空（drain）的语义。
+# 当调用 result() 时，会先依序完成队列中排在前面的所有 Future，
+# 确保在流水线场景下结果按发送顺序被消费。
 class FutureWrapper(Future):
     def __init__(
         self,
@@ -93,6 +114,13 @@ class FutureWrapper(Future):
                 self.set_exception(e)
 
 
+# MultiprocExecutor：基于多进程的执行器实现。
+# 设计要点：
+#   - 主进程通过 rpc_broadcast_mq 向所有 Worker 广播 RPC 请求
+#   - 每个 Worker 通过独立的 response_mq 返回执行结果
+#   - 支持多节点部署（nnodes_within_dp > 1）时的跨节点消息队列
+#   - 内置 Worker 健康监控线程，Worker 异常退出时自动触发关闭流程
+#   - 使用 weakref.finalize 确保进程退出时自动清理资源
 class MultiprocExecutor(Executor):
     supports_pp: bool = True
 
@@ -100,6 +128,9 @@ class MultiprocExecutor(Executor):
         self.monitor_workers = monitor_workers
         super().__init__(vllm_config)
 
+    # 初始化执行器：创建 Worker 进程、建立共享内存消息队列、启动健康监控。
+    # 整体流程：验证并行配置 → 设置多进程环境 → 创建广播消息队列 →
+    # 逐一启动 Worker 子进程 → 等待所有 Worker 就绪 → 建立响应消息队列。
     def _init_executor(self) -> None:
         # Call self.shutdown at exit to clean up
         # and ensure workers will be terminated.
@@ -235,6 +266,7 @@ class MultiprocExecutor(Executor):
 
         self.output_rank = self._get_output_rank()
 
+    # 获取并行度配置：返回 (TP大小, PP大小, PCP大小)，同时设置 world_size 和 local_world_size
     def _get_parallel_sizes(self) -> tuple[int, int, int]:
         self.world_size = self.parallel_config.world_size
         assert self.world_size % self.parallel_config.nnodes_within_dp == 0, (
@@ -254,6 +286,8 @@ class MultiprocExecutor(Executor):
     def _is_driver_worker(self, rank: int) -> bool:
         return rank % self.parallel_config.tensor_parallel_size == 0
 
+    # 启动 Worker 健康监控：在后台线程中监听所有 Worker 进程的存活状态，
+    # 任何 Worker 异常退出时会触发执行器关闭并调用失败回调通知引擎。
     def start_worker_monitor(self, inline=False) -> None:
         workers = self.workers
         self_ref = weakref.ref(self)
@@ -293,6 +327,8 @@ class MultiprocExecutor(Executor):
         else:
             self.failure_callback = callback
 
+    # 重写 execute_model：通过 collective_rpc 分发模型执行请求，
+    # 仅从 output_rank（最后PP阶段的首个TP Worker）收集输出以减少通信开销。
     def execute_model(  # type: ignore[override]
         self, scheduler_output: SchedulerOutput, non_block: bool = False
     ) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
@@ -326,6 +362,11 @@ class MultiprocExecutor(Executor):
             "take_draft_token_ids", unique_reply_rank=self.output_rank
         )
 
+    # collective_rpc 的多进程实现：
+    # 1. 通过 rpc_broadcast_mq 将方法名/参数广播给所有 Worker
+    # 2. 从指定的 response_mq 中收集响应（unique_reply_rank 可指定只收单个 Worker 的结果）
+    # 3. 支持 KV 输出聚合（kv_output_aggregator）以合并多 Worker 输出
+    # 4. non_block=True 时返回 FutureWrapper，pending 的 Future 按 FIFO 排空
     def collective_rpc(  # type: ignore[override]
         self,
         method: str | Callable,
@@ -396,6 +437,8 @@ class MultiprocExecutor(Executor):
 
         return aggregate(get_response())
 
+    # 确保所有 Worker 进程被终止：先等待自行退出，再发 SIGTERM，最后发 SIGKILL。
+    # 采用渐进式策略避免强制终止导致资源泄漏。
     @staticmethod
     def _ensure_worker_termination(worker_procs: list[BaseProcess]):
         """Ensure that all worker processes are terminated. Assumes workers have
@@ -432,6 +475,8 @@ class MultiprocExecutor(Executor):
             for p in active_procs():
                 p.kill()
 
+    # 优雅关闭执行器：先关闭 death_writer 通知 Worker 退出，
+    # 等待进程终止后再清理消息队列资源。
     def shutdown(self):
         """Properly shut down the executor and its workers"""
         if not getattr(self, "shutting_down", False):
@@ -471,6 +516,8 @@ class MultiprocExecutor(Executor):
         pp_size = self.parallel_config.pipeline_parallel_size
         return 2 if pp_size <= 1 and self.scheduler_config.async_scheduling else pp_size
 
+    # 计算输出 rank：返回最后一个 PP 阶段中 TP rank=0 的 Worker 的全局 rank。
+    # 只有该 Worker 需要返回 ModelRunnerOutput，其他 Worker 的输出被忽略。
     def _get_output_rank(self) -> int:
         # Only returns ModelRunnerOutput from TP rank=0 and PP rank=-1
         # (the first TP worker of the last PP stage).
@@ -488,6 +535,8 @@ class MultiprocExecutor(Executor):
         )
 
 
+# UnreadyWorkerProcHandle：Worker 进程在完成初始化之前的句柄，
+# 包含进程对象、就绪管道和死亡通知管道。
 @dataclass
 class UnreadyWorkerProcHandle:
     """WorkerProcess handle before READY."""
@@ -498,6 +547,8 @@ class UnreadyWorkerProcHandle:
     death_writer: Connection | None = None
 
 
+# WorkerProcHandle：Worker 进程就绪后的完整句柄，
+# 包含进程对象、响应消息队列（本地和远程）等通信资源。
 @dataclass
 class WorkerProcHandle:
     proc: BaseProcess
@@ -526,6 +577,12 @@ class WorkerProcHandle:
         )
 
 
+# WorkerProc：在独立子进程中运行的 Worker 封装类。
+# 每个 WorkerProc 实例对应一个 GPU，负责：
+#   1. 初始化分布式环境和模型加载
+#   2. 建立与主进程的共享内存消息队列通信
+#   3. 运行 busy loop 不断接收 RPC 请求并执行
+#   4. 监控父进程存活状态（death pipe），父进程退出时自动清理
 class WorkerProc:
     """Wrapper that runs one Worker in a separate process."""
 
@@ -533,6 +590,8 @@ class WorkerProc:
     rpc_broadcast_mq: MessageQueue | None
     worker_response_mq: MessageQueue | None
 
+    # 初始化消息队列：单节点模式下直接创建本地共享内存队列；
+    # 多节点模式下通过分布式组创建跨节点消息队列。
     def _init_message_queues(
         self, input_shm_handle: Handle, vllm_config: VllmConfig
     ) -> None:
@@ -565,6 +624,8 @@ class WorkerProc:
                 )
             )
 
+    # WorkerProc 构造函数：初始化 Worker 实例、加载模型、建立消息队列。
+    # 在子进程中被调用，完成设备初始化和模型权重加载。
     @instrument(span_name="Worker init")
     def __init__(
         self,
@@ -629,6 +690,8 @@ class WorkerProc:
         # environment variable overrides after this point)
         enable_envs_cache()
 
+    # 创建 Worker 子进程的工厂方法：设置管道通信（就绪通知和死亡检测），
+    # 启动守护进程运行 worker_main 入口。返回未就绪的进程句柄。
     @staticmethod
     def make_worker_process(
         vllm_config: VllmConfig,
@@ -698,6 +761,8 @@ class WorkerProc:
             peer_worker_response_mqs=peer_worker_response_mqs,
         )
 
+    # 等待所有 Worker 进程初始化完成：通过 ready_pipe 接收就绪信号，
+    # 建立响应消息队列连接。任何 Worker 失败都会抛出异常。
     @staticmethod
     def wait_for_ready(
         unready_proc_handles: list[UnreadyWorkerProcHandle],
@@ -747,6 +812,8 @@ class WorkerProc:
         destroy_model_parallel()
         destroy_distributed_environment()
 
+    # 监控死亡管道：在后台线程中检测父进程是否退出，
+    # 父进程退出时关闭消息队列以触发 Worker 的优雅终止。
     def monitor_death_pipe(self, death_pipe, shutdown_requested: threading.Event):
         if death_pipe is None:
             return
@@ -772,6 +839,9 @@ class WorkerProc:
             name="DeathPipeMonitor",
         ).start()
 
+    # Worker 进程的主入口：完成初始化后进入 busy loop 持续处理 RPC 请求。
+    # 设置信号处理器以支持优雅终止（SIGTERM/SIGINT），
+    # 异常退出时通过消息队列通知主进程。
     @staticmethod
     def worker_main(*args, **kwargs):
         """Worker initialization and execution loops.
@@ -911,6 +981,9 @@ class WorkerProc:
             output = self.async_output_queue.get()
             self.enqueue_output(output)
 
+    # Worker 的主循环：不断从广播消息队列中取出 RPC 请求，
+    # 解析方法名并在 Worker 实例上调用，将结果或异常通过响应队列返回。
+    # output_rank 机制允许只有指定 rank 的 Worker 发送响应。
     def worker_busy_loop(self):
         """Main busy loop for Multiprocessing Workers"""
         assert self.rpc_broadcast_mq is not None
@@ -976,6 +1049,8 @@ class WorkerProc:
         decorate_logs(process_name)
 
 
+# 设置多进程 Worker 环境变量：强制使用 spawn 方式创建子进程，
+# 并限制 OpenMP 线程数以避免多进程场景下的 CPU 资源争抢。
 def set_multiprocessing_worker_envs():
     """Set up environment variables that should be used when there are workers
     in a multiprocessing environment. This should be called by the parent

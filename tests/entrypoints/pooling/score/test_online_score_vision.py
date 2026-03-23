@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# [视觉评分在线测试模块：验证 Qwen3-VL-Reranker 多模态模型的 score/rerank 端点，支持文本、图片URL、图片base64及混合内容输入]
+
 import json
 
 import pytest
@@ -53,10 +55,12 @@ ROCM_EXTRA_ARGS = (
 )
 
 
+# [辅助函数：根据注意力后端获取对应的容差值]
 def get_tol(backend: str) -> float:
     return BACKEND_TOL.get(backend, BACKEND_TOL["default"])
 
 
+# [辅助函数：带后端容差的分数断言，打印详细的差异信息]
 def assert_score(actual: float, expected: float, backend: str, label: str):
     tol = get_tol(backend)
     diff = abs(actual - expected)
@@ -95,6 +99,7 @@ TEXT_VS_IMAGE = 0.7423753142356873
 TEXT_VS_TEXT_PLUS_IMAGE = 0.5298863053321838
 
 
+# [测试夹具：参数化不同注意力后端启动 Qwen3-VL-Reranker 服务器]
 @pytest.fixture(scope="module", params=ATTN_BACKENDS)
 def server(request):
     backend = request.param
@@ -123,6 +128,7 @@ def server(request):
         yield remote_server, backend
 
 
+# [测试纯文本评分：验证文本查询与文本文档的评分结果]
 def test_score_api_queries_str_documents_str(server: tuple[RemoteOpenAIServer, str]):
     remote_server, backend = server
     score_response = requests.post(
@@ -143,6 +149,7 @@ def test_score_api_queries_str_documents_str(server: tuple[RemoteOpenAIServer, s
     assert_score(score.data[0].score, TEXT_VS_TEXT, backend, "text_vs_text")
 
 
+# [测试文本内容格式评分：验证使用 content 列表传入文本文档的评分结果]
 def test_score_api_queries_str_documents_text_content(
     server: tuple[RemoteOpenAIServer, str],
 ):
@@ -165,6 +172,7 @@ def test_score_api_queries_str_documents_text_content(
     assert_score(score.data[0].score, TEXT_VS_TEXT, backend, "text_vs_text")
 
 
+# [测试图片 URL 评分：验证文本查询与图片 URL 文档的评分结果]
 def test_score_api_queries_str_documents_image_url_content(
     server: tuple[RemoteOpenAIServer, str],
 ):
@@ -187,6 +195,7 @@ def test_score_api_queries_str_documents_image_url_content(
     assert_score(score.data[0].score, TEXT_VS_IMAGE, backend, "text_vs_image")
 
 
+# [测试 base64 图片评分：验证文本查询与 base64 编码图片文档的评分结果]
 def test_score_api_queries_str_documents_image_base64_content(
     server: tuple[RemoteOpenAIServer, str],
 ):
@@ -209,6 +218,7 @@ def test_score_api_queries_str_documents_image_base64_content(
     assert_score(score.data[0].score, TEXT_VS_IMAGE, backend, "text_vs_image_base64")
 
 
+# [测试图文混合评分：验证文本查询与文本+图片混合文档的评分结果]
 def test_score_api_queries_str_documents_image_url_plus_text_content(
     server: tuple[RemoteOpenAIServer, str],
 ):
@@ -233,6 +243,7 @@ def test_score_api_queries_str_documents_image_url_plus_text_content(
     )
 
 
+# [测试文档列表评分：验证单查询对多种类型文档列表的批量评分]
 def test_score_api_queries_str_documents_list(
     server: tuple[RemoteOpenAIServer, str],
 ):
@@ -268,6 +279,7 @@ def test_score_api_queries_str_documents_list(
     )
 
 
+# [测试重排 API 文档列表：验证 rerank 端点对多种类型文档列表的排序结果]
 def test_rerank_api_queries_str_documents_list(
     server: tuple[RemoteOpenAIServer, str],
 ):
@@ -320,6 +332,7 @@ def test_rerank_api_queries_str_documents_list(
     )
 
 
+# [测试配对列表评分：验证多查询与多文档一一配对的评分结果]
 def test_score_api_queries_list_documents_list(
     server: tuple[RemoteOpenAIServer, str],
 ):

@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 模型测试通用工具模块：提供输出比较、logprobs校验、嵌入相似度检查、
+# 模型上下文构建和dummy配置覆盖等辅助功能
+
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -22,6 +25,7 @@ from .registry import HF_EXAMPLE_MODELS
 TokensText = tuple[list[int], str]
 
 
+# 比较两个模型生成的序列是否完全相同
 def check_outputs_equal(
     *,
     outputs_0_lst: Sequence[TokensText],
@@ -88,6 +92,7 @@ TokensTextLogprobsPromptLogprobs = tuple[
 ]
 
 
+# 比较两个模型生成的logprobs是否接近（允许一定偏差）
 def check_logprobs_close(
     *,
     outputs_0_lst: Sequence[
@@ -271,6 +276,7 @@ def check_logprobs_close(
                     warnings.warn(fail_msg, stacklevel=2)
 
 
+# 为指定模型创建InputProcessingContext，用于测试输入处理流程
 def build_model_context(
     model_id: str,
     runner: RunnerOption = "auto",
@@ -327,6 +333,7 @@ def build_model_context(
     )
 
 
+# 比较两组嵌入向量的余弦相似度是否足够接近
 def check_embeddings_close(
     *,
     embeddings_0_lst: Sequence[list[float]],
@@ -358,6 +365,7 @@ def check_embeddings_close(
         assert sim >= 1 - tol, fail_msg
 
 
+# 对嵌入向量进行Matryoshka截断和L2归一化
 def matryoshka_fy(tensor: torch.Tensor, dimensions: int):
     tensor = torch.tensor(tensor)
     tensor = tensor[..., :dimensions]
@@ -365,6 +373,7 @@ def matryoshka_fy(tensor: torch.Tensor, dimensions: int):
     return tensor
 
 
+# 根据输出维度自动选择sigmoid或softmax激活函数
 def softmax(data):
     if data.shape[-1] == 1:
         return F.sigmoid(data)
@@ -373,6 +382,7 @@ def softmax(data):
 
 
 @dataclass
+# 通用模型测试信息基类
 class ModelInfo:
     name: str
     architecture: str = ""
@@ -389,6 +399,7 @@ class ModelInfo:
 
 
 @dataclass
+# 嵌入模型的测试信息，包含MTEB评分和Matryoshka维度
 class EmbedModelInfo(ModelInfo):
     mteb_score: float | None = None
     is_matryoshka: bool = False
@@ -396,17 +407,20 @@ class EmbedModelInfo(ModelInfo):
 
 
 @dataclass
+# 重排序模型的测试信息，包含MTEB评分和聊天模板
 class RerankModelInfo(ModelInfo):
     mteb_score: float | None = None
     chat_template_name: str | None = None
 
 
 @dataclass
+# 生成模型的测试信息，包含HF困惑度基准值
 class GenerateModelInfo(ModelInfo):
     hf_dtype: str = "auto"
     hf_ppl: float | None = None
 
 
+# 根据模型信息和CI环境变量构建vLLM测试的额外参数
 def get_vllm_extra_kwargs(model_info: ModelInfo, vllm_extra_kwargs):
     # A model family has many models with the same architecture,
     # and we don't need to test each one.
@@ -436,6 +450,7 @@ def get_vllm_extra_kwargs(model_info: ModelInfo, vllm_extra_kwargs):
     return vllm_extra_kwargs
 
 
+# 生成用于测试的最小化模型配置覆盖（减少层数和专家数以加速测试）
 def dummy_hf_overrides(
     hf_config: PretrainedConfig,
     *,
@@ -536,6 +551,7 @@ def dummy_hf_overrides(
     return hf_config
 
 
+# 检查transformers版本并在不满足要求时跳过测试
 def check_transformers_version(
     model: str,
     min_transformers_version: str | None = None,

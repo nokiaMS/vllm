@@ -31,6 +31,7 @@ if current_platform.is_rocm():
     )
 
 
+# [中文注释] 使用torch实现的MoE permute参考函数：按专家重新排列token
 def torch_permute(
     hidden_states: torch.Tensor,
     topk_ids: torch.Tensor,
@@ -83,6 +84,7 @@ def torch_permute(
     ]
 
 
+# [中文注释] 使用torch实现的MoE unpermute参考函数：将专家输出恢复为原始token顺序并加权求和
 def torch_unpermute(
     permuted_hidden_states: torch.Tensor,
     topk_weights: torch.Tensor,
@@ -117,6 +119,7 @@ def torch_unpermute(
 @pytest.mark.parametrize("topk", TOP_KS)
 @pytest.mark.parametrize("dtype", [torch.bfloat16])
 @pytest.mark.parametrize("ep_size", EP_SIZE)
+# [中文注释] 测试MoE permute/unpermute内核与参考实现在不同专家数和EP配置下的一致性
 def test_moe_permute_unpermute(
     n_token: int,
     n_hidden: int,

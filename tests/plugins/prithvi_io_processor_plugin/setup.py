@@ -3,6 +3,7 @@
 
 from setuptools import setup
 
+# Prithvi IO 处理器插件的安装配置
 setup(
     name="prithvi_io_processor_plugin",
     version="0.1",

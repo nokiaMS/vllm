@@ -21,6 +21,7 @@ from vllm.tokenizers import get_tokenizer
 from vllm.utils.torch_utils import is_torch_equal_or_newer
 
 
+# 获取动态形状编译测试的模型列表
 def get_test_models():
     """Get list of models to test based on PyTorch version"""
     # TODO "Qwen/Qwen3-4B-Instruct-2507" fails Fix issue and support it.
@@ -40,6 +41,7 @@ def get_test_models():
 @pytest.mark.parametrize("use_bytecode_hook", [True, False])
 @pytest.mark.parametrize("evaluate_guards", [False, True])
 @pytest.mark.skipif(not is_torch_equal_or_newer("2.10.0"), reason="requires torch 2.10")
+# 测试各种动态形状类型（BACKED/UNBACKED/SIZE_OBLIVIOUS）能成功编译并正确推理
 def test_dynamic_shapes_compilation(
     monkeypatch,
     model_name,
@@ -113,6 +115,7 @@ def test_dynamic_shapes_compilation(
     ],
 )
 @pytest.mark.parametrize("evaluate_guards", [False, True])
+# 测试 evaluate_guards 能正确检测形状特化违规（guard 失败时抛出异常）
 def test_model_specialization_with_evaluate_guards(
     monkeypatch, use_aot_compile, dynamic_shapes_type, evaluate_guards
 ):

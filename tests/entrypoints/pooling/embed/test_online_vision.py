@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# [视觉嵌入在线测试模块：验证 VLM2Vec 视觉语言模型的文本和图片嵌入功能，支持多种图片格式]
+
 import json
 
 import pytest
@@ -31,6 +33,7 @@ image_url = "https://vllm-public-assets.s3.us-west-2.amazonaws.com/multimodal_as
 image_base64 = {"url": encode_image_url(fetch_image(image_url))}
 
 
+# [测试夹具：启动 VLM2Vec-Full 视觉嵌入模型的远程服务器，配置自定义 Jinja 模板]
 @pytest.fixture(scope="module")
 def server():
     args = [
@@ -52,6 +55,7 @@ def server():
         yield remote_server
 
 
+# [测试纯文本嵌入请求：验证文本输入的嵌入维度和 token 计数]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_text_request(server: RemoteOpenAIServer, model_name: str):
     messages = [
@@ -77,6 +81,7 @@ def test_chat_text_request(server: RemoteOpenAIServer, model_name: str):
     assert output.usage.prompt_tokens == 14
 
 
+# [测试图片 URL 嵌入请求：验证通过图片 URL 获取嵌入的维度和 token 计数]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_image_url_request(server: RemoteOpenAIServer, model_name: str):
     messages = [
@@ -102,6 +107,7 @@ def test_chat_image_url_request(server: RemoteOpenAIServer, model_name: str):
     assert output.usage.prompt_tokens == 767
 
 
+# [测试 base64 编码图片嵌入请求：验证与 URL 方式获得相同的嵌入结果]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_image_base64_request(server: RemoteOpenAIServer, model_name: str):
     messages = [
@@ -127,6 +133,7 @@ def test_chat_image_base64_request(server: RemoteOpenAIServer, model_name: str):
     assert output.usage.prompt_tokens == 767
 
 
+# [测试图片 media_io_kwargs 参数：验证 RGBA 图片的背景色处理]
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 def test_chat_image_with_media_io_kwargs(server: RemoteOpenAIServer, model_name: str):
     rgba_image_url = (
@@ -160,6 +167,7 @@ def test_chat_image_with_media_io_kwargs(server: RemoteOpenAIServer, model_name:
     assert len(output.data[0].embedding) == 3072
 
 
+# [辅助函数：使用 HuggingFace processor 计算图片+文本输入的预期 token 数]
 def get_hf_prompt_tokens(model_name, content, image_url):
     processor = AutoProcessor.from_pretrained(
         model_name, trust_remote_code=True, num_crops=4
@@ -176,6 +184,7 @@ def get_hf_prompt_tokens(model_name, content, image_url):
     return inputs.input_ids.shape[1]
 
 
+# [测试多种图片格式的嵌入：参数化验证 JPG/PNG（灰度/RGB/RGBA）图片的嵌入与 HF token 计数一致]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
 @pytest.mark.parametrize("image_url", TEST_IMAGE_ASSETS, indirect=True)

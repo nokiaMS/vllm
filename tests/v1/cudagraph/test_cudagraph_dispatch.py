@@ -24,6 +24,9 @@ from vllm.platforms import current_platform
 from vllm.v1.cudagraph_dispatcher import CudagraphDispatcher
 
 
+# [中文注释] 测试 CUDA 图调度器的捕获、重放和回退逻辑
+
+# [中文注释] 用于测试的简单 MLP 模型
 # Helper MLP for testing
 class SimpleMLP(nn.Module):
     def __init__(self):

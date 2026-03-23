@@ -9,6 +9,7 @@ from vllm.v1.outputs import KVConnectorOutput, ModelRunnerOutput
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 虚拟ModelRunnerOutput：用于测试KVOutputAggregator的输出合并逻辑。
 class DummyModelRunnerOutput(ModelRunnerOutput):
     def __init__(
         self,
@@ -33,6 +34,7 @@ class DummyModelRunnerOutput(ModelRunnerOutput):
         )
 
 
+# [中文注释] 测试用例：验证KVOutputAggregator正确合并多个worker的输出（finished_sending/recving/invalid_block_ids）。
 def test_aggregate_workers_output():
     aggregator = KVOutputAggregator(expected_finished_count=2)
 
@@ -85,6 +87,7 @@ def test_aggregate_workers_output():
     assert aggregated.invalid_block_ids == {3, 4, 5}
 
 
+# [中文注释] 测试用例：验证带expected_finished_count参数的输出聚合逻辑。
 def test_aggregate_workers_output_with_expected_finished_count():
     # We create the aggregator expecting to collect from 4 workers
     aggregator = KVOutputAggregator(expected_finished_count=4)

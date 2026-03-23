@@ -20,11 +20,13 @@ from vllm.multimodal.audio import (
 )
 
 
+# [中文注释] 创建虚拟音频测试数据夹具
 @pytest.fixture
 def dummy_audio():
     return np.array([0.0, 0.1, 0.2, 0.3, 0.4], dtype=float)
 
 
+# [中文注释] 测试librosa方法的音频重采样
 def test_resample_audio_librosa(dummy_audio):
     with patch("vllm.multimodal.audio.librosa.resample") as mock_resample:
         mock_resample.return_value = dummy_audio * 2
@@ -35,6 +37,7 @@ def test_resample_audio_librosa(dummy_audio):
         assert np.all(out == dummy_audio * 2)
 
 
+# [中文注释] 测试scipy方法的音频重采样：降采样、升采样和等采样率
 def test_resample_audio_scipy(dummy_audio):
     out_down = resample_audio_scipy(dummy_audio, orig_sr=4, target_sr=2)
     out_up = resample_audio_scipy(dummy_audio, orig_sr=2, target_sr=4)
@@ -78,6 +81,7 @@ def test_audio_resampler_scipy_calls_resample(dummy_audio):
         assert np.all(out == dummy_audio)
 
 
+# [中文注释] 测试无效重采样方法引发ValueError
 def test_audio_resampler_invalid_method(dummy_audio):
     resampler = AudioResampler(target_sr=22050, method="invalid")
     with pytest.raises(ValueError):
@@ -95,6 +99,7 @@ def test_audio_resampler_no_target_sr(dummy_audio):
 # ============================================================
 
 
+# [中文注释] 测试音频归一化：不同比特深度、已归一化、空数组、多声道等场景
 class TestNormalizeAudio:
     """Tests for normalize_audio function with different specs."""
 
@@ -253,6 +258,7 @@ class TestNormalizeAudio:
 # ============================================================
 
 
+# [中文注释] 测试多模态数据解析器的声道归一化：多声道转单声道
 class TestMultiModalDataParserChannelNormalization:
     """Tests for MultiModalDataParser.target_channels integration.
 
@@ -358,6 +364,7 @@ class TestMultiModalDataParserChannelNormalization:
 # ============================================================
 
 
+# [中文注释] 音频处理管道端到端测试：重采样、归一化和声道降混的完整流程
 class TestAudioPipelineE2E:
     """End-to-end tests for audio normalization in the full pipeline.
 
@@ -592,6 +599,7 @@ class TestAudioPipelineE2E:
 # ============================================================
 
 
+# [中文注释] 测试音频分块功能：验证split_audio在不同长度和块大小下的正确性
 class TestAudioChunking:
     """Tests for split_audio and find_split_point utilities in vllm.multimodal.audio."""
 

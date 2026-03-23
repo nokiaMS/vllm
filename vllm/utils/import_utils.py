@@ -23,6 +23,7 @@ from vllm.logger import init_logger
 logger = init_logger(__name__)
 
 
+# 导入 pynvml 模块（NVIDIA 管理库的 Python 封装），使用 vLLM 自带的副本以避免与第三方包冲突
 def import_pynvml():
     """
     Historical comments:
@@ -55,6 +56,7 @@ def import_pynvml():
     return pynvml
 
 
+# 导入 triton_kernels 模块：优先使用系统安装版本，回退到 vLLM 自带的第三方副本
 @cache
 def import_triton_kernels():
     """
@@ -84,6 +86,7 @@ def import_triton_kernels():
         )
 
 
+# 根据文件路径动态导入 Python 模块（基于 importlib 官方方案）
 def import_from_path(module_name: str, file_path: str | os.PathLike):
     """
     Import a Python file according to its file path.
@@ -103,6 +106,7 @@ def import_from_path(module_name: str, file_path: str | os.PathLike):
     return module
 
 
+# 根据完全限定名（如 "module.Class"）解析并返回对应的 Python 对象
 def resolve_obj_by_qualname(qualname: str) -> Any:
     """
     Resolve an object by its fully-qualified class name.
@@ -112,6 +116,7 @@ def resolve_obj_by_qualname(qualname: str) -> Any:
     return getattr(module, obj_name)
 
 
+# 从 vLLM 包的元数据中解析所有可选依赖分组（extras），返回 {extra_name: [package_names]} 字典
 @cache
 def get_vllm_optional_dependencies():
     metadata = importlib.metadata.metadata("vllm")
@@ -128,6 +133,8 @@ def get_vllm_optional_dependencies():
     }
 
 
+# 占位符基类：拦截所有特殊方法调用并抛出错误，防止未安装模块的占位对象被意外使用
+# 设计思路：Python 的特殊方法查找不经过 __getattr__，因此必须显式重写每个双下划线方法
 class _PlaceholderBase:
     """
     Disallows downstream usage of placeholder modules.
@@ -284,6 +291,7 @@ class _PlaceholderBase:
         return self.__getattr__("__exit__")
 
 
+# 模块占位符：当模块未安装时提供友好的错误提示，并尝试给出 vLLM extras 安装建议
 class PlaceholderModule(_PlaceholderBase):
     """
     A placeholder object to use when a module does not exist.
@@ -320,6 +328,7 @@ class PlaceholderModule(_PlaceholderBase):
         )
 
 
+# 模块属性占位符：追踪属性访问路径，在实际使用时委托给 PlaceholderModule 抛出具体的导入错误
 class _PlaceholderModuleAttr(_PlaceholderBase):
     def __init__(self, module: PlaceholderModule, attr_path: str) -> None:
         super().__init__()
@@ -340,6 +349,8 @@ class _PlaceholderModuleAttr(_PlaceholderBase):
         )
 
 
+# 延迟加载器：继承 ModuleType，首次访问属性时才真正导入模块
+# 设计思路：避免在启动时导入大型依赖（如 xgrammar），减少初始化时间和副作用
 class LazyLoader(ModuleType):
     """
     `LazyLoader` module borrowed from [Tensorflow]
@@ -391,6 +402,7 @@ class LazyLoader(ModuleType):
         return dir(self._module)
 
 
+# 可选依赖检测工具集：以下函数用于检查各个可选包是否可用，结果带缓存以避免重复查找
 # Optional dependency detection utilities
 @cache
 def _has_module(module_name: str) -> bool:

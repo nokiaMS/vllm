@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试稀疏FlashMLA内核的元数据生成、解码和预填充功能的冒烟测试
 import pytest
 import torch
 
 
+# 冒烟测试稀疏FlashMLA的元数据生成（tile_scheduler_metadata和num_splits）
 def test_sparse_flashmla_metadata_smoke():
     import vllm.v1.attention.ops.flashmla as fm
 
@@ -33,6 +35,7 @@ def test_sparse_flashmla_metadata_smoke():
     assert num_splits.dtype == torch.int32
 
 
+# 冒烟测试稀疏FlashMLA解码路径（FP8 KV缓存和稀疏索引）
 def test_sparse_flashmla_decode_smoke():
     import vllm.v1.attention.ops.flashmla as fm
 
@@ -96,6 +99,7 @@ def test_sparse_flashmla_decode_smoke():
     assert lse.shape[0] == batch_size
 
 
+# 冒烟测试稀疏FlashMLA预填充路径的输出形状和基本功能
 def test_sparse_flashmla_prefill_smoke():
     import vllm.v1.attention.ops.flashmla as fm
 

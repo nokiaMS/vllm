@@ -12,6 +12,7 @@ parser_name = "ernie45"
 REASONING_MODEL_NAME = "baidu/ERNIE-4.5-21B-A3B-Thinking"
 
 
+# [中文注释] 加载ERNIE-4.5分词器夹具
 @pytest.fixture(scope="module")
 def ernie45_tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -97,6 +98,7 @@ TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试ERNIE-4.5推理提取：覆盖流式/非流式的多种推理场景
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,

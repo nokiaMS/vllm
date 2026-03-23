@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 ChatGLM3 模型在张量并行下的 LoRA 推理正确性
 
 import vllm
 import vllm.config

@@ -14,6 +14,7 @@ end_token = "</think>"
 REASONING_MODEL_NAME = "zai-org/GLM-4.5"
 
 
+# [中文注释] 加载GLM-4.5分词器夹具
 @pytest.fixture(scope="module")
 def glm45_tokenizer():
     return AutoTokenizer.from_pretrained(REASONING_MODEL_NAME)
@@ -166,6 +167,7 @@ REASONING_END_TEST_CASES = [
 ]
 
 
+# [中文注释] 参数化测试GLM-4.5推理提取：包括多轮对话和推理结束判断
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,
@@ -192,6 +194,7 @@ def test_reasoning(
     assert is_reasoning_end == param_dict["is_reasoning_end"]
 
 
+# [中文注释] 测试完整多轮对话提示词中的推理结束判断
 @pytest.mark.parametrize("prompt, is_reasoning_end", REASONING_END_TEST_CASES)
 def test_is_reasoning_end_full_prompt(
     prompt: str, is_reasoning_end: bool, glm45_tokenizer

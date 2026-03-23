@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 EPLB 与 FusedMoE 层在 NVFP4 量化数据并行场景下的交互正确性
 
 # Test that the interaction between EPLB and FusedMoE Layer is okay for DP w/ NVFP4
 

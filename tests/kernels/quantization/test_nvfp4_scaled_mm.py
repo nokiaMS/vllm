@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试NVFP4缩放矩阵乘法内核的正确性（需要Blackwell SM100+）
 import pytest
 import torch
 from nvfp4_utils import FLOAT4_E2M1_MAX, FLOAT8_E4M3_MAX, dequantize_nvfp4_to_dtype
@@ -24,6 +25,7 @@ SEEDS = [42]
 CUDA_DEVICES = ["cuda:0"]
 
 
+# 计算NVFP4反量化后的参考矩阵乘法结果
 def get_ref_results(
     a_fp4,
     b_fp4,
@@ -49,6 +51,7 @@ def get_ref_results(
     return torch.matmul(a_in_dtype, b_in_dtype.t())
 
 
+# 测试NVFP4缩放矩阵乘法内核与反量化参考实现的数值一致性
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("shape", SHAPES)
 @pytest.mark.parametrize("seed", SEEDS)

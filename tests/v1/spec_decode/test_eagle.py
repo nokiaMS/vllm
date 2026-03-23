@@ -40,6 +40,7 @@ ar_draft_model_dir = "amd/PARD-Llama-3.2-1B"  # Compatible with parallel and AR 
 BLOCK_SIZE = 16
 
 
+# [中文注释] 辅助函数：创建EAGLE推测解码提议器实例，用于单元测试
 def _create_proposer(
     method: str,
     num_speculative_tokens: int,
@@ -100,6 +101,7 @@ def _create_proposer(
     return proposer
 
 
+# [中文注释] 测试EAGLE提议器的下一个token ID准备逻辑
 def test_prepare_next_token_ids():
     """
     Test for prepare_next_token_ids_cpu and prepare_next_token_ids_padded.
@@ -189,6 +191,7 @@ def test_prepare_next_token_ids():
     assert torch.equal(valid_sampled_tokens_count, expected_valid_sampled_tokens_count)
 
 
+# [中文注释] 测试EAGLE提议器的输入准备逻辑（token ID、位置和隐藏状态）
 def test_prepare_inputs():
     """
     cu_target_query_lens: [0, a, a + b, a + b + c]
@@ -279,6 +282,7 @@ def test_prepare_inputs():
     assert torch.equal(token_indices, expected_token_indices)
 
 
+# [中文注释] 测试带填充的EAGLE输入准备逻辑（不同序列长度下的正确对齐）
 def test_prepare_inputs_padded():
     """
     Input scenario is 3 requests with num_speculative_tokens == 2 and:
@@ -343,6 +347,7 @@ def test_prepare_inputs_padded():
     assert torch.equal(token_indices_to_sample, expected_token_indices_to_sample)
 
 
+# [中文注释] 测试默认EAGLE模式下首次前向传播的输入设置
 def test_set_inputs_first_pass_default_eagle():
     """
     Test for set_inputs_first_pass without extra input slots (default EAGLE).
@@ -429,6 +434,7 @@ def test_set_inputs_first_pass_default_eagle():
     assert torch.equal(proposer.hidden_states[:num_tokens], target_hidden_states)
 
 
+# [中文注释] 测试草稿模型模式下首次前向传播的输入设置
 def test_set_inputs_first_pass_draft_model():
     """
     Test for set_inputs_first_pass with a draft model (extra input slots,
@@ -571,6 +577,7 @@ def test_set_inputs_first_pass_draft_model():
     assert torch.equal(output_cad.query_start_loc, expected_query_start_loc)
 
 
+# [中文注释] 测试并行草稿生成模式下首次前向传播的输入设置
 def test_set_inputs_first_pass_parallel_drafting():
     """
     Test for set_inputs_first_pass with parallel drafting (extra input slots,
@@ -735,6 +742,7 @@ def test_set_inputs_first_pass_parallel_drafting():
 @mock.patch("vllm.v1.spec_decode.eagle.get_pp_group")
 @mock.patch("vllm.v1.spec_decode.eagle.get_layers_from_vllm_config")
 @mock.patch("vllm.v1.spec_decode.eagle.get_model")
+# [中文注释] 测试EAGLE模型加载逻辑（默认EAGLE头和独立草稿模型）
 def test_load_model(
     mock_get_model,
     mock_get_layers,
@@ -834,6 +842,7 @@ def test_load_model(
 @pytest.mark.parametrize("method", ["eagle", "eagle3"])
 @pytest.mark.parametrize("attn_backend", get_attn_backend_list_based_on_platform())
 @pytest.mark.parametrize("num_speculative_tokens", [1, 3, 8])
+# [中文注释] 测试EAGLE提议器的token提议功能（贪心解码和确定性logits）
 def test_propose(method, attn_backend, num_speculative_tokens, monkeypatch):
     if attn_backend == "TRITON_ATTN" and not current_platform.is_rocm():
         pytest.skip(
@@ -1020,6 +1029,7 @@ def test_propose(method, attn_backend, num_speculative_tokens, monkeypatch):
         [(0,), (1,), (2,), (0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)],  # Tree
     ],
 )
+# [中文注释] 测试EAGLE树状推测解码的提议功能
 def test_propose_tree(spec_token_tree):
     # Get GPU device.
     device = torch.device(current_platform.device_type)

@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 集成测试 SageMaker 处理器覆盖功能：自定义脚本函数、装饰器、环境变量覆盖
+# 以及优先级顺序（环境变量 > 装饰器 > 脚本函数 > 框架默认）
+
 """Integration tests for handler override functionality.
 
 Tests real customer usage scenarios:
@@ -28,6 +31,7 @@ from .conftest import (
 )
 
 
+# 模拟真实客户使用场景的处理器覆盖集成测试
 class TestHandlerOverrideIntegration:
     """Integration tests simulating real customer usage scenarios.
 

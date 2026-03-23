@@ -9,6 +9,8 @@ from functools import wraps
 from typing import Any
 
 
+# 基于 cProfile 的上下文管理器，用于对代码块进行性能分析；
+# 支持将结果保存到文件或直接打印到标准输出
 @contextlib.contextmanager
 def cprofile_context(save_file: str | None = None):
     """Run a cprofile
@@ -32,6 +34,8 @@ def cprofile_context(save_file: str | None = None):
             prof.print_stats(sort="cumtime")
 
 
+# 装饰器版本的 cProfile 性能分析工具，可通过 enabled 参数控制是否启用，
+# 方便在开发和生产环境间切换
 def cprofile(save_file: str | None = None, enabled: bool = True):
     """Decorator to profile a Python method using cProfile.
 

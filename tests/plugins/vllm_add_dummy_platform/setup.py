@@ -3,6 +3,7 @@
 
 from setuptools import setup
 
+# 虚拟平台插件的安装配置，用于测试 vLLM 平台插件机制
 setup(
     name="vllm_add_dummy_platform",
     version="0.1",

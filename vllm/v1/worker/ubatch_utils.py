@@ -10,6 +10,8 @@ from vllm.config import ParallelConfig
 from vllm.v1.attention.backend import CommonAttentionMetadata
 
 
+# 微批次切片数据类，定义一个微批次在请求维度和 token 维度上的范围
+# 用于将大批次切分为多个微批次以实现双批次重叠（DBO）执行
 @dataclass
 class UBatchSlice:
     request_slice: slice
@@ -29,12 +31,15 @@ class UBatchSlice:
 UBatchSlices: TypeAlias = list[UBatchSlice]
 
 
+# 判断最后一个微批次是否为空（所有原始 token 已被前面的微批次消耗完毕）
 def is_last_ubatch_empty(
     orig_num_tokens: int, padded_num_tokens: int, num_ubatches: int
 ) -> bool:
     return (padded_num_tokens // num_ubatches) * (num_ubatches - 1) >= orig_num_tokens
 
 
+# 检查当前 token 数量是否达到微批次切分阈值
+# 分别对解码阶段和预填充阶段使用不同的阈值判断
 def check_ubatch_thresholds(
     config: ParallelConfig, num_tokens: int, uniform_decode: bool
 ) -> bool:
@@ -46,6 +51,8 @@ def check_ubatch_thresholds(
         return num_tokens >= config.dbo_prefill_token_threshold
 
 
+# [中文注释] 将最后一个微批次切片扩展到填充后的总 token 数
+#   因为微批次切片在 DP 填充之前创建，需要在此补齐以匹配最终的 token 总数
 # This pads the last ubatch slice out to the total number of tokens
 # (num_tokens + padding) since we do `create_ubatch_slices` before applying DP padding.
 def _pad_out_ubatch_slices(
@@ -60,6 +67,8 @@ def _pad_out_ubatch_slices(
     ]
 
 
+# 根据 token 分布创建微批次切片，将 token 序列按均匀分割点划分为多个微批次
+# 使用 searchsorted 确定每个切分点对应的请求范围，同时返回填充后的切片用于对齐
 def maybe_create_ubatch_slices(
     should_ubatch: bool,
     num_scheduled_tokens: np.ndarray,
@@ -114,6 +123,8 @@ def maybe_create_ubatch_slices(
     return ubatch_slices, ubatch_slices_padded
 
 
+# 从全局 query_start_loc 中提取指定请求范围的子张量，并重新归零偏移
+# 注意：此函数创建新张量，不兼容 CUDAGraph
 def slice_query_start_locs(
     query_start_loc: torch.Tensor,
     request_slice: slice,
@@ -131,6 +142,8 @@ def slice_query_start_locs(
     )
 
 
+# 根据微批次切片构建新的注意力元数据，处理请求在微批次边界被切分的情况
+# 关键算法：检测首尾请求是否被跨微批次拆分，若是则调整 query_start_loc 和 seq_lens
 def _make_metadata_with_slice(
     ubatch_slice: UBatchSlice, attn_metadata: CommonAttentionMetadata
 ) -> CommonAttentionMetadata:
@@ -226,6 +239,8 @@ def _make_metadata_with_slice(
     )
 
 
+# 将完整的注意力元数据按微批次切片列表拆分为多个独立的注意力元数据实例
+# 不修改原始元数据，每个微批次获得独立的元数据副本
 def split_attn_metadata(
     ubatch_slices: list[UBatchSlice],
     common_attn_metadata: CommonAttentionMetadata,

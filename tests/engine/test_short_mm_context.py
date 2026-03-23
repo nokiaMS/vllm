@@ -16,6 +16,7 @@ models = ["llava-hf/llava-1.5-7b-hf"]
 
 
 @pytest.mark.parametrize("model", models)
+# [中文注释] 测试上下文长度不足以容纳多模态token时抛出ValueError（LLaVA模型）
 def test_context_length_too_short(vllm_runner, image_assets, model):
     images = [asset.pil_image for asset in image_assets]
 

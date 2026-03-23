@@ -11,6 +11,7 @@ from vllm.tool_parsers.deepseekv31_tool_parser import (
 MODEL = "deepseek-ai/DeepSeek-V3.1"
 
 
+# [中文注释] 加载DeepSeek-V3.1工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def deepseekv31_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL)

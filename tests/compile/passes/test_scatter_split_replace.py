@@ -15,6 +15,7 @@ from vllm.config import CompilationConfig, CompilationMode, VllmConfig
 from vllm.model_executor.layers.rotary_embedding import RotaryEmbedding
 
 
+# 包含 RoPE+getitem+slice_scatter+split 序列的模型，用于替换 pass 测试
 class ScatterSplitReplacementModel(nn.Module):
     """Model with a rope+getitem+slice_scatter+split_with_sizes sequence."""
 
@@ -60,6 +61,7 @@ class ScatterSplitReplacementModel(nn.Module):
 
 
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+# 测试 ScatterSplitReplacementPass 消除 slice_scatter 并保留正确输出
 def test_scatter_split_replace(dtype):
     torch.set_default_device("cuda")
     torch.set_default_dtype(dtype)

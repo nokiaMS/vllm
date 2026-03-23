@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from vllm.v1.request import Request
 
 
+# [中文注释] 旧式连接器：使用2参数__init__签名（config, role），测试向后兼容性。
 class OldStyleTestConnector(KVConnectorBase_V1):
     """
     Test connector using the old signature with 2 required arguments.
@@ -77,6 +78,7 @@ class OldStyleTestConnector(KVConnectorBase_V1):
         pass
 
 
+# [中文注释] 新式连接器：使用3参数__init__签名（config, role, kv_cache_config），为当前标准接口。
 class NewStyleTestConnector(KVConnectorBase_V1):
     """
     Test connector using the new signature with 3 required arguments.
@@ -129,6 +131,7 @@ class NewStyleTestConnector(KVConnectorBase_V1):
 
 
 @pytest.mark.parametrize("role", [KVConnectorRole.SCHEDULER, KVConnectorRole.WORKER])
+# [中文注释] 测试用例：验证工厂能正确实例化使用旧式2参数签名的外部连接器。
 def test_external_old_signature_factory_instantiation(role):
     """
     Test that external connectors with old signature (2 required args) loaded
@@ -153,6 +156,7 @@ def test_external_old_signature_factory_instantiation(role):
 
 
 @pytest.mark.parametrize("role", [KVConnectorRole.SCHEDULER, KVConnectorRole.WORKER])
+# [中文注释] 测试用例：验证工厂能正确实例化使用新式3参数签名的连接器。
 def test_external_new_signature_factory_instantiation(role):
     """
     Test that external connectors with new signature (3 required args) loaded
@@ -177,6 +181,7 @@ def test_external_new_signature_factory_instantiation(role):
 
 
 @pytest.mark.parametrize("role", [KVConnectorRole.SCHEDULER, KVConnectorRole.WORKER])
+# [中文注释] 测试用例：验证旧式连接器调用super().__init__时的兼容性。
 def test_old_signature_super_init(role):
     """
     Test that old-style connectors can call super().__init__() without
@@ -191,6 +196,7 @@ def test_old_signature_super_init(role):
     assert connector._kv_cache_config is None
 
 
+# [中文注释] 测试用例：验证旧式连接器使用关键字参数调用super().__init__的兼容性。
 def test_old_signature_super_init_with_kwargs():
     """
     Test that old-style connectors can call super().__init__() with keyword
@@ -213,6 +219,7 @@ def test_old_signature_super_init_with_kwargs():
     assert connector2._kv_cache_config is None
 
 
+# [中文注释] 测试用例：验证内部连接器（如NixlConnector）使用新式签名。
 def test_internal_connector_uses_new_signature():
     """
     Test that internal connectors (registered in factory) always use the new
@@ -238,6 +245,7 @@ def test_internal_connector_uses_new_signature():
     assert connector._kv_cache_config == kv_cache_config
 
 
+# [中文注释] 测试用例：通过mock验证签名检测机制能正确区分旧式和新式参数。
 def test_signature_detection_with_mocking():
     """
     Test that the factory correctly applies compat_sig flag returned from

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 多模态测试的 pytest 配置文件，处理 ROCm 平台的特殊兼容性设置
 """Pytest configuration for vLLM multimodal tests."""
 
 import os
@@ -10,6 +11,7 @@ import torch
 from vllm.platforms import current_platform
 
 
+# 在测试收集之前进行 ROCm 平台的早期配置，禁用可能导致非确定性结果的 skinny GEMM
 def pytest_configure(config):
     """Early ROCm configuration that must happen before test collection."""
     if not current_platform.is_rocm():
@@ -27,6 +29,7 @@ def pytest_configure(config):
     )
 
 
+# 根据收集的测试项配置 ROCm 特定设置，禁用 Flash/MemEfficient SDP 以避免精度问题
 def pytest_collection_modifyitems(config, items):
     """Configure ROCm-specific settings based on collected tests."""
     if not current_platform.is_rocm():
@@ -50,6 +53,7 @@ def pytest_collection_modifyitems(config, items):
     )
 
 
+# 为 ROCm 平台强制 HF 视觉编码器使用 SDPA 注意力机制，解决 flash_attention_2 的精度问题
 def patch_hf_vision_attn_for_rocm(model):
     """Force SDPA for HF vision encoders on ROCm.
 

@@ -29,6 +29,7 @@ from .utils import (
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 辅助函数：创建匹配token数回调，用于模拟外部KV传输的token匹配。
 def _make_get_num_new_matched_tokens(
     req_num_new_matched_tokens: dict[str, int],
     async_load: bool,
@@ -40,6 +41,7 @@ def _make_get_num_new_matched_tokens(
     return get_num_new_matched_tokens
 
 
+# [中文注释] 测试夹具：创建fail策略调度器。
 @pytest.fixture
 def fail_scheduler():
     """scheduler with kv_load_failure_policy='fail'"""
@@ -49,6 +51,7 @@ def fail_scheduler():
 
 
 @pytest.fixture
+# [中文注释] 测试夹具：创建recompute策略调度器。
 def recompute_scheduler():
     """scheduler with kv_load_failure_policy='recompute'"""
     vllm_config = create_vllm_config()
@@ -56,6 +59,7 @@ def recompute_scheduler():
     return create_scheduler(vllm_config)
 
 
+# [中文注释] 测试用例：同步recompute场景下，运行中请求的无效块不会被释放，而是被重新计算。
 def test_sync_recompute_blocks_not_freed_for_running_requests(
     recompute_scheduler: Scheduler,
 ):
@@ -179,6 +183,7 @@ def test_sync_recompute_blocks_not_freed_for_running_requests(
     ), "Request should be reschedulable for recomputation"
 
 
+# [中文注释] 测试用例：同步fail场景下，无效块必须从缓存中驱逐。
 def test_sync_fail_invalid_blocks_evicted(fail_scheduler: Scheduler):
     """
     Test sync fail case - invalid blocks must be evicted from cache.
@@ -293,6 +298,7 @@ def test_sync_fail_invalid_blocks_evicted(fail_scheduler: Scheduler):
     assert conn_stats.hits == num_external_computed_tokens
 
 
+# [中文注释] 测试用例：异步recompute场景下，传输后无效块不会被缓存。
 def test_async_recompute_blocks_not_cached_when_invalid(
     recompute_scheduler: Scheduler,
 ):

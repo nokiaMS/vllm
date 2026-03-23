@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 EPLB 专家重平衡算法（包括基本重平衡、层次化负载均衡、GPU 内槽位保留等）
 
 import numpy as np
 import pytest

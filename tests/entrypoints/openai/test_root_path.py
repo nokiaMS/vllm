@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 --root-path 配置与 API Key 认证：验证不同 base_url 和 API Key 组合的行为]
 
 import contextlib
 import os
@@ -36,6 +37,7 @@ def server():
         yield remote_server
 
 
+# [定义测试用例结构：模型名、base_url、API Key 和预期错误]
 class TestCase(NamedTuple):
     model_name: str
     base_url: list[str]
@@ -73,6 +75,7 @@ class TestCase(NamedTuple):
         ),
     ],
 )
+# [测试带 root_path 和 API Key 的聊天会话：不同 URL/Key 组合的认证行为]
 async def test_chat_session_root_path_with_api_key(
     server: RemoteOpenAIServer, test_case: TestCase
 ):

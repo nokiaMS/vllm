@@ -22,6 +22,7 @@ from vllm.v1.engine.exceptions import EngineDeadError
 MODELS = ["hmellor/tiny-random-LlamaForCausalLM"]
 
 
+# [中文注释] 辅助函数：模拟前向传播中的异常，在第10次调用时抛出错误
 def evil_forward(self, *args, **kwargs):
     """Evil forward method that raise an exception after 10 calls."""
     NUMBER_OF_GOOD_PASSES = 10
@@ -53,6 +54,7 @@ def rocm_evil_forward(rocm_sitecustomize_factory):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("tensor_parallel_size", [2, 1])
 @pytest.mark.parametrize("model", MODELS)
+# [中文注释] 测试AsyncLLM在前向传播错误后能正确传播异常并释放GPU内存
 async def test_async_llm_model_error(
     monkeypatch, rocm_evil_forward, tensor_parallel_size: int, model: str
 ) -> None:
@@ -115,6 +117,7 @@ async def test_async_llm_model_error(
 @pytest.mark.parametrize("enable_multiprocessing", [True])
 @pytest.mark.parametrize("tensor_parallel_size", [2, 1])
 @pytest.mark.parametrize("model", MODELS)
+# [中文注释] 测试LLM在前向传播错误后能正确传播异常并释放GPU内存
 def test_llm_model_error(
     monkeypatch,
     rocm_evil_forward,

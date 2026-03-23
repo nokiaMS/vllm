@@ -11,6 +11,8 @@ from tests.quantization.utils import is_quant_method_supported
 from ..utils import compare_two_settings
 
 
+# 测试各种量化方法（FP8、GPTQ、AWQ、compressed-tensors）在 CPU 卸载模式下的正确性
+
 @pytest.mark.skipif(
     not is_quant_method_supported("fp8"),
     reason="fp8 is not supported on this GPU type.",

@@ -8,6 +8,7 @@ from vllm.utils.mem_utils import MemorySnapshot, memory_profiling
 from ..utils import create_new_process_for_each_test
 
 
+# [中文注释] 测试CUDA内存性能分析：模拟模型加载和推理过程，验证torch和非torch内存使用量的准确追踪
 @create_new_process_for_each_test()
 def test_memory_profiling():
     # Fake out some model loading + inference memory usage to test profiling

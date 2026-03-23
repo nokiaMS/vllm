@@ -15,6 +15,8 @@ import lm_eval
 import pytest
 from packaging import version
 
+# 测试 Quark 混合精度量化模型（MXFP4/FP8）的准确性
+
 QUARK_MXFP4_AVAILABLE = importlib.util.find_spec("quark") is not None and version.parse(
     importlib.metadata.version("amd-quark")
 ) >= version.parse("0.8.99")

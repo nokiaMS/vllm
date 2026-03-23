@@ -12,6 +12,7 @@ from vllm.distributed.kv_transfer.kv_connector.v1.lmcache_connector import (
 from vllm.v1.outputs import KVConnectorOutput
 
 
+# [中文注释] 测试夹具：创建模拟的LMCache引擎事件对象。
 @pytest.fixture
 def mock_lmcache_engine_event():
     """Create a mock event object that mimics what the lmcache engine returns."""
@@ -46,6 +47,7 @@ def mock_lmcache_engine_event():
     )
 
 
+# [中文注释] 测试夹具：创建mock的LMCacheConnectorV1实例，使用真实方法实现。
 @pytest.fixture
 def mock_connector():
     """Create a mock LMCacheConnectorV1 instance with mocked dependencies."""
@@ -71,6 +73,7 @@ def mock_connector():
     return connector
 
 
+# [中文注释] 测试类：验证get_kv_connector_kv_cache_events方法的事件获取和转换逻辑。
 class TestGetKVConnectorKVCacheEvents:
     """Test get_kv_connector_kv_cache_events method."""
 
@@ -197,6 +200,7 @@ class TestGetKVConnectorKVCacheEvents:
         assert events[0].parent_block_hash is None
 
 
+# [中文注释] 测试类：验证update_connector_output方法正确更新连接器输出状态。
 class TestUpdateConnectorOutput:
     """Test update_connector_output method."""
 
@@ -391,6 +395,7 @@ class TestUpdateConnectorOutput:
         assert mock_connector._kv_cache_events.get_number_of_workers() == 3
 
 
+# [中文注释] 测试类：验证take_events方法的事件聚合和消费逻辑。
 class TestTakeEvents:
     """Test take_events method."""
 
@@ -559,6 +564,7 @@ class TestTakeEvents:
         assert mock_connector._kv_cache_events is None
 
 
+# [中文注释] 测试类：端到端集成场景，验证事件获取、输出更新和事件消费的完整流程。
 class TestIntegrationScenarios:
     """Test integration scenarios."""
 

@@ -19,6 +19,10 @@ from vllm.v1.worker.gpu.sample.states import NO_LOGPROBS, SamplingStates
 from vllm.v1.worker.gpu.states import RequestState
 
 
+# GPU 采样器主类
+# 协调整个采样流程：logit 偏置 -> 惩罚 -> 禁用词 -> 温度缩放 -> min_p -> top_k/top_p -> Gumbel 采样
+# 设计思路：各采样参数处理器（penalties、logit_bias、bad_words 等）独立管理状态，
+# Sampler 作为顶层协调者按顺序调用它们，最终通过 Gumbel-Max 技巧完成随机采样
 class Sampler:
     def __init__(
         self,
@@ -40,6 +44,7 @@ class Sampler:
         self.bad_words_state = BadWordsState(req_states)
         self.num_speculative_tokens = num_speculative_tokens
 
+    # 将新请求的采样参数注册到所有子状态管理器
     def add_request(
         self, req_idx: int, prompt_len: int, sampling_params: SamplingParams
     ) -> None:
@@ -48,12 +53,15 @@ class Sampler:
         self.logit_bias_state.add_request(req_idx, prompt_len, sampling_params)
         self.bad_words_state.add_request(req_idx, sampling_params)
 
+    # 批量刷写所有子状态的暂存数据到 GPU
     def apply_staged_writes(self) -> None:
         self.sampling_states.apply_staged_writes()
         self.penalties_state.apply_staged_writes()
         self.logit_bias_state.apply_staged_writes()
         self.bad_words_state.apply_staged_writes()
 
+    # 采样器主调用入口
+    # 执行完整的采样流程并构建输出：应用采样参数 -> Gumbel 采样 -> 可选计算 logprobs -> 封装结果
     def __call__(
         self,
         logits: torch.Tensor,
@@ -102,6 +110,9 @@ class Sampler:
         )
         return sampler_output
 
+    # 按顺序应用所有采样参数修改 logits
+    # 顺序：logit_bias -> penalties -> bad_words -> temperature -> min_p -> top_k/top_p
+    # 先复制 logits 到 FP32 张量以保证数值精度，所有操作均原地修改
     def apply_sampling_params(
         self,
         logits: torch.Tensor,
@@ -151,6 +162,8 @@ class Sampler:
             logits, expanded_idx_mapping, idx_mapping_np
         )
 
+    # 采样核心方法：先应用所有采样参数处理 logits，再调用 Gumbel 采样得到最终 token
+    # 返回采样的 token ID 和原始 logits（用于后续 logprobs 计算）
     def sample(
         self,
         logits: torch.Tensor,

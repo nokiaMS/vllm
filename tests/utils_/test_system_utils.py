@@ -7,6 +7,7 @@ from pathlib import Path
 from vllm.utils.system_utils import unique_filepath
 
 
+# [中文注释] 测试唯一文件路径生成：验证连续调用生成10个不同的文件路径
 def test_unique_filepath():
     temp_dir = tempfile.mkdtemp()
     path_fn = lambda i: Path(temp_dir) / f"file_{i}.txt"

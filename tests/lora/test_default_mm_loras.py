@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试默认注册的多模态 LoRA 适配器的自动加载和推理功能
 """
 Tests for applying default registered multimodal loras.
 """

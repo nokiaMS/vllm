@@ -18,6 +18,7 @@ from vllm.v1.attention.backends.registry import AttentionBackendEnum
 from ...utils import create_new_process_for_each_test
 
 
+# 返回用于全图编译测试的模型列表，支持按关键字过滤
 def models_list(*, all: bool = True, keywords: list[str] | None = None):
     TEST_MODELS: list[tuple[str, dict[str, Any]]] = [
         ("facebook/opt-125m", {}),
@@ -77,6 +78,7 @@ def models_list(*, all: bool = True, keywords: list[str] | None = None):
 )
 @pytest.mark.parametrize("model, model_kwargs", models_list(all=True))
 @create_new_process_for_each_test()
+# 测试多种模型在不同编译模式下的全图编译
 def test_full_graph(
     monkeypatch: pytest.MonkeyPatch,
     model: str,
@@ -166,6 +168,7 @@ def test_full_graph(
 )
 # only test some of the models
 @create_new_process_for_each_test()
+# 测试自定义编译配置（额外 compile_sizes、融合 pass、depyf、Inductor 图分区）
 def test_custom_compile_config(
     compilation_config: CompilationConfig,
     model: str,
@@ -202,6 +205,7 @@ def test_custom_compile_config(
         ),  # MLA (Multi-head Latent Attention) model
     ],
 )
+# 测试 FP8 KV cache scale 在编译模式下的正确性（含 MLA 后端）
 def test_fp8_kv_scale_compile(
     compilation_mode: int,
     model: str,
@@ -219,6 +223,7 @@ def test_fp8_kv_scale_compile(
     run_model(compilation_mode, model, **model_kwargs)
 
 
+# 使用指定编译配置运行模型推理并打印生成结果
 def run_model(compile_config: int | CompilationConfig, model: str, **model_kwargs):
     compilation_config = (
         compile_config

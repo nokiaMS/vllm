@@ -13,6 +13,7 @@ pytestmark = pytest.mark.cpu_test
 # ============================================================================
 
 
+# 测试序列重复检测函数：验证各种重复模式的检测和停止条件
 class TestCheckSequenceRepetition:
     """Unit tests for the check_sequence_repetition function"""
 

@@ -27,6 +27,7 @@ from vllm.v1.structured_output import StructuredOutputManager
 STOP_TOKEN = 128001
 
 
+# [中文注释] 辅助类：用于调度器流式测试的虚拟请求，支持可恢复会话
 class DummyRequest(Request):
     def __init__(
         self,
@@ -48,6 +49,7 @@ class DummyRequest(Request):
         )
 
 
+# [中文注释] 辅助函数：创建用于流式测试的调度器实例
 def create_scheduler() -> Scheduler:
     vllm_config = VllmConfig(device_config=DeviceConfig("cpu"))
     vllm_config.model_config = MagicMock()
@@ -79,6 +81,7 @@ def create_scheduler() -> Scheduler:
     )
 
 
+# [中文注释] 测试类：验证调度器的流式请求生命周期管理（添加、更新、完成会话）
 class TestStreamingScheduler(unittest.TestCase):
     def test_add_request(self):
         scheduler = create_scheduler()

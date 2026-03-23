@@ -28,6 +28,7 @@ BLOCK_SIZE = [128, 128]
 @pytest.mark.parametrize("K", [128, 256])  # hidden dim
 @pytest.mark.parametrize("N", [512, 1024])  # intermediate dim per expert
 @pytest.mark.parametrize("topk", [2, 4])
+# [中文注释] 测试BatchedDeepGemmExperts与BatchedTritonExperts的数值一致性，验证FP8块量化下两种后端结果匹配
 def test_batched_deepgemm_vs_triton(
     E: int, T: int, K: int, N: int, topk: int, monkeypatch, workspace_init
 ):

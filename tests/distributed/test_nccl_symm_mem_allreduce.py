@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 NCCL 对称内存 AllReduce 通信操作的正确性
 
 import random
 import typing

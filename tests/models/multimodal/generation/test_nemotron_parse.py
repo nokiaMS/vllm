@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 NVIDIA Nemotron Parse 文档解析模型，验证 vLLM 与 HF 推理输出一致性
 
 from collections.abc import Sequence
 

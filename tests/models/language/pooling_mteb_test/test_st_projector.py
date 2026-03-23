@@ -33,6 +33,7 @@ ST_PROJECTOR_MODELS = [
 ]
 
 
+# 测试带有投影层（Dense）的 SentenceTransformer 嵌入模型在 MTEB 基准上的评分
 @pytest.mark.parametrize("model_info", ST_PROJECTOR_MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     mteb_test_embed_models(hf_runner, vllm_runner, model_info)

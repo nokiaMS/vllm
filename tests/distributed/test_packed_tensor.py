@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试打包张量广播功能（生产者-消费者模式的张量批量传输）
 """Tests for packed tensor broadcasting functionality.
 
 Unit tests for packed_broadcast_producer and packed_broadcast_consumer.

@@ -9,6 +9,10 @@ from vllm.v1.worker.gpu.buffer_utils import async_copy_to_gpu
 from vllm.v1.worker.gpu.input_batch import InputBatch
 
 
+# 结构化输出工作器，负责在 GPU 上应用语法约束位掩码（grammar bitmask）。
+# 设计思路：使用异步拷贝流将位掩码从 CPU 传输到 GPU，与主计算流并行执行，
+# 然后通过 Triton 内核将不符合语法约束的 token 的 logits 设为 -inf。
+# 这确保了生成的 token 序列始终符合指定的语法规则（如 JSON schema）。
 class StructuredOutputsWorker:
     def __init__(self, max_num_logits: int, vocab_size: int, device: torch.device):
         self.logits_indices = torch.zeros(
@@ -20,6 +24,8 @@ class StructuredOutputsWorker:
         self.device = device
         self.copy_stream = torch.cuda.Stream()
 
+    # 将语法位掩码应用到 logits 上：先异步拷贝位掩码到 GPU，
+    # 构建位掩码到 logits 行的索引映射，然后用 Triton 内核将被禁止的 token 位置设为 -inf。
     def apply_grammar_bitmask(
         self,
         logits: torch.Tensor,
@@ -80,6 +86,10 @@ class StructuredOutputsWorker:
         self.copy_stream.wait_stream(current_stream)
 
 
+# Triton 内核：就地应用语法位掩码到 logits 张量。
+# 算法：将 32 位压缩的位掩码解包为逐 token 的布尔掩码，
+# 对于掩码值为 0（即被语法禁止）的位置，将对应 logits 设为 -inf。
+# 改编自 xgrammar 项目的 Triton 实现。
 # Adapted from
 # https://github.com/mlc-ai/xgrammar/blob/main/python/xgrammar/kernels/apply_token_bitmask_inplace_triton.py
 @triton.jit

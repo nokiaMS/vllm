@@ -39,12 +39,14 @@ SAMPLING_PARAMS = SamplingParams(temperature=0, max_tokens=20)
 
 
 # Test connector with custom stats for testing MultiConnector
+# [中文注释] Mock连接器统计类：用于测试MultiConnector的统计聚合功能。
 class MockConnectorStats(KVConnectorStats):
     """Mock stats class for testing."""
 
     pass
 
 
+# [中文注释] Mock连接器：用于测试MultiConnector方法委托和统计重建。
 class MockConnector(KVConnectorBase_V1):
     """Mock connector for testing."""
 
@@ -88,6 +90,7 @@ KVConnectorFactory.register_connector("MockConnector", __name__, MockConnector._
 
 
 @pytest.fixture
+# [中文注释] 测试夹具：创建包含两个MockConnector的MultiConnector实例。
 def mc() -> MultiConnector:
     """MultiConnector using two mocked connectors"""
     vllm_config = create_vllm_config()
@@ -120,6 +123,7 @@ def mc() -> MultiConnector:
 
 
 # Helper function to compare directories recursively
+# [中文注释] 辅助函数：递归比较两个目录的内容是否一致。
 def _compare_directories(dir1: Path, dir2: Path) -> bool:
     """Compares two directories recursively for identical content."""
     dcmp = filecmp.dircmp(dir1, dir2)
@@ -135,6 +139,7 @@ def _compare_directories(dir1: Path, dir2: Path) -> bool:
     return True
 
 
+# [中文注释] 测试用例：验证双ExampleConnector的MultiConnector输出一致性。
 def test_multi_example_connector_consistency():
     """
     Tests that MultiConnector with two ExampleConnectors saves
@@ -310,6 +315,7 @@ def test_multi_example_connector_consistency():
     shutil.rmtree(storage_2_path)
 
 
+# [中文注释] 辅助函数：读取连接器事件日志文件，返回各连接器的事件记录。
 def get_connector_events() -> dict[str, list[str]]:
     # Read in connector events and reset the files.
     import glob
@@ -328,6 +334,7 @@ def get_connector_events() -> dict[str, list[str]]:
     return connector_events
 
 
+# [中文注释] 测试用例：验证引擎ID冲突时MultiConnector会正确报错。
 def test_engine_id_conflict():
     configs = [KVTransferConfig() for _ in range(2)]
     ids = [config.engine_id for config in configs]
@@ -336,6 +343,7 @@ def test_engine_id_conflict():
     )
 
 
+# [中文注释] 测试用例：验证MultiConnector处理请求抢占的集成逻辑。
 def test_multi_connector_handle_preemptions_integration():
     """
     Integration test: verify MultiConnector delegates handle_preemptions
@@ -420,6 +428,7 @@ def test_multi_connector_handle_preemptions_integration():
         shutil.rmtree(storage_path, ignore_errors=True)
 
 
+# [中文注释] 测试类：验证MultiConnector统计信息的聚合、序列化和重建。
 class TestMultiConnectorStats:
     """Tests for MultiConnector stats reconstruction and operations."""
 
@@ -754,6 +763,7 @@ class TestMultiConnectorStats:
         assert not stats.is_empty()
 
 
+# [中文注释] 测试用例：验证MultiConnector重写了KVConnectorBase_V1的所有基类方法。
 def test_multi_connector_overrides_all_base_methods():
     """
     Ensure MultiConnector overrides all public methods from KVConnectorBase_V1.
@@ -790,6 +800,7 @@ Options:
 """)
 
 
+# [中文注释] 测试用例：验证MultiConnector的cross_layer_blocks偏好设置。
 def test_multi_connector_prefer_cross_layer_blocks(mc):
     mc._connectors[0].prefer_cross_layer_blocks = False
     mc._connectors[1].prefer_cross_layer_blocks = True
@@ -800,6 +811,7 @@ def test_multi_connector_prefer_cross_layer_blocks(mc):
     assert mc.prefer_cross_layer_blocks is True
 
 
+# [中文注释] 测试用例：验证MultiConnector的worker元数据聚合逻辑。
 def test_multi_connector_worker_metadata(mc):
     class MockConnectorWorkerMetadata(KVConnectorWorkerMetadata):
         def __init__(self, data: set[str]):

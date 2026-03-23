@@ -35,6 +35,8 @@ FLASHINFER_CUBINS_REPOSITORY = os.environ.get(
 )
 
 
+# 检查是否有预编译的 FlashInfer cubin 包可用
+# cubin 是 CUDA 二进制文件，可避免运行时 JIT 编译
 @functools.cache
 def has_flashinfer_cubin() -> bool:
     """Return `True` if flashinfer-cubin package is available."""
@@ -46,6 +48,7 @@ def has_flashinfer_cubin() -> bool:
     return False
 
 
+# 检查 FlashInfer 是否可用：需要安装 flashinfer 包，且有预编译 cubin 或 nvcc 编译器
 @functools.cache
 def has_flashinfer() -> bool:
     """Return `True` if flashinfer-python package is available."""
@@ -65,6 +68,7 @@ def has_flashinfer() -> bool:
     return True
 
 
+# 当 FlashInfer 不可用时的占位函数，调用时抛出运行时错误
 def _missing(*_: Any, **__: Any) -> NoReturn:
     """Placeholder for unavailable FlashInfer backend."""
     raise RuntimeError(
@@ -74,6 +78,7 @@ def _missing(*_: Any, **__: Any) -> NoReturn:
     )
 
 
+# 安全导入子模块，导入失败时返回 None 而非抛出异常
 def _get_submodule(module_name: str) -> Any | None:
     """Safely import a submodule and return it, or None if not available."""
     try:
@@ -82,6 +87,9 @@ def _get_submodule(module_name: str) -> Any | None:
         return None
 
 
+# [中文注释] 通用延迟导入包装器工厂函数
+#   创建的包装器在首次调用时才导入目标模块并缓存实现
+#   如果模块不可用则回退到 fallback_fn（默认抛出错误）
 # General lazy import wrapper
 def _lazy_import_wrapper(
     module_name: str, attr_name: str, fallback_fn: Callable[..., Any] = _missing
@@ -104,6 +112,8 @@ def _lazy_import_wrapper(
     return wrapper
 
 
+# [中文注释] 为 FlashInfer 各功能函数创建延迟加载包装器
+#   涵盖 MoE 融合内核、FP4/FP8 量化、CUTLASS 融合 MoE 等
 # Create lazy wrappers for each function
 flashinfer_trtllm_bf16_moe = _lazy_import_wrapper(
     "flashinfer.fused_moe", "trtllm_bf16_moe"
@@ -143,12 +153,15 @@ autotune = _lazy_import_wrapper(
 _is_fi_autotuning: bool = False
 
 
+# 检查 FlashInfer 通信模块是否可用（用于多节点 NVLink 通信）
 @functools.cache
 def has_flashinfer_comm() -> bool:
     """Return `True` if FlashInfer comm module is available."""
     return has_flashinfer() and importlib.util.find_spec("flashinfer.comm") is not None
 
 
+# 检查 FlashInfer 的 MNNVL all-to-all 通信是否可用
+# 需要 Mapping、MnnvlMemory、MnnvlMoe、MoEAlltoallInfo 四个组件同时可用
 @functools.cache
 def has_flashinfer_all2all() -> bool:
     """Return `True` if FlashInfer mnnvl all2all is available."""
@@ -170,6 +183,7 @@ def has_flashinfer_all2all() -> bool:
     return True
 
 
+# 检查 FlashInfer 的 MoE（混合专家）融合内核模块是否可用
 @functools.cache
 def has_flashinfer_moe() -> bool:
     """Return `True` if FlashInfer MoE module is available."""
@@ -179,6 +193,7 @@ def has_flashinfer_moe() -> bool:
     )
 
 
+# 检查 FlashInfer 的 CuTe DSL 模块是否可用（用于自定义 CUDA 内核生成）
 @functools.cache
 def has_flashinfer_cutedsl() -> bool:
     """Return ``True`` if FlashInfer cutedsl module is available."""
@@ -187,6 +202,8 @@ def has_flashinfer_cutedsl() -> bool:
     )
 
 
+# 检查 FlashInfer 的 TensorRT-LLM 融合 MoE 内核是否完整可用
+# 需要 FP8 块缩放、FP8 逐张量缩放、FP4 块缩放、MXINT4 块缩放四种 MoE 变体
 @functools.cache
 def has_flashinfer_trtllm_fused_moe() -> bool:
     """Return `True` if FlashInfer TRTLLM fused MoE is available."""
@@ -205,6 +222,7 @@ def has_flashinfer_trtllm_fused_moe() -> bool:
     return True
 
 
+# 检查 FlashInfer 的 CUTLASS 融合 MoE 内核及 FP4 量化组件是否完整可用
 @functools.cache
 def has_flashinfer_cutlass_fused_moe() -> bool:
     """Return `True` if FlashInfer CUTLASS fused MoE is available."""
@@ -226,6 +244,7 @@ def has_flashinfer_cutlass_fused_moe() -> bool:
     return True
 
 
+# 检查 FlashInfer CuTe DSL 的掩码分组 GEMM 及相关 FP4 量化函数是否可用
 @functools.cache
 def has_flashinfer_cutedsl_grouped_gemm_nt_masked() -> bool:
     """Return ``True`` if FlashInfer CUTLASS fused MoE is available."""
@@ -246,6 +265,8 @@ def has_flashinfer_cutedsl_grouped_gemm_nt_masked() -> bool:
     return True
 
 
+# 检查 NVIDIA 制品仓库是否可访问
+# 该仓库用于下载 TRTLLM FHMA 等预编译 cubin 内核
 @functools.cache
 def has_nvidia_artifactory() -> bool:
     """Return `True` if NVIDIA's artifactory is accessible.
@@ -274,6 +295,8 @@ def has_nvidia_artifactory() -> bool:
         return False
 
 
+# 判断当前平台是否支持 TensorRT-LLM 注意力后端
+# 要求 SM100 架构、可访问 NVIDIA 制品仓库、且未启用批次不变模式
 @functools.cache
 def supports_trtllm_attention() -> bool:
     """
@@ -290,6 +313,8 @@ def supports_trtllm_attention() -> bool:
     )
 
 
+# 读取 vLLM 配置中是否强制启用/禁用 TRTLLM 注意力
+# 仅在初始化阶段调用，返回 None 表示未设置（自动检测）
 def force_use_trtllm_attention() -> bool | None:
     """
     This function should only be called during initialization stage when vllm config
@@ -304,6 +329,7 @@ def force_use_trtllm_attention() -> bool | None:
     return vllm_config.attention_config.use_trtllm_attention
 
 
+# 检查当前头数配置是否兼容 TRTLLM 注意力（要求 Q 头数是 KV 头数的整数倍）
 def can_use_trtllm_attention(num_qo_heads: int, num_kv_heads: int) -> bool:
     """Check if the current configuration supports TRTLLM attention."""
     if force_use_trtllm_attention() is False:
@@ -312,6 +338,9 @@ def can_use_trtllm_attention(num_qo_heads: int, num_kv_heads: int) -> bool:
     return has_trtllm and (num_qo_heads % num_kv_heads == 0)
 
 
+# 综合决策函数：根据硬件能力、头数配置、数据类型、KV 缓存类型等条件
+# 决定是否使用 TRTLLM 注意力后端
+# 支持强制开启/关闭和自动检测三种模式，prefill 和 decode 阶段的策略不同
 def use_trtllm_attention(
     num_qo_heads: int,
     num_kv_heads: int,
@@ -399,6 +428,9 @@ def use_trtllm_attention(
 if has_flashinfer():
     from vllm.utils.torch_utils import direct_register_custom_op
 
+    # FlashInfer 的 concat_mla_k 自定义算子包装器
+    # 针对 DeepSeek V3 的 MLA（Multi-head Latent Attention）优化
+    # 将 nope 部分和 rope 部分原地拼接到 k 张量中
     def _flashinfer_concat_mla_k(
         k: torch.Tensor,
         k_nope: torch.Tensor,
@@ -430,6 +462,7 @@ if has_flashinfer():
 
         concat_mla_k(k, k_nope, k_pe)
 
+    # concat_mla_k 的假实现，用于 torch.compile 的 shape 推断阶段
     def _flashinfer_concat_mla_k_fake(
         k: torch.Tensor,
         k_nope: torch.Tensor,
@@ -445,6 +478,7 @@ if has_flashinfer():
         fake_impl=_flashinfer_concat_mla_k_fake,
     )
 
+    # FP4 矩阵乘法自定义算子，支持 CUTLASS/cuDNN/TRTLLM 后端
     @torch.library.custom_op(
         "vllm::flashinfer_mm_fp4",
         mutates_args=[],
@@ -489,6 +523,7 @@ if has_flashinfer():
     ) -> torch.Tensor:
         return torch.empty(A.shape[0], B.shape[1], dtype=dtype, device=A.device)
 
+    # FP8 批量矩阵乘法自定义算子
     @torch.library.custom_op(
         "vllm::bmm_fp8",
         mutates_args=[],
@@ -521,6 +556,7 @@ if has_flashinfer():
             A.shape[0], A.shape[1], B.shape[2], dtype=dtype, device=A.device
         )
 
+    # NVFP4 量化自定义算子，使用 8x4 缩放因子布局
     @torch.library.custom_op(
         "vllm::flashinfer_nvfp4_quantize",
         mutates_args=[],
@@ -554,6 +590,8 @@ if has_flashinfer():
             rounded_m, rounded_n, dtype=torch.uint8, device=a.device
         )
 
+    # MXFP8（Microscaling FP8）矩阵乘法自定义算子
+    # 要求缩放因子使用 FlashInfer 的 swizzled 1D 布局
     @torch.library.custom_op(
         "vllm::mm_mxfp8",
         mutates_args=[],
@@ -594,6 +632,8 @@ if has_flashinfer():
         return torch.empty(A.shape[0], B.shape[1], dtype=out_dtype, device=A.device)
 
 
+# MXFP8 矩阵乘法辅助函数
+# 接收非转置权重并在内部处理转置，要求缩放因子为 swizzled 1D 格式
 def flashinfer_mm_mxfp8(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -632,6 +672,8 @@ def flashinfer_mm_mxfp8(
     )
 
 
+# 带缩放的 FP4 矩阵乘法，支持 CUTLASS/cuDNN/TRTLLM 后端
+# 根据后端类型调整缩放因子格式，小批量时自动切换 8x4 缩放因子布局
 def flashinfer_scaled_fp4_mm(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -664,6 +706,8 @@ def flashinfer_scaled_fp4_mm(
     )
 
 
+# 带缩放的 FP8 矩阵乘法，使用逐张量缩放因子
+# 通过 bmm_fp8 实现，支持可选的 bias 加法
 def flashinfer_scaled_fp8_mm(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -694,6 +738,7 @@ def flashinfer_scaled_fp8_mm(
     return output
 
 
+# NVFP4 量化的便捷封装，使用 8x4 缩放因子布局
 def flashinfer_quant_nvfp4_8x4_sf_layout(
     a: torch.Tensor, a_global_sf: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -705,6 +750,7 @@ flashinfer_fp8_blockscale_gemm = _lazy_import_wrapper(
 )
 
 
+# 检查 FlashInfer 的块缩放 FP8 GEMM 是否可用（仅限 SM90/Hopper 架构）
 @functools.cache
 def has_flashinfer_fp8_blockscale_gemm() -> bool:
     """Return `True` if FlashInfer block-scale FP8 GEMM is available."""
@@ -715,6 +761,7 @@ def has_flashinfer_fp8_blockscale_gemm() -> bool:
     )
 
 
+# 检查环境变量是否启用了 FlashInfer 块缩放 FP8 GEMM 且硬件支持
 @functools.cache
 def is_flashinfer_fp8_blockscale_gemm_supported() -> bool:
     """Return `True` if FlashInfer block-scale FP8 GEMM is supported."""
@@ -724,6 +771,8 @@ def is_flashinfer_fp8_blockscale_gemm_supported() -> bool:
     )
 
 
+# 判断是否应使用 FlashInfer 进行块缩放 FP8 GEMM
+# 要求输出和输入为 bfloat16、权重为 FP8，且权重维度满足对齐要求
 def should_use_flashinfer_for_blockscale_fp8_gemm(
     is_flashinfer_supported: bool,
     output_dtype: torch.dtype,

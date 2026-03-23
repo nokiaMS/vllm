@@ -24,12 +24,14 @@ from vllm.logger import init_logger
 logger = init_logger(__name__)
 
 
+# 批量关闭 ZMQ 套接字，linger=0 表示立即丢弃未发送的消息
 def close_sockets(sockets: Sequence[zmq.Socket | zmq.asyncio.Socket]):
     for sock in sockets:
         if sock is not None:
             sock.close(linger=0)
 
 
+# 获取本机 IP 地址：优先使用 VLLM_HOST_IP 环境变量，否则通过 UDP 连接探测本机出口 IP（先 IPv4 后 IPv6）
 def get_ip() -> str:
     host_ip = envs.VLLM_HOST_IP
     if "HOST_IP" in os.environ and "VLLM_HOST_IP" not in os.environ:
@@ -72,6 +74,7 @@ def get_ip() -> str:
     return "0.0.0.0"
 
 
+# 测试是否能绑定到指定的回环地址（用于检测系统支持 IPv4 还是 IPv6 回环）
 def test_loopback_bind(address: str, family: int) -> bool:
     try:
         s = socket.socket(family, socket.SOCK_DGRAM)
@@ -82,6 +85,7 @@ def test_loopback_bind(address: str, family: int) -> bool:
         return False
 
 
+# 获取回环地址：优先使用 VLLM_LOOPBACK_IP 环境变量，否则自动检测 127.0.0.1 或 ::1
 def get_loopback_ip() -> str:
     loopback_ip = envs.VLLM_LOOPBACK_IP
     if loopback_ip:
@@ -100,6 +104,7 @@ def get_loopback_ip() -> str:
         )
 
 
+# 验证字符串是否为合法的 IPv6 地址
 def is_valid_ipv6_address(address: str) -> bool:
     try:
         ipaddress.IPv6Address(address)
@@ -108,6 +113,7 @@ def is_valid_ipv6_address(address: str) -> bool:
         return False
 
 
+# 解析 "host:port" 字符串，支持 IPv6 方括号格式（如 "[::1]:8080"）
 def split_host_port(host_port: str) -> tuple[str, int]:
     # ipv6
     if host_port.startswith("["):
@@ -120,6 +126,7 @@ def split_host_port(host_port: str) -> tuple[str, int]:
         return host, int(port)
 
 
+# 将主机和端口拼接为字符串，IPv6 地址自动加方括号
 def join_host_port(host: str, port: int) -> str:
     if is_valid_ipv6_address(host):
         return f"[{host}]:{port}"
@@ -127,10 +134,12 @@ def join_host_port(host: str, port: int) -> str:
         return f"{host}:{port}"
 
 
+# 生成 PyTorch 分布式初始化所需的 TCP URI
 def get_distributed_init_method(ip: str, port: int) -> str:
     return get_tcp_uri(ip, port)
 
 
+# 构建 TCP URI 字符串，IPv6 地址自动加方括号
 def get_tcp_uri(ip: str, port: int) -> str:
     if is_valid_ipv6_address(ip):
         return f"tcp://[{ip}]:{port}"
@@ -138,15 +147,18 @@ def get_tcp_uri(ip: str, port: int) -> str:
         return f"tcp://{ip}:{port}"
 
 
+# 生成唯一的 ZMQ IPC 路径（基于 UUID），用于进程间通信
 def get_open_zmq_ipc_path() -> str:
     base_rpc_path = envs.VLLM_RPC_BASE_PATH
     return f"ipc://{base_rpc_path}/{uuid4()}"
 
 
+# 生成唯一的 ZMQ 进程内通信路径（基于 UUID）
 def get_open_zmq_inproc_path() -> str:
     return f"inproc://{uuid4()}"
 
 
+# 获取可用端口：在数据并行模式下自动避开主进程预留的端口范围
 def get_open_port() -> int:
     """
     Get an open port for the vLLM process to listen on.
@@ -166,6 +178,7 @@ def get_open_port() -> int:
     return _get_open_port()
 
 
+# 获取多个不重复的可用端口：当设置了 VLLM_PORT 时从该端口开始向上扫描
 def get_open_ports_list(count: int = 5) -> list[int]:
     """Get a list of unique open ports.
 
@@ -187,6 +200,7 @@ def get_open_ports_list(count: int = 5) -> list[int]:
     return list(ports_set)
 
 
+# 底层端口获取：若指定起始端口则递增尝试，否则让系统自动分配（绑定端口 0）
 def _get_open_port(
     start_port: int | None = None,
     max_attempts: int | None = None,
@@ -221,6 +235,7 @@ def _get_open_port(
             return s.getsockname()[1]
 
 
+# 查找占用指定端口的进程（排除自身），用于优雅关闭时的冲突检测（macOS 不支持）
 def find_process_using_port(port: int) -> psutil.Process | None:
     # TODO: We can not check for running processes with network
     # port on macOS. Therefore, we can not have a full graceful shutdown
@@ -239,6 +254,7 @@ def find_process_using_port(port: int) -> psutil.Process | None:
     return None
 
 
+# 解析 ZMQ 路径为 (scheme, host, port) 三元组，并校验 TCP 必须有 host 和 port
 def split_zmq_path(path: str) -> tuple[str, str, str]:
     """Split a zmq path into its parts."""
     parsed = parse_url(path)
@@ -262,6 +278,7 @@ def split_zmq_path(path: str) -> tuple[str, str, str]:
     return scheme, host, port
 
 
+# 从各部分构建 ZMQ 路径字符串，自动处理 IPv6 方括号格式
 def make_zmq_path(scheme: str, host: str, port: int | None = None) -> str:
     """Make a ZMQ path from its parts.
 
@@ -280,6 +297,7 @@ def make_zmq_path(scheme: str, host: str, port: int | None = None) -> str:
     return f"{scheme}://{host}:{port}"
 
 
+# 创建并配置 ZMQ 套接字：根据系统内存自动调整缓冲区大小，处理 IPv6、身份标识、ROUTER 握手切换等选项
 # Adapted from: https://github.com/sgl-project/sglang/blob/v0.4.1/python/sglang/srt/utils.py#L783 # noqa: E501
 def make_zmq_socket(
     ctx: zmq.asyncio.Context | zmq.Context,  # type: ignore[name-defined]
@@ -342,6 +360,7 @@ def make_zmq_socket(
     return socket
 
 
+# ZMQ 套接字上下文管理器：自动创建上下文和套接字，退出时销毁上下文释放资源
 @contextlib.contextmanager
 def zmq_socket_ctx(
     path: str,

@@ -16,6 +16,7 @@ if not torch.cuda.is_available():
     pytest.skip("CUDA required for EAGLE kernel tests", allow_module_level=True)
 
 
+# [中文注释] 辅助函数：EAGLE步骤槽映射的Python参考实现，用于对比验证Triton内核
 def _reference_eagle_step_slot_mapping(
     positions_1d: torch.Tensor,
     block_table_tensor: torch.Tensor,
@@ -45,6 +46,7 @@ def _reference_eagle_step_slot_mapping(
     return clamped_positions, slot_mapping, new_seq_lens
 
 
+# [中文注释] 测试EAGLE步骤槽映射Triton内核与参考实现的结果一致性
 def test_eagle_step_slot_mapping_kernel():
     """Test fused kernel matches Python reference for slot mapping and metadata."""
     device = torch.device("cuda")
@@ -91,6 +93,7 @@ def test_eagle_step_slot_mapping_kernel():
     )
 
 
+# [中文注释] 测试超出最大模型长度时EAGLE槽映射内核的截断行为
 def test_eagle_step_slot_mapping_kernel_exceeds_max():
     """Test fused kernel when position exceeds max_model_len."""
     device = torch.device("cuda")
@@ -127,6 +130,7 @@ def test_eagle_step_slot_mapping_kernel_exceeds_max():
     assert seq_lens[3].item() == 1
 
 
+# [中文注释] 测试CUDAGraph填充场景下EAGLE槽映射内核的正确性
 def test_eagle_step_slot_mapping_kernel_cudagraph_padding():
     """Test that padding threads write PADDING_SLOT_ID when
     input_batch_size > batch_size (cudagraph padding)."""

@@ -66,6 +66,7 @@ P = ParamSpec("P")
 
 
 @contextmanager
+# [中文注释] 上下文管理器：设置数据并行元数据（跨DP的token数量）用于前向推理
 def with_dp_metadata(M: int, world_size: int):
     num_tokens_across_dp = torch.tensor([M] * world_size, device="cpu", dtype=torch.int)
 
@@ -90,6 +91,7 @@ def next_power_of_2(x):
     return 2 ** math.ceil(math.log2(x))
 
 
+# [中文注释] 创建FP8块量化测试权重（w1和w2及其缩放因子）
 def make_block_quant_fp8_weights(
     e: int,
     n: int,
@@ -106,6 +108,7 @@ def make_block_quant_fp8_weights(
 
 
 @dataclasses.dataclass
+# [中文注释] DeepEP+DeepGEMM测试配置，包含模型维度、专家数、量化参数等
 class TestConfig:
     topk: int
     m: int
@@ -120,6 +123,7 @@ class TestConfig:
 
 
 @dataclasses.dataclass
+# [中文注释] DeepEP+DeepGEMM测试张量容器，包含隐藏状态、权重和路由信息
 class TestTensors:
     rank_tokens: torch.Tensor  # all ranks make this many tokens
     rank_token_scales: torch.Tensor | None
@@ -161,6 +165,7 @@ class TestTensors:
         )
 
 
+# [中文注释] 创建DeepEP低延迟模式的模块化MoE内核（使用BatchedDeepGemmExperts）
 def make_ll_modular_kernel(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -202,6 +207,7 @@ def make_ll_modular_kernel(
     )
 
 
+# [中文注释] 创建DeepEP高吞吐模式的模块化MoE内核（使用DeepGemmExperts）
 def make_ht_modular_kernel(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -235,6 +241,7 @@ def make_ht_modular_kernel(
     )
 
 
+# [中文注释] 统一创建DeepEP模块化内核：根据测试模式选择高吞吐或低延迟版本
 def make_modular_kernel(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -276,6 +283,7 @@ def make_modular_kernel(
     return mk
 
 
+# [中文注释] DeepEP+DeepGEMM MoE实现：在指定rank上运行模块化内核并返回结果
 def deepep_deepgemm_moe_impl(
     pg: ProcessGroup,
     pgi: ProcessGroupInfo,
@@ -334,6 +342,7 @@ def deepep_deepgemm_moe_impl(
     return out
 
 
+# [中文注释] Triton参考实现：使用fused_experts计算MoE作为DeepGEMM的对比基准
 def triton_impl(
     a: torch.Tensor,
     topk_ids: torch.Tensor,
@@ -363,6 +372,7 @@ def triton_impl(
     )
 
 
+# [中文注释] DeepEP+DeepGEMM MoE核心测试逻辑：在多GPU上运行并比较DeepGEMM与Triton结果
 def _test_deepep_deepgemm_moe(
     pgi: ProcessGroupInfo,
     dp_size: int,
@@ -452,6 +462,7 @@ NUM_EXPERTS = [32]
 @multi_gpu_test(num_gpus=2)
 @requires_deep_ep
 @requires_deep_gemm
+# [中文注释] 测试DeepEP高吞吐模式+DeepGEMM MoE在多GPU上的端到端正确性
 def test_ht_deepep_deepgemm_moe(
     mnk: tuple[int, int, int],
     num_experts: int,
@@ -524,6 +535,7 @@ USE_FP8_DISPATCH = [False]
 @multi_gpu_test(num_gpus=2)
 @requires_deep_ep
 @requires_deep_gemm
+# [中文注释] 测试DeepEP低延迟模式+DeepGEMM MoE在多GPU上的端到端正确性
 def test_ll_deepep_deepgemm_moe(
     mnk: tuple[int, int, int],
     num_experts: int,

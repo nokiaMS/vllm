@@ -13,6 +13,7 @@ import pytest
 import torch
 
 
+# [中文注释] 测试稀疏张量不变量验证的上下文管理器
 class TestSparseTensorValidationContextManager:
     """Test that torch.sparse.check_sparse_tensor_invariants() works as expected."""
 
@@ -74,6 +75,7 @@ class TestSparseTensorValidationContextManager:
         assert tensor.is_sparse
 
 
+# [中文注释] 测试带验证的torch.load功能：检测损坏的稀疏张量数据
 class TestTorchLoadWithValidation:
     """Test torch.load() with sparse tensor validation."""
 

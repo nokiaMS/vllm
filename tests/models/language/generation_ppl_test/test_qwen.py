@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试Qwen3和Qwen3.5模型（包括FP8变体）的困惑度
+
 import pytest
 
 from tests.models.utils import GenerateModelInfo

@@ -9,6 +9,8 @@ from vllm.distributed.eplb.eplb_state import EplbLayerState
 from vllm.model_executor.layers.fused_moe.config import RoutingMethodType
 from vllm.model_executor.layers.fused_moe.router.base_router import BaseRouter
 
+# 测试路由专家（MoE）的 EPLB 映射前捕获钩子和 GPU 模型运行器的绑定逻辑
+
 pytestmark = pytest.mark.cpu_test
 
 
@@ -37,6 +39,7 @@ def _make_router() -> DummyRouter:
     )
 
 
+# 测试路由器捕获函数在 EPLB 映射之前记录原始 topk_ids
 def test_base_router_capture_pre_eplb_mapping():
     router = _make_router()
     captured = []
@@ -56,6 +59,7 @@ def test_base_router_capture_pre_eplb_mapping():
     assert torch.equal(topk_ids, torch.tensor([[11, 12], [13, 14]]))
 
 
+# 测试启用 EPLB 时捕获函数仍然记录逻辑 ID（映射前）
 def test_base_router_capture_with_eplb_enabled():
     router = _make_router()
     router.enable_eplb = True
@@ -81,6 +85,7 @@ def test_base_router_capture_with_eplb_enabled():
     assert torch.equal(topk_ids, torch.tensor([[11, 12], [13, 14]]))
 
 
+# 测试 GPU 模型运行器正确绑定路由器捕获钩子
 def test_gpu_model_runner_binds_router_capture(monkeypatch):
     from vllm.v1.worker import gpu_model_runner as gmr
 
@@ -121,6 +126,7 @@ def test_gpu_model_runner_binds_router_capture(monkeypatch):
     assert torch.equal(topk_ids, torch.tensor([[5, 6]]))
 
 
+# 测试绑定前后捕获钩子的状态变化
 def test_gpu_model_runner_binding_stage(monkeypatch):
     from vllm.v1.worker import gpu_model_runner as gmr
 

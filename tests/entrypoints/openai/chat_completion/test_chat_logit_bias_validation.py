@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 logit_bias 参数的有效和无效 token ID 验证
+
 import openai
 import pytest
 import pytest_asyncio
@@ -41,6 +43,7 @@ async def client(server):
 
 
 @pytest.mark.asyncio
+# 测试有效 token ID 的 logit_bias 请求成功
 async def test_chat_logit_bias_valid(client):
     """Test that valid logit_bias values are accepted in chat completions."""
     vocab_size = get_vocab_size(MODEL_NAME)
@@ -57,6 +60,7 @@ async def test_chat_logit_bias_valid(client):
 
 
 @pytest.mark.asyncio
+# 测试超出词汇表范围的 token ID 被拒绝
 async def test_chat_logit_bias_invalid(client):
     """Test that invalid logit_bias values are rejected in chat completions."""
     vocab_size = get_vocab_size(MODEL_NAME)

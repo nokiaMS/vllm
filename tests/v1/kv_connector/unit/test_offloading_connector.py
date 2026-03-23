@@ -57,6 +57,7 @@ from .utils import (
 )
 
 
+# [中文注释] Mock加载/存储规格：模拟块hash的存储介质规格。
 class MockLoadStoreSpec(LoadStoreSpec):
     def __init__(self, block_hashes: Iterable[BlockHash]):
         self.block_hashes: list[BlockHash] = list(block_hashes)
@@ -69,6 +70,7 @@ class MockLoadStoreSpec(LoadStoreSpec):
         return repr(self.block_hashes)
 
 
+# [中文注释] Mock卸载处理器：模拟GPU与外部存储之间的块传输操作。
 class MockOffloadingHandler(OffloadingHandler):
     def __init__(self):
         self.transfer_specs: dict[int, TransferSpec] = {}
@@ -106,6 +108,7 @@ class MockOffloadingHandler(OffloadingHandler):
         self.complete_jobs(job_ids)
 
 
+# [中文注释] Mock卸载规格：提供模拟的LRU管理器和处理器，用于OffloadingConnector测试。
 class MockOffloadingSpec(OffloadingSpec):
     def __init__(self, vllm_config: VllmConfig, kv_cache_config: KVCacheConfig):
         super().__init__(vllm_config, kv_cache_config)
@@ -146,11 +149,13 @@ class MockOffloadingSpec(OffloadingSpec):
 
 
 @dataclass
+# [中文注释] 传输摘要数据类：记录存储和加载的块ID汇总。
 class TransferSummary:
     gpu_block_indices: list[int]
     offload_addresses: list[Any]
 
 
+# [中文注释] 请求运行器：封装调度器和连接器的测试执行流程，模拟完整的调度-生成循环。
 class RequestRunner:
     def __init__(
         self,
@@ -496,6 +501,7 @@ class RequestRunner:
 
 
 @pytest.fixture
+# [中文注释] 测试夹具：创建带MockOffloadingSpec的RequestRunner实例。
 def request_runner():
     runners = []
 
@@ -514,6 +520,7 @@ def request_runner():
     yield runner_factory  # pass factory to the test
 
 
+# [中文注释] 辅助函数：生成模拟的存储输出事件列表。
 def generate_store_output(block_hashes: Iterable[BlockHash]):
     block_hashes = list(block_hashes)
     return PrepareStoreOutput(
@@ -524,6 +531,7 @@ def generate_store_output(block_hashes: Iterable[BlockHash]):
 
 
 @pytest.mark.parametrize("async_scheduling", [True, False])
+# [中文注释] 测试用例：验证OffloadingConnector的基本存储/加载功能和KV缓存命中逻辑。
 def test_offloading_connector(request_runner, async_scheduling: bool):
     offloaded_block_size = 12
     gpu_block_size = 4
@@ -670,6 +678,7 @@ def test_offloading_connector(request_runner, async_scheduling: bool):
 
 
 @pytest.mark.parametrize("async_scheduling", [True, False])
+# [中文注释] 测试用例：验证请求被抢占时OffloadingConnector的处理逻辑。
 def test_request_preemption(request_runner, async_scheduling: bool):
     offloaded_block_size = 12
     gpu_block_size = 4
@@ -738,6 +747,7 @@ def test_request_preemption(request_runner, async_scheduling: bool):
 
 
 @pytest.mark.parametrize("async_scheduling", [True, False])
+# [中文注释] 测试用例：验证相同前缀的并发查找不会导致重复加载或数据竞争。
 def test_concurrent_lookups_of_the_same_prefix(request_runner, async_scheduling: bool):
     offloaded_block_size = 12
     gpu_block_size = 4
@@ -798,6 +808,7 @@ def test_concurrent_lookups_of_the_same_prefix(request_runner, async_scheduling:
 
 
 @pytest.mark.parametrize("async_scheduling", [True, False])
+# [中文注释] 测试用例：验证中止正在加载的请求时的清理逻辑。
 def test_abort_loading_requests(request_runner, async_scheduling: bool):
     offloaded_block_size = 12
     gpu_block_size = 4
@@ -850,6 +861,7 @@ def test_abort_loading_requests(request_runner, async_scheduling: bool):
     assert req_id not in runner.scheduler.requests
 
 
+# [中文注释] 测试类：验证OffloadingConnector统计信息（存储/加载命中率、块数等）的正确性。
 class TestOffloadingConnectorStats:
     """Tests for OffloadingConnector stats reconstruction and operations."""
 

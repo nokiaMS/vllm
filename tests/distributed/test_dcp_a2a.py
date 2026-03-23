@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 DCP（解码上下文并行）All-to-All 通信后端的配置验证和 LSE 加权组合的正确性
 """Unit tests for DCP A2A communication backend (no GPU required).
 
 Tests cover:

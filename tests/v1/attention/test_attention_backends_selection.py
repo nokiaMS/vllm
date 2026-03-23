@@ -16,6 +16,7 @@ from vllm.v1.attention.backends.mamba2_attn import Mamba2AttentionBackend
 from vllm.v1.attention.backends.short_conv_attn import ShortConvAttentionBackend
 
 
+# 测试 Mamba 类层（Mamba1/Mamba2/线性注意力/短卷积）返回正确的注意力后端类
 @pytest.mark.parametrize(
     "layer_class, init_kwargs, expected_backend, expected_mamba_type",
     [

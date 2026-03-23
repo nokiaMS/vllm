@@ -16,6 +16,7 @@ from vllm.v1.worker.ubatching import dbo_current_ubatch_id
 logger = init_logger(__name__)
 
 
+# 计算给定形状和数据类型的张量所占字节数
 def _compute_bytes(shape: tuple[int, ...], dtype: torch.dtype) -> int:
     return prod(shape) * dtype.itemsize
 
@@ -28,6 +29,9 @@ _GiB = 1024**3
 _manager: "WorkspaceManager | None" = None
 
 
+# 工作空间管理器，为 DBO（双批次重叠）执行管理 GPU 临时缓冲区
+# 设计思路：按需增长的单一大缓冲区，支持锁定机制防止热路径中的意外内存分配
+# 每个微批次维护独立的工作空间以避免数据竞争
 class WorkspaceManager:
     """Manager for workspace allocation.
 
@@ -192,6 +196,7 @@ class WorkspaceManager:
         return current_workspace
 
 
+# 检查全局工作空间管理器是否已初始化
 def is_workspace_manager_initialized() -> bool:
     """Check if workspace manager has been initialized.
 
@@ -201,6 +206,7 @@ def is_workspace_manager_initialized() -> bool:
     return _manager is not None
 
 
+# 获取当前全局工作空间管理器实例，未初始化时抛出异常
 def current_workspace_manager() -> "WorkspaceManager":
     """Get the current workspace manager instance.
 
@@ -214,6 +220,8 @@ def current_workspace_manager() -> "WorkspaceManager":
     return _manager
 
 
+# 初始化全局工作空间管理器，通常在 GPUModelRunner.__init__ 中调用
+# 必须在使用任何工作空间函数之前调用
 def init_workspace_manager(
     device: torch.device, num_ubatches: int | None = None
 ) -> None:
@@ -237,6 +245,8 @@ def init_workspace_manager(
     _manager = WorkspaceManager(device, num_ubatches)
 
 
+# 锁定工作空间，禁止后续增长；在预热/性能分析完成后调用
+# 锁定后任何超出当前大小的分配请求将触发 AssertionError
 def lock_workspace() -> None:
     """Lock the workspace to prevent further growth.
 
@@ -259,6 +269,7 @@ def lock_workspace() -> None:
     current_workspace_manager().lock()
 
 
+# 解锁工作空间以允许增长，用于弹性专家并行（EP）缩放场景
 def unlock_workspace() -> None:
     """Unlock the workspace to allow growth.
 
@@ -270,6 +281,7 @@ def unlock_workspace() -> None:
     current_workspace_manager().unlock()
 
 
+# 重置工作空间管理器为未初始化状态，主要用于测试环境的清理
 def reset_workspace_manager() -> None:
     """Reset the workspace manager to uninitialized state.
 

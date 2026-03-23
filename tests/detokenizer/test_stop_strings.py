@@ -11,6 +11,7 @@ MODEL = "meta-llama/llama-2-7b-hf"
 MAX_TOKENS = 200
 
 
+# [中文注释] 通用停止测试辅助函数，验证输出文本和停止原因
 def _test_stopping(
     llm: LLM,
     expected_output: str,
@@ -35,6 +36,7 @@ def _test_stopping(
     assert output.stop_reason == expected_reason
 
 
+# [中文注释] 测试基本单字符停止字符串（"."），验证包含和不包含停止符的输出
 def _stop_basic(llm):
     _test_stopping(
         llm,
@@ -53,6 +55,7 @@ def _stop_basic(llm):
     )
 
 
+# [中文注释] 测试多token停止字符串（跨token边界的停止词匹配）
 def _stop_multi_tokens(llm):
     _test_stopping(
         llm,
@@ -71,6 +74,7 @@ def _stop_multi_tokens(llm):
     )
 
 
+# [中文注释] 测试部分token匹配的停止字符串（停止词在token内部匹配）
 def _stop_partial_token(llm):
     _test_stopping(
         llm,
@@ -89,6 +93,7 @@ def _stop_partial_token(llm):
     )
 
 
+# [中文注释] 测试通过token ID停止生成（stop_token_ids参数）
 def _stop_token_id(llm):
     # token id 13013 => " organization"
 
@@ -109,6 +114,7 @@ def _stop_token_id(llm):
     )
 
 
+# [中文注释] 集成测试：验证各类停止字符串场景（基本、多token、部分token）
 @pytest.mark.skip_global_cleanup
 def test_stop_strings():
     llm = LLM(MODEL, enforce_eager=True)

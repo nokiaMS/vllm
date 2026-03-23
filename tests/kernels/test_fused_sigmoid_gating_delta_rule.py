@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试融合sigmoid门控Delta规则状态更新内核的正确性，
+# 验证融合实现与分步参考实现在非推测解码和推测解码场景下的数值一致性
 import pytest
 import torch
 import torch.nn.functional as F
@@ -22,6 +24,7 @@ DEVICE = current_platform.device_type
 @pytest.mark.parametrize("head_k_dim", [128])
 @pytest.mark.parametrize("head_v_dim", [128])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+# 测试非推测解码场景下融合sigmoid门控Delta规则更新与分步参考实现的一致性
 def test_fused_sigmoid_gating_delta_rule_update_non_spec(
     tp_size: int,
     num_reqs: int,
@@ -108,6 +111,7 @@ def test_fused_sigmoid_gating_delta_rule_update_non_spec(
 @pytest.mark.parametrize("head_v_dim", [128])
 @pytest.mark.parametrize("num_speculative_tokens", [1, 3])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+# 测试推测解码场景下融合sigmoid门控Delta规则更新与分步参考实现的一致性
 def test_fused_sigmoid_gating_delta_rule_update_spec(
     tp_size: int,
     num_reqs: int,

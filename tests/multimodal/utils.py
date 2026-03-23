@@ -7,12 +7,14 @@ import numpy.typing as npt
 from PIL import Image
 
 
+# [中文注释] 生成随机尺寸的RGB测试图像
 def random_image(rng: np.random.RandomState, min_wh: int, max_wh: int):
     w, h = rng.randint(min_wh, max_wh, size=(2,))
     arr = rng.randint(0, 255, size=(w, h, 3), dtype=np.uint8)
     return Image.fromarray(arr)
 
 
+# [中文注释] 生成随机帧数和尺寸的测试视频数组
 def random_video(
     rng: np.random.RandomState,
     min_frames: int,
@@ -25,6 +27,7 @@ def random_video(
     return rng.randint(0, 255, size=(num_frames, w, h, 3), dtype=np.uint8)
 
 
+# [中文注释] 生成随机长度的测试音频数据
 def random_audio(
     rng: np.random.RandomState,
     min_len: int,
@@ -35,6 +38,7 @@ def random_audio(
     return rng.rand(audio_len), sr
 
 
+# [中文注释] 从静态图像创建测试视频文件：支持彩色/灰度和自定义编码格式
 def create_video_from_image(
     image_path: str,
     video_path: str,
@@ -66,6 +70,7 @@ def create_video_from_image(
     return video_path
 
 
+# [中文注释] 计算两个向量的余弦相似度
 def cosine_similarity(A: npt.NDArray, B: npt.NDArray, axis: int = -1) -> npt.NDArray:
     """Compute cosine similarity between two vectors."""
     return np.sum(A * B, axis=axis) / (
@@ -73,6 +78,7 @@ def cosine_similarity(A: npt.NDArray, B: npt.NDArray, axis: int = -1) -> npt.NDA
     )
 
 
+# [中文注释] 将图像像素值归一化到[0, 1]范围
 def normalize_image(image: npt.NDArray) -> npt.NDArray:
     """Normalize image to [0, 1] range."""
     return image.astype(np.float32) / 255.0

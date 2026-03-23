@@ -16,6 +16,7 @@ pytestmark = pytest.mark.cpu_test
 
 
 @pytest.fixture(autouse=True)
+# [中文注释] 测试夹具：创建独立的prometheus_client注册表，避免测试间干扰。
 def test_registry(monkeypatch):
     # Use a custom registry for tests
     test_registry = prometheus_client.CollectorRegistry(auto_describe=True)
@@ -24,6 +25,7 @@ def test_registry(monkeypatch):
 
 
 @pytest.mark.parametrize("num_engines", [1, 4])
+# [中文注释] 测试用例：验证Gauge类型指标的快照读取和聚合。
 def test_gauge_metric(test_registry, num_engines):
     g = prometheus_client.Gauge(
         "vllm:test_gauge",
@@ -47,6 +49,7 @@ def test_gauge_metric(test_registry, num_engines):
 
 
 @pytest.mark.parametrize("num_engines", [1, 4])
+# [中文注释] 测试用例：验证Counter类型指标的快照读取和聚合。
 def test_counter_metric(test_registry, num_engines):
     c = prometheus_client.Counter(
         "vllm:test_counter",
@@ -70,6 +73,7 @@ def test_counter_metric(test_registry, num_engines):
 
 
 @pytest.mark.parametrize("num_engines", [1, 4])
+# [中文注释] 测试用例：验证Histogram类型指标的快照读取和聚合。
 def test_histogram_metric(test_registry, num_engines):
     h = prometheus_client.Histogram(
         "vllm:test_histogram",
@@ -103,6 +107,7 @@ def test_histogram_metric(test_registry, num_engines):
 
 
 @pytest.mark.parametrize("num_engines", [1, 4])
+# [中文注释] 测试用例：验证Vector类型指标（带标签）的快照读取和聚合。
 def test_vector_metric(test_registry, num_engines):
     c = prometheus_client.Counter(
         "vllm:spec_decode_num_accepted_tokens_per_pos",

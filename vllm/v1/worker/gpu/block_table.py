@@ -10,6 +10,13 @@ from vllm.v1.attention.backends.utils import PAD_SLOT_ID
 from vllm.v1.worker.gpu.buffer_utils import StagedWriteTensor, UvaBackedTensor
 
 
+# 块表管理器：管理 KV 缓存的分页块表（block table），负责块 ID 的写入、
+# 从请求索引到批次索引的 gather 操作、以及 slot mapping 的计算。
+# 设计要点：
+# - 使用分阶段写入（staged write）机制：先在 CPU 端暂存修改，再批量通过 Triton 内核写入 GPU。
+# - 支持多个 KV 缓存组（不同注意力层可能有不同的块大小）。
+# - 支持上下文并行（Context Parallelism），通过交错方式在多个 rank 间分片 KV 缓存。
+# - input_block_tables 为前向传播使用的持久化张量，确保 CUDA graph 捕获时地址不变。
 class BlockTables:
     def __init__(
         self,
@@ -78,12 +85,14 @@ class BlockTables:
             device=self.device,
         )
 
+    # 将多个张量的数据指针打包为 uint64 张量，供 Triton 内核通过指针间接寻址访问。
     def _make_ptr_tensor(self, x: Iterable[torch.Tensor]) -> torch.Tensor:
         # NOTE(woosuk): Use uint64 instead of int64 to cover all possible addresses.
         return torch.tensor(
             [t.data_ptr() for t in x], dtype=torch.uint64, device=self.device
         )
 
+    # 为指定请求追加或覆写新的块 ID，暂存到 staged write 缓冲区中。
     def append_block_ids(
         self,
         req_index: int,
@@ -96,6 +105,7 @@ class BlockTables:
             self.block_tables[i].stage_write(req_index, start, block_ids)
             self.num_blocks.np[i, req_index] = start + len(block_ids)
 
+    # 将所有暂存的块 ID 写入操作批量应用到 GPU 张量上。
     def apply_staged_writes(self) -> None:
         # TODO(woosuk): This can be inefficient since it launches one kernel per
         # block table. Implement a kernel to handle all block tables at once.
@@ -103,6 +113,8 @@ class BlockTables:
             block_table.apply_write()
         self.num_blocks.copy_to_uva()
 
+    # 通过 Triton 内核按 idx_mapping 将源块表的行 gather 到输入块表中，
+    # 同时将超出实际请求数的填充行清零（用于 CUDA graph 的固定形状要求）。
     def gather_block_tables(
         self,
         idx_mapping: torch.Tensor,
@@ -123,6 +135,7 @@ class BlockTables:
         )
         return tuple(bt[:num_reqs_padded] for bt in self.input_block_tables)
 
+    # 返回用于 CUDA graph 捕获的虚拟块表（返回持久化张量的切片以保持地址不变）。
     def get_dummy_block_tables(self, num_reqs: int) -> tuple[torch.Tensor, ...]:
         # NOTE(woosuk): The output may be used for CUDA graph capture.
         # Therefore, this method must return the persistent tensor
@@ -130,6 +143,8 @@ class BlockTables:
         # rather than allocating a new tensor.
         return tuple(block_table[:num_reqs] for block_table in self.input_block_tables)
 
+    # 通过 Triton 内核计算 slot mapping：将每个 token 的位置映射到对应的 KV 缓存槽位。
+    # 支持上下文并行（CP）场景下的交错分片逻辑，非本 rank 拥有的 token 映射为 PAD_SLOT_ID。
     def compute_slot_mappings(
         self,
         idx_mapping: torch.Tensor,
@@ -157,6 +172,7 @@ class BlockTables:
         )
         return self.slot_mappings[:, :num_tokens_padded]
 
+    # 返回用于 CUDA graph 捕获的虚拟 slot mapping，所有槽位填充为 PAD_SLOT_ID。
     def get_dummy_slot_mappings(self, num_tokens: int) -> torch.Tensor:
         # Fill the entire slot_mappings tensor, not just the first `num_tokens` entries.
         # This is because the padding logic is complex and kernels may access beyond
@@ -169,6 +185,8 @@ class BlockTables:
         return self.slot_mappings[:, :num_tokens]
 
 
+# Triton 内核：将源块表的行按 batch_idx -> req_idx 的映射 gather 到目标块表中。
+# 对于超出实际请求数的填充行，将其清零以确保 CUDA graph 回放时的正确性。
 @triton.jit
 def _gather_block_tables_kernel(
     batch_idx_to_req_idx,  # [batch_size]
@@ -209,6 +227,10 @@ def _gather_block_tables_kernel(
         tl.store(dst_row_ptr + offset, block_ids, mask=offset < num_blocks)
 
 
+# Triton 内核：根据 token 位置和块表计算每个 token 的 KV 缓存槽位 ID。
+# 算法：position -> (block_index, block_offset) -> block_number * block_size + offset。
+# 支持上下文并行（CP_SIZE > 1）时的交错分片：仅当前 rank 拥有的 token 写入有效槽位，
+# 其余写入 PAD_ID。最后一个 program 负责将尾部填充为 PAD_ID（用于 CUDA graph）。
 @triton.jit
 def _compute_slot_mappings_kernel(
     max_num_tokens,
@@ -274,6 +296,7 @@ def _compute_slot_mappings_kernel(
         tl.store(slot_mapping_ptr + offset, slot_ids, mask=offset < end_idx)
 
 
+# Triton 辅助函数：从指针的指针加载实际数据指针，并转换为指定元素类型的指针。
 @triton.jit
 def _load_ptr(ptr_to_ptr, elem_dtype):
     ptr = tl.load(ptr_to_ptr)

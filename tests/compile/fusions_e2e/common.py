@@ -11,6 +11,7 @@ from vllm.platforms import current_platform
 from vllm.v1.attention.backends.registry import AttentionBackendEnum
 
 
+# 存储各类融合 pass 的期望匹配数量
 class Matches(NamedTuple):
     # simple pointwise
     aiter_rms_quant_fusion: int = 0
@@ -24,6 +25,7 @@ class Matches(NamedTuple):
     async_tp: int = 0
 
 
+# 模型融合信息，包含模型名称和根据层数计算匹配数的回调
 class ModelFusionInfo(NamedTuple):
     model_name: str
     matches: Callable[[int], Matches]
@@ -32,6 +34,7 @@ class ModelFusionInfo(NamedTuple):
     hf_overrides: Callable[[int], dict] = lambda n: {"num_hidden_layers": n}
 
 
+# Attention 后端测试用例，指定后端枚举和额外参数
 class AttentionBackendCase(NamedTuple):
     backend: AttentionBackendEnum
     model_kwargs: dict[str, Any] = {}
@@ -42,6 +45,7 @@ is_blackwell = lambda: current_platform.is_device_capability_family(100)
 """Are we running on Blackwell, a lot of tests depend on it"""
 
 
+# 生成自定义算子的所有启用/禁用组合，用于参数化测试
 def custom_ops_combos(*custom_ops: str) -> Iterable[str]:
     """Generate all combinations of custom ops for parametrization."""
     custom_ops_lists = [[f"-{op}", f"+{op}"] for op in custom_ops]

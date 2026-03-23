@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Qwen3 模型的 LoRA 反嵌入（unembed）层功能
 """
 Tests for Qwen3 unembed LoRA support.
 

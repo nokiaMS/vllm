@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 Responses API 的消息序列化：验证 dict 和 Message 对象的序列化逻辑]
 from openai_harmony import (
     Message,
 )
@@ -10,6 +11,7 @@ from vllm.entrypoints.openai.responses.protocol import (
 )
 
 
+# [测试单条消息序列化：dict 和 Message 对象均能正确转换]
 def test_serialize_message() -> None:
     dict_value = {"a": 1, "b": "2"}
     assert serialize_message(dict_value) == dict_value
@@ -24,6 +26,7 @@ def test_serialize_message() -> None:
     assert serialize_message(msg) == msg_value
 
 
+# [测试消息列表序列化：空值返回 None，混合列表正确序列化]
 def test_serialize_messages() -> None:
     assert serialize_messages(None) is None
     assert serialize_messages([]) is None

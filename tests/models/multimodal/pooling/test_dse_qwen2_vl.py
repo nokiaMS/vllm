@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 DSE-Qwen2-VL 多模态嵌入模型的文本和图像嵌入输出，对比 vLLM 与 HF
 
 from collections.abc import Callable
 

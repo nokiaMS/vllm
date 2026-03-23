@@ -27,6 +27,9 @@ from vllm.v1.attention.backends.registry import AttentionBackendEnum
 from vllm.v1.kv_cache_interface import FullAttentionSpec
 
 
+# 注意力测试的公共工具函数和类定义
+
+# 批次配置规格：定义序列长度和查询长度
 @dataclass
 class BatchSpec:
     """Specification for a batch configuration (workload shape only)."""
@@ -47,6 +50,7 @@ class BatchSpec:
         return sum(self.query_lens)
 
 
+# 根据批次规格创建通用注意力元数据（查询起始位置、序列长度、块表等）
 def create_common_attn_metadata(
     batch_spec: BatchSpec,
     block_size: int,
@@ -118,6 +122,7 @@ def create_common_attn_metadata(
     )
 
 
+# 尝试获取注意力后端类，若不可用则跳过测试
 def try_get_attention_backend(
     backend: AttentionBackendEnum,
 ) -> tuple[type[AttentionMetadataBuilder], type[AttentionImpl]]:
@@ -130,6 +135,7 @@ def try_get_attention_backend(
         raise AssertionError("unreachable") from None
 
 
+# 检查后端的 forward 方法是否已包含 KV 缓存更新
 def try_backend_includes_kv_cache_update(
     backend: AttentionBackendEnum,
 ) -> bool:
@@ -142,6 +148,7 @@ def try_backend_includes_kv_cache_update(
         raise AssertionError("unreachable") from None
 
 
+# 从 VllmConfig 创建标准的全注意力 KV 缓存规格
 def create_standard_kv_cache_spec(vllm_config: VllmConfig) -> FullAttentionSpec:
     """Create a FullAttentionSpec from ModelParams only."""
     return FullAttentionSpec(
@@ -155,6 +162,7 @@ def create_standard_kv_cache_spec(vllm_config: VllmConfig) -> FullAttentionSpec:
     )
 
 
+# 创建用于测试的 VllmConfig，包含合理的默认参数
 def create_vllm_config(
     model_name: str = "meta-llama/Meta-Llama-3-8B",
     tensor_parallel_size: int = 1,
@@ -236,6 +244,7 @@ def create_vllm_config(
     )
 
 
+# 创建随机填充的虚拟 KV 缓存张量
 def create_dummy_kv_cache(
     block_size: int,
     num_kv_heads: int,
@@ -257,6 +266,7 @@ def create_dummy_kv_cache(
     return kv_cache
 
 
+# 后端配置数据类：包含注意力和编译配置及 GPU 架构要求
 @dataclass
 class BackendConfig:
     name: str

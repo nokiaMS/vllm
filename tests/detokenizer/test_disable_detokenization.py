@@ -8,6 +8,7 @@ from vllm.sampling_params import SamplingParams
 
 
 @pytest.mark.parametrize("model", ["distilbert/distilgpt2"])
+# [中文注释] 测试detokenize=False时输出文本为空但token_ids与启用去分词时一致
 def test_computed_prefix_blocks(model: str):
     # This test checks if the engine generates completions both with and
     # without optional detokenization, that detokenization includes text

@@ -5,6 +5,7 @@
 from ..utils import compare_two_settings
 
 
+# [中文注释] 测试Llama模型的预取CPU卸载功能，比较卸载和不卸载时的输出一致性
 def test_prefetch_offload_llama():
     """Test prefetch CPU offloading with Llama-3.2-1B-Instruct.
 

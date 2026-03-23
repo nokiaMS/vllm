@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试RMSNorm层及融合RMSNorm+静态FP8量化内核的正确性，
+# 覆盖残差连接、步长输入、不同量化scale等场景
 import pytest
 import torch
 
@@ -27,6 +29,7 @@ CUDA_DEVICES = [
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("strided_input", [False, True])
 @torch.inference_mode()
+# 测试RMSNorm层的CUDA内核与原生实现在不同token数、隐藏层大小和残差条件下的一致性
 def test_rms_norm(
     default_vllm_config,
     num_tokens: int,
@@ -81,6 +84,7 @@ def test_rms_norm(
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @pytest.mark.parametrize("strided_input", [False, True])
+# 测试融合RMSNorm+静态FP8量化内核与分步实现的数值一致性
 def test_fused_rms_norm_quant(
     num_tokens: int,
     hidden_size: int,

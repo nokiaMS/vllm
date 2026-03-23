@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 核心测试的公共工具函数：创建调度器实例和模拟请求
 
 import torch
 

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试oneDNN后端的INT8量化GEMM和BF16 GEMM内核（仅CPU），
+# 覆盖per-tensor/per-token量化、零点偏移(AZP)、bias以及步长输入等场景
 import pytest
 import torch
 
@@ -26,10 +28,12 @@ CACHE_SIZES = [2]
 DTYPE = [torch.bfloat16]
 
 
+# 生成指定形状的随机INT8张量
 def rand_int8(shape: tuple, device: str = "cpu"):
     return to_int8(torch.rand(shape, device=device) * 255 - 128)
 
 
+# INT8缩放矩阵乘法的参考实现，支持零点偏移和bias
 def ref_int8_scaled_mm(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -50,6 +54,7 @@ def ref_int8_scaled_mm(
     return output.to(dtype=output_type)
 
 
+# oneDNN INT8 GEMM测试辅助函数，验证per-tensor/per-token量化的正确性
 def onednn_int8_gemm_test_helper(
     primitive_cache_size: int,
     m: int,
@@ -107,6 +112,7 @@ def onednn_int8_gemm_test_helper(
         torch.testing.assert_close(out, baseline, rtol=1e-1, atol=1e0)
 
 
+# oneDNN BF16 GEMM测试辅助函数，验证带/不带bias和步长输入的正确性
 def onednn_gemm_test_helper(
     primitive_cache_size: int,
     m: int,
@@ -162,6 +168,7 @@ def onednn_gemm_test_helper(
 @pytest.mark.parametrize("use_azp", [True, False])
 @pytest.mark.parametrize("output_type", DTYPE)
 @pytest.mark.parametrize("primitive_cache_size", CACHE_SIZES)
+# 测试oneDNN INT8缩放GEMM在不同矩阵大小、量化粒度和偏置条件下的正确性
 def test_onednn_int8_scaled_gemm(
     n: int,
     k: int,
@@ -193,6 +200,7 @@ def test_onednn_int8_scaled_gemm(
 @pytest.mark.parametrize("use_stride", [True, False])
 @pytest.mark.parametrize("dtype", DTYPE)
 @pytest.mark.parametrize("primitive_cache_size", CACHE_SIZES)
+# 测试oneDNN BF16 GEMM在不同矩阵大小、bias和步长条件下的正确性
 def test_onednn_gemm(
     n: int,
     k: int,

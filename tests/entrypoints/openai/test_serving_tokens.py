@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 token 级生成端点：generate API、logprobs、与 chat completions 一致性、stop 字符串和 LoRA]
 
 import os
 
@@ -18,6 +19,7 @@ MODEL_NAME = "Qwen/Qwen3-0.6B"
 GEN_ENDPOINT = "/inference/v1/generate"
 
 
+# [获取模型词表大小]
 def get_vocab_size(model_name):
     config = ModelConfig(
         model=model_name,
@@ -101,6 +103,7 @@ async def client(server: RemoteOpenAIServer):
 
 
 @pytest.mark.asyncio
+# [测试基本的 generate 端点调用]
 async def test_generate_endpoint(client):
     payload = {
         "model": MODEL_NAME,
@@ -116,6 +119,7 @@ async def test_generate_endpoint(client):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("logprobs_value", [0, 1, 5])
+# [测试 generate 端点的 logprobs 返回]
 async def test_generate_logprobs(client, logprobs_value):
     payload = {
         "model": MODEL_NAME,
@@ -141,6 +145,7 @@ async def test_generate_logprobs(client, logprobs_value):
 
 
 @pytest.mark.asyncio
+# [测试 generate 端点与 chat completions 端点结果一致性]
 async def test_same_response_as_chat_completions(client, tokenizer, messages):
     token_ids = tokenizer.apply_chat_template(
         messages,
@@ -212,6 +217,7 @@ async def test_same_response_as_chat_completions(client, tokenizer, messages):
 
 
 @pytest.mark.asyncio
+# [测试 stop 字符串工作流：detokenize=False 时不支持 stop 字符串]
 async def test_stop_string_workflow(client, tokenizer, messages):
     token_ids = tokenizer.apply_chat_template(
         messages,
@@ -291,6 +297,7 @@ async def test_stop_string_workflow(client, tokenizer, messages):
     ],
     indirect=True,
 )
+# [测试使用 LoRA 适配器的 generate 端点并与 chat completions 结果对比]
 async def test_generate_with_lora_adapter(client, tokenizer, messages):
     # Verify adapters are listed
     models_resp = await client.get("/v1/models")

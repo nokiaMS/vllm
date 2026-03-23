@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 Anthropic 消息格式到 OpenAI 格式的转换：图像源处理、tool_result 内容解析、
+# 以及计费头部（x-anthropic-billing-header）的剥离
+
 """Unit tests for Anthropic-to-OpenAI request conversion.
 
 Tests the image source handling and tool_result content parsing in
@@ -15,6 +19,7 @@ _convert = AnthropicServingMessages._convert_anthropic_to_openai_request
 _img_url = AnthropicServingMessages._convert_image_source_to_url
 
 
+# 辅助函数：构建 Anthropic 消息请求对象
 def _make_request(
     messages: list[dict],
     **kwargs,
@@ -32,6 +37,7 @@ def _make_request(
 # ======================================================================
 
 
+# 测试图像源到 URL 的转换：base64、URL、缺省类型等场景
 class TestConvertImageSourceToUrl:
     def test_base64_source(self):
         source = {
@@ -82,6 +88,7 @@ class TestConvertImageSourceToUrl:
 # ======================================================================
 
 
+# 测试用户消息中图像内容块的转换（base64 和 URL 图像源）
 class TestImageContentBlocks:
     def test_base64_image_in_user_message(self):
         request = _make_request(
@@ -147,6 +154,7 @@ class TestImageContentBlocks:
 # ======================================================================
 
 
+# 测试 tool_result 内容处理：纯文本、图像、混合内容及 None 值
 class TestToolResultContent:
     def _make_tool_result_request(
         self, tool_result_content
@@ -331,6 +339,7 @@ class TestToolResultContent:
 # ======================================================================
 
 
+# 测试系统消息中 x-anthropic-billing-header 计费头部的剥离
 class TestAttributionHeaderStripping:
     def test_billing_header_stripped_from_system(self):
         """Claude Code's x-anthropic-billing-header block should be

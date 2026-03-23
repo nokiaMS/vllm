@@ -5,6 +5,7 @@ import torch
 from transformers import AutoModelForSequenceClassification
 
 
+# 测试多标签分类模型：验证 vLLM 的分类输出与 HuggingFace 模型的结果是否接近
 @pytest.mark.parametrize(
     "model",
     ["Rami/multi-label-class-classification-on-github-issues"],

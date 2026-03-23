@@ -30,6 +30,9 @@ sampling_params = SamplingParams(
 )
 
 
+# 测试分片状态加载器的正确性，包括子张量过滤和分片保存/加载的端到端验证
+
+# 测试过滤掉共享存储的子张量，只保留原始张量
 def test_filter_subtensors():
     state_dict = {
         "a": torch.empty(2),
@@ -85,6 +88,7 @@ def _run_generate(input_dir, queue: mp.Queue, **kwargs):
 
 @pytest.mark.parametrize("enable_lora", [False, True])
 @pytest.mark.parametrize("tp_size", [1, 2])
+# 测试分片状态保存和加载后模型输出与原始模型一致
 def test_sharded_state_loader(
     enable_lora, tp_size, num_gpus_available, llama_3p2_1b_files
 ):

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试AWQ（Activation-aware Weight Quantization）反量化和GEMM的opcheck验证
 
 import pytest
 import torch
@@ -8,6 +9,7 @@ from tests.kernels.utils import opcheck
 from vllm import _custom_ops as ops  # noqa: F401
 
 
+# 验证AWQ反量化操作的opcheck一致性
 @pytest.mark.skipif(
     not hasattr(torch.ops._C, "awq_dequantize"),
     reason="AWQ is not supported on this GPU type.",
@@ -29,6 +31,7 @@ def test_awq_dequantize_opcheck(monkeypatch: pytest.MonkeyPatch):
         )
 
 
+# 验证AWQ GEMM操作的opcheck一致性（当前已跳过待修复）
 @pytest.mark.skip(reason="Not working; needs investigation.")
 @pytest.mark.skipif(
     not hasattr(torch.ops._C, "awq_gemm"),

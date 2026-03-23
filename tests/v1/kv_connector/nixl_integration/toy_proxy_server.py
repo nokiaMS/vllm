@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+# [中文注释] FastAPI生命周期管理器：初始化和清理prefill/decode实例的HTTP客户端连接池。
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -86,6 +87,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+# [中文注释] 解析命令行参数：配置prefill和decode实例的地址和端口。
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -131,6 +133,7 @@ def parse_args():
     return args
 
 
+# [中文注释] 轮询选择下一个prefill或decode客户端，实现简单负载均衡。
 def get_next_client(app, service_type: str):
     """
     Get the next client in round-robin fashion.
@@ -152,6 +155,7 @@ def get_next_client(app, service_type: str):
         raise ValueError(f"Unknown service type: {service_type}")
 
 
+# [中文注释] 异步函数：将请求转发到prefill或decode服务并返回流式响应。
 async def send_request_to_service(
     client_info: dict, endpoint: str, req_data: dict, request_id: str
 ):
@@ -190,6 +194,7 @@ async def send_request_to_service(
     return response
 
 
+# [中文注释] 异步生成器：流式传输后端服务的SSE响应数据。
 async def stream_service_response(
     client_info: dict, endpoint: str, req_data: dict, request_id: str
 ):
@@ -209,6 +214,7 @@ async def stream_service_response(
             yield chunk
 
 
+# [中文注释] 核心路由处理：将completions请求先发到prefill再转发到decode，实现P/D分离代理。
 async def _handle_completions(api: str, request: Request):
     try:
         req_data = await request.json()
@@ -255,16 +261,19 @@ async def _handle_completions(api: str, request: Request):
 
 
 @app.post("/v1/completions")
+# [中文注释] 路由处理器：处理/v1/completions端点的请求。
 async def handle_completions(request: Request):
     return await _handle_completions("/completions", request)
 
 
 @app.post("/v1/chat/completions")
+# [中文注释] 路由处理器：处理/v1/chat/completions端点的请求。
 async def handle_chat_completions(request: Request):
     return await _handle_completions("/chat/completions", request)
 
 
 @app.get("/healthcheck")
+# [中文注释] 健康检查端点：返回代理服务器运行状态。
 async def healthcheck():
     """Simple endpoint to check if the server is running."""
     return {

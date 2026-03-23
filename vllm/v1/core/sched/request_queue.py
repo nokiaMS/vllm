@@ -10,6 +10,7 @@ from enum import Enum
 from vllm.v1.request import Request
 
 
+# [中文注释] 调度策略枚举：FCFS（先来先服务）和 PRIORITY（优先级调度）。
 class SchedulingPolicy(Enum):
     """Enum for scheduling policies."""
 
@@ -17,6 +18,8 @@ class SchedulingPolicy(Enum):
     PRIORITY = "priority"
 
 
+# [中文注释] 请求队列抽象基类，定义调度器所需的队列操作接口。
+#   子类需实现：add_request、pop_request、peek_request、prepend_request 等方法。
 class RequestQueue(ABC):
     """Abstract base class for request queues."""
 
@@ -72,6 +75,8 @@ class RequestQueue(ABC):
         pass
 
 
+# [中文注释] FCFS（先来先服务）请求队列，继承自 deque 和 RequestQueue。
+#   按请求到达顺序调度，prepend_request 用于将被抢占的请求放回队首。
 class FCFSRequestQueue(deque[Request], RequestQueue):
     """A first-come-first-served queue that supports deque operations."""
 
@@ -128,6 +133,9 @@ class FCFSRequestQueue(deque[Request], RequestQueue):
         return super().__iter__()
 
 
+# [中文注释] 优先级请求队列，基于最小堆实现。
+#   按 Request 的 (priority, arrival_time) 排序，priority 值越小优先级越高。
+#   prepend_request 等效于 add_request（优先级队列没有"队首"概念）。
 class PriorityRequestQueue(RequestQueue):
     """
     A priority queue that supports heap operations.
@@ -198,6 +206,7 @@ class PriorityRequestQueue(RequestQueue):
             yield heapq.heappop(heap_copy)
 
 
+# [中文注释] 工厂函数：根据调度策略创建对应的请求队列实例。
 def create_request_queue(policy: SchedulingPolicy) -> RequestQueue:
     """Create request queue based on scheduling policy."""
     if policy == SchedulingPolicy.PRIORITY:

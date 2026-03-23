@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 # ruff: noqa: E501
 
+# 测试 Hunyuan A13B 工具解析器的非流式提取和流式增量解析功能
+
 import json
 from unittest.mock import MagicMock
 
@@ -15,6 +17,7 @@ from vllm.entrypoints.openai.engine.protocol import FunctionCall, ToolCall
 from vllm.tool_parsers import ToolParser, ToolParserManager
 
 
+# 创建 ToolCall 辅助函数，用于构造预期的工具调用对象
 def make_tool_call(name, arguments):
     return ToolCall(
         type="function",
@@ -84,6 +87,7 @@ def make_tool_call(name, arguments):
         ),
     ],
 )
+# 参数化测试 Hunyuan A13B 解析器的非流式工具调用提取（含单调用、多调用、带前缀文本等场景）
 def test_hunyuan_a13b_tool_parser_extract(
     model_output, expected_tool_calls, expected_content
 ):
@@ -162,6 +166,7 @@ def test_hunyuan_a13b_tool_parser_extract(
         ),
     ],
 )
+# 参数化测试 Hunyuan A13B 解析器的流式增量工具调用解析
 def test_hunyuan_a13b_tool_parser_streaming(model_deltas, expected_tool_calls):
     mock_tokenizer = MagicMock()
 

@@ -14,6 +14,7 @@ from ..utils import RemoteOpenAIServer
 MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
 
 
+# [中文注释] 使用openssl生成自签名证书用于SSL测试
 def generate_self_signed_cert(cert_dir: Path) -> tuple[Path, Path]:
     """Generate a self-signed certificate for testing."""
     cert_file = cert_dir / "cert.pem"
@@ -43,6 +44,7 @@ def generate_self_signed_cert(cert_dir: Path) -> tuple[Path, Path]:
     return cert_file, key_file
 
 
+# [中文注释] 支持SSL自签名证书的RemoteOpenAIServer子类，用于HTTPS基准测试
 class RemoteOpenAIServerSSL(RemoteOpenAIServer):
     """RemoteOpenAIServer subclass that supports SSL with self-signed certs."""
 
@@ -70,6 +72,7 @@ class RemoteOpenAIServerSSL(RemoteOpenAIServer):
                     raise RuntimeError("Server failed to start in time.") from None
 
 
+# [中文注释] 启动标准HTTP模式的vLLM远程服务器fixture
 @pytest.fixture(scope="function")
 def server():
     args = ["--max-model-len", "1024", "--enforce-eager", "--load-format", "dummy"]
@@ -78,6 +81,7 @@ def server():
         yield remote_server
 
 
+# [中文注释] 启动带自签名SSL证书的vLLM远程服务器fixture
 @pytest.fixture(scope="function")
 def ssl_server():
     """Start a vLLM server with SSL enabled using a self-signed certificate."""
@@ -99,6 +103,7 @@ def ssl_server():
             yield remote_server
 
 
+# [中文注释] 测试vllm bench serve CLI命令的基本服务基准测试
 @pytest.mark.benchmark
 def test_bench_serve(server):
     # Test default model detection and input/output len
@@ -124,6 +129,7 @@ def test_bench_serve(server):
     assert result.returncode == 0, f"Benchmark failed: {result.stderr}"
 
 
+# [中文注释] 测试--insecure标志与自签名证书HTTPS服务器的配合使用
 @pytest.mark.benchmark
 def test_bench_serve_insecure(ssl_server):
     """Test --insecure flag with an HTTPS server using a self-signed certificate."""
@@ -149,6 +155,7 @@ def test_bench_serve_insecure(ssl_server):
     assert result.returncode == 0, f"Benchmark failed: {result.stderr}"
 
 
+# [中文注释] 测试vllm bench serve的聊天完成端点基准测试（/v1/chat/completions）
 @pytest.mark.benchmark
 def test_bench_serve_chat(server):
     command = [

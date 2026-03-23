@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Transformers 后端的多模态处理器，验证 vLLM 与 HF 处理器输出一致性
 import pytest
 
 from vllm.assets.image import ImageAsset

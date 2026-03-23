@@ -20,6 +20,7 @@ from vllm.env_override import (
 )
 
 
+# [中文注释] 测试VLLM_ENABLE_CUDA_COMPATIBILITY环境变量解析，包括默认禁用、各种falsy/truthy值
 class TestCudaCompatibilityEnvParsing:
     """Test VLLM_ENABLE_CUDA_COMPATIBILITY env var parsing."""
 
@@ -56,6 +57,7 @@ class TestCudaCompatibilityEnvParsing:
         assert str(compat_dir) in ld_path
 
 
+# [中文注释] 测试CUDA兼容性库路径检测：自定义路径覆盖、conda回退、默认cuda路径回退
 class TestCudaCompatibilityPathDetection:
     """Test path detection: custom override, conda, default."""
 
@@ -114,6 +116,7 @@ class TestCudaCompatibilityPathDetection:
         assert "/usr/local/cuda-12.8/compat" in ld_path
 
 
+# [中文注释] 测试LD_LIBRARY_PATH的前置添加和去重逻辑
 class TestCudaCompatibilityLdPathManipulation:
     """Test LD_LIBRARY_PATH prepend and deduplication logic."""
 
@@ -169,6 +172,7 @@ class TestCudaCompatibilityLdPathManipulation:
         assert os.environ["LD_LIBRARY_PATH"] == original
 
 
+# [中文注释] 测试_get_torch_cuda_version()辅助函数，包括torch可用和不可用的情况
 class TestGetTorchCudaVersion:
     """Test _get_torch_cuda_version() helper."""
 

@@ -17,6 +17,7 @@ _PROMPTS = [
 
 
 @pytest.mark.parametrize("num_speculative_tokens", [1, 3, 10])
+# [中文注释] 测试Ngram推测解码在最大模型长度限制下的正确处理
 def test_ngram_max_len(num_speculative_tokens: int):
     llm = LLM(
         model="facebook/opt-125m",
@@ -35,6 +36,7 @@ def test_ngram_max_len(num_speculative_tokens: int):
 
 @pytest.mark.parametrize("num_speculative_tokens", [1, 3, 10])
 @pytest.mark.parametrize("attn_backend", get_attn_backend_list_based_on_platform())
+# [中文注释] 测试EAGLE推测解码在最大模型长度限制下的正确处理
 def test_eagle_max_len(
     monkeypatch: pytest.MonkeyPatch, num_speculative_tokens: int, attn_backend: str
 ):

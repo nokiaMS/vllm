@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 确定性测试的公共工具：跳过标记、后端列表、模型解析、随机提示生成和 logprobs 提取
 import os
 import random
 
@@ -34,6 +35,7 @@ DEFAULT_MODEL = "Qwen/Qwen3-1.7B"
 MLA_MODEL = "deepseek-ai/DeepSeek-V2-Lite-Chat"
 
 
+# 根据后端类型解析对应的模型名称（MLA 后端使用 DeepSeek 模型）
 def resolve_model_name(backend: str) -> str:
     """Resolve the model name for the given backend."""
     model = os.getenv("VLLM_TEST_MODEL", DEFAULT_MODEL)
@@ -42,6 +44,7 @@ def resolve_model_name(backend: str) -> str:
     return model
 
 
+# 生成随机提示文本，支持指定词数范围，用于模拟多样化的输入场景
 def _random_prompt(min_words: int = 1024, max_words: int = 1024 * 2) -> str:
     # Generate more realistic prompts that will actually produce varied tokens
     # Use a mix of common English text patterns
@@ -88,6 +91,7 @@ def _random_prompt(min_words: int = 1024, max_words: int = 1024 * 2) -> str:
     return base_prompt
 
 
+# 从 RequestOutput 中提取每步的 logprobs 张量和对应的 token_ids
 def _extract_step_logprobs(request_output):
     if getattr(request_output, "outputs", None):
         inner = request_output.outputs[0]
@@ -104,5 +108,6 @@ def _extract_step_logprobs(request_output):
     return None, None
 
 
+# 检查当前 GPU 计算能力是否低于 SM90（Hopper 架构）
 def is_device_capability_below_90() -> bool:
     return not current_platform.has_device_capability(90)

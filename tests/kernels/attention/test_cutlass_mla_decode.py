@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试CUTLASS MLA解码注意力内核（需要SM100+即Blackwell架构）的计算正确性和性能
 import math
 import random
 
@@ -12,6 +13,7 @@ from vllm.triton_utils import triton
 from vllm.utils.platform_utils import num_compute_units
 
 
+# 计算两个张量的余弦差异并断言在阈值内
 def cal_diff(
     x: torch.Tensor,
     y: torch.Tensor,
@@ -39,6 +41,7 @@ CUTLASS_MLA_UNSUPPORTED_REASON = (
 )
 
 
+# 测试CUTLASS MLA解码内核与PyTorch参考实现的数值一致性和吞吐性能
 @pytest.mark.skipif(
     not current_platform.has_device_capability(100),
     reason=CUTLASS_MLA_UNSUPPORTED_REASON,

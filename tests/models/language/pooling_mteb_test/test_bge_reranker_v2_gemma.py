@@ -37,6 +37,7 @@ RERANK_MODELS = [
 PROMPT = "Given a query A and a passage B, determine whether the passage contains an answer to the query by providing a prediction of either 'Yes' or 'No'."  # noqa: E501
 
 
+# HuggingFace Gemma 重排序运行器：使用因果语言模型和 "Yes" token 的 logit 进行相关性评分
 class GemmaRerankerHfRunner(MtebCrossEncoderMixin, HfRunner):
     def __init__(
         self, model_name: str, dtype: str = "auto", *args: Any, **kwargs: Any
@@ -127,6 +128,7 @@ class GemmaRerankerHfRunner(MtebCrossEncoderMixin, HfRunner):
         return torch.Tensor(scores)
 
 
+# 测试 BGE-Reranker-v2-Gemma 模型在 MTEB 重排序基准上的性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
     mteb_test_rerank_models(

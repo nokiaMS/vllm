@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试DeepGEMM FP8 MQA（多查询注意力）logits计算内核的正确性
 import random
 
 import pytest
@@ -18,6 +19,7 @@ from vllm.utils.import_utils import has_deep_gemm
 from vllm.utils.math_utils import cdiv
 
 
+# 将KV缓存张量转换为FP8格式并附加per-block缩放因子
 def kv_cache_cast_to_fp8(x: torch.Tensor) -> torch.Tensor:
     # x: (num_blocks, block_size, 1, head_dim)
     num_blocks, block_size, num_heads, head_dim = x.shape
@@ -39,6 +41,7 @@ def kv_cache_cast_to_fp8(x: torch.Tensor) -> torch.Tensor:
     return x_fp8.view(num_blocks, block_size, num_heads, head_dim + 4)
 
 
+# 按指定维度将张量量化为FP8并返回缩放因子
 def per_custom_dims_cast_to_fp8(
     x: torch.Tensor, dims: tuple, use_ue8m0: bool
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -50,6 +53,7 @@ def per_custom_dims_cast_to_fp8(
     return x_scaled, sf.squeeze()
 
 
+# 生成用于上下文并行（CP）测试的序列起止索引
 def _generate_cp_test_data(seq_len: int, seq_len_kv: int):
     assert seq_len_kv % seq_len == 0 and seq_len % 2 == 0
     chunk_size = seq_len // 2
@@ -63,6 +67,7 @@ def _generate_cp_test_data(seq_len: int, seq_len_kv: int):
     return ks, ke
 
 
+# FP8 MQA logits计算的参考实现（使用掩码和ReLU加权求和）
 def _ref_fp8_mqa_logits(
     q: torch.Tensor,
     kv: torch.Tensor,
@@ -90,6 +95,7 @@ def _ref_fp8_mqa_logits(
     return logits
 
 
+# 测试DeepGEMM FP8 MQA logits内核与参考实现的一致性
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="CUDA only")
 @pytest.mark.skipif(not has_deep_gemm(), reason="DeepGEMM not available")
 @pytest.mark.skipif(
@@ -150,6 +156,7 @@ def test_deepgemm_fp8_mqa_logits(clean_logits: bool):
                 assert diff < 1e-3, f"{diff=}"
 
 
+# FP8分页MQA logits计算的参考实现（支持块表和因果掩码）
 def _ref_fp8_paged_mqa_logits(
     q: torch.Tensor,
     kv_cache: torch.Tensor,
@@ -200,6 +207,7 @@ def _ref_fp8_paged_mqa_logits(
     return logits
 
 
+# 测试DeepGEMM FP8分页MQA logits内核与参考实现的一致性
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="CUDA only")
 @pytest.mark.skipif(not has_deep_gemm(), reason="DeepGEMM not available")
 @pytest.mark.skipif(

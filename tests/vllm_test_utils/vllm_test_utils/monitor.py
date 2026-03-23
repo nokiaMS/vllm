@@ -11,6 +11,7 @@ from typing import Generic, TypeVar
 _T = TypeVar("_T")
 
 
+# [中文注释] 监控值数据类，存储值变化列表和对应的调用栈
 @dataclasses.dataclass
 class MonitoredValues(Generic[_T]):
     values: list[_T] = dataclasses.field(default_factory=list)
@@ -18,6 +19,7 @@ class MonitoredValues(Generic[_T]):
 
 
 @contextlib.contextmanager
+# [中文注释] 上下文管理器：持续监控值的变化，每次变化时记录值和调用栈
 def monitor(
     measure_func: Callable[[], _T],
 ) -> Generator[MonitoredValues[_T], None, None]:

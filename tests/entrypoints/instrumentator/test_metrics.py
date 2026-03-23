@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+# 测试 Prometheus 指标端点：指标计数值验证、指标名称存在性检查、
+# 请求中止后指标重置以及批处理模式下的指标可用性
+
 import asyncio
 import subprocess
 import sys

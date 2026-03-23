@@ -27,6 +27,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+# [中文注释] 测试AITER group_fp8_quant操作的fake实现是否正确定义
 def test_rocm_aiter_group_fp8_quant_fake_implementation():
     """Test that the fake implementation is correctly
     defined for torch.ops.vllm.rocm_aiter_group_fp8_quant."""
@@ -46,6 +47,7 @@ def test_rocm_aiter_group_fp8_quant_fake_implementation():
     )
 
 
+# [中文注释] 测试group_fp8_quant操作在torch.compile和CUDA graph模式下的正确性
 def test_rocm_aiter_group_fp8_quant_torch_compile_with_cudagraph():
     """Test that rocm_aiter_ops.group_fp8_quant
     with group size 128 can be used with
@@ -109,6 +111,7 @@ def test_rocm_aiter_group_fp8_quant_torch_compile_with_cudagraph():
     assert torch.allclose(scales_compiled_2, scales_eager_2, rtol=1e-3, atol=1e-3)
 
 
+# [中文注释] 测试group_fp8_quant在不同输入形状下的输出shape和dtype
 def test_rocm_aiter_group_fp8_quant_different_shapes():
     """Test rocm_aiter_ops.group_fp8_quant with different input shapes."""
     group_size = 128

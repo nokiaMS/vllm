@@ -12,6 +12,9 @@ from vllm.v1.worker.gpu.input_batch import InputBatch
 from vllm.v1.worker.gpu.states import RequestState
 
 
+# 池化运行器：负责从模型隐藏状态中提取句子/文档级嵌入
+# 当前仅支持decoder-only模型的"LAST"池化策略（取最后一个token的隐藏状态）
+# 输出经L2归一化，适用于语义相似度和检索任务
 # NOTE(woosuk): Currently, this class only supports the "LAST" pooling task
 # on decoder-only models. How to support other pooling tasks and models
 # is to be determined.
@@ -19,6 +22,7 @@ class PoolingRunner:
     def __init__(self, model: nn.Module):
         self.model = cast(VllmModelForPooling, model)
 
+    # 检查模型是否支持池化，返回支持的任务类型列表
     @staticmethod
     def get_supported_tasks(model: nn.Module) -> list[PoolingTask]:
         if not is_pooling_model(model):
@@ -26,6 +30,8 @@ class PoolingRunner:
         assert "embed" in model.pooler.get_supported_tasks()
         return ["embed"]
 
+    # 执行池化操作：提取每个请求最后一个token的隐藏状态并L2归一化
+    # 同时返回有效性掩码，仅当序列长度等于prompt长度时结果有效
     def pool(
         self,
         hidden_states: torch.Tensor,
@@ -41,6 +47,7 @@ class PoolingRunner:
         is_valid = input_batch.seq_lens == prompt_len
         return last_hidden_states, is_valid
 
+    # 虚拟池化运行：用于CUDA Graph捕获时的预热，仅执行归一化操作
     def dummy_pooler_run(self, hidden_states: torch.Tensor) -> None:
         F.normalize(hidden_states, p=2, dim=-1)
         return

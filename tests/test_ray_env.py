@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 Ray 环境变量传播：验证默认前缀匹配、用户自定义扩展、排除机制和边界情况]
 """Tests for vllm.ray.ray_env — env var propagation to Ray workers."""
 
 import os
@@ -12,6 +13,7 @@ from vllm.ray.ray_env import get_env_vars_to_copy
 # ---------------------------------------------------------------------------
 
 
+# [测试内置前缀（VLLM_, LMCACHE_, NCCL_ 等）的环境变量自动传播]
 class TestDefaultPrefixes:
     """Built-in prefixes (VLLM_, LMCACHE_, NCCL_, UCX_, HF_, HUGGING_FACE_)
     should be forwarded without any extra configuration."""
@@ -47,6 +49,7 @@ class TestDefaultPrefixes:
 # ---------------------------------------------------------------------------
 
 
+# [测试默认额外变量（如 PYTHONHASHSEED）始终包含在传播列表中]
 class TestDefaultExtraVars:
     """Individual vars listed in VLLM_RAY_EXTRA_ENV_VARS_TO_COPY's default."""
 
@@ -62,6 +65,7 @@ class TestDefaultExtraVars:
 # ---------------------------------------------------------------------------
 
 
+# [测试用户自定义的前缀和额外变量能叠加到默认配置上]
 class TestUserExtensions:
     """Users can add prefixes and extra vars at deploy time."""
 
@@ -98,6 +102,7 @@ class TestUserExtensions:
 # ---------------------------------------------------------------------------
 
 
+# [测试 exclude_vars 和 RAY_NON_CARRY_OVER_ENV_VARS 排除机制]
 class TestExclusion:
     """exclude_vars and RAY_NON_CARRY_OVER_ENV_VARS take precedence."""
 
@@ -121,6 +126,7 @@ class TestExclusion:
 # ---------------------------------------------------------------------------
 
 
+# [测试 additional_vars 参数支持平台特定的额外环境变量]
 class TestAdditionalVars:
     """The additional_vars parameter supports platform-specific vars."""
 
@@ -135,6 +141,7 @@ class TestAdditionalVars:
 # ---------------------------------------------------------------------------
 
 
+# [测试边界情况：前缀的严格 startswith 匹配、CSV 空白处理、用户扩展的叠加性]
 class TestEdgeCases:
     """Prefix matching should be strict (startswith, not contains)."""
 

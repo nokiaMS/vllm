@@ -17,6 +17,7 @@ from vllm.model_executor.models.bert import (
 # ---------------------------------------------------------------------
 
 
+# 测试 SPLADE 稀疏池化器：验证前向传播的输出与参考公式 log1p(relu(logits)) 的 max pooling 结果一致
 @pytest.mark.parametrize("B,T,H,V", [(2, 3, 5, 7)])
 @torch.inference_mode
 def test_splade_pooler_matches_reference_formula(B, T, H, V):

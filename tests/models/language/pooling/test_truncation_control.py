@@ -20,6 +20,7 @@ calculus, each contributing unique perspectives that would shape this new
 field."""
 
 
+# 测试较小的截断大小：验证 truncate_prompt_tokens 参数能将输入截断到指定的 token 数量
 def test_smaller_truncation_size(
     vllm_runner, model_name=MODEL_NAME, input_str=input_str
 ):
@@ -38,6 +39,7 @@ def test_smaller_truncation_size(
     assert len(prompt_tokens) == truncate_prompt_tokens
 
 
+# 测试最大截断大小：验证 truncate_prompt_tokens=-1 时将输入截断到 max_model_len
 def test_max_truncation_size(vllm_runner, model_name=MODEL_NAME, input_str=input_str):
     truncate_prompt_tokens = -1
 
@@ -54,6 +56,7 @@ def test_max_truncation_size(vllm_runner, model_name=MODEL_NAME, input_str=input
     assert len(prompt_tokens) == max_model_len
 
 
+# 测试超出上限的截断大小：验证 truncate_prompt_tokens 超过 max_model_len 时是否抛出 ValueError
 def test_bigger_truncation_size(
     vllm_runner, model_name=MODEL_NAME, input_str=input_str
 ):

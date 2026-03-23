@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 LLaVA-NeXT 模型的图像嵌入池化功能，对比 vLLM 与 HF 的嵌入输出
 
 import pytest
 import torch.nn.functional as F

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 内核测试通用工具集：提供注意力机制测试所需的QKV数据结构、打包/解包操作、
+# KV缓存构造、MoE专家参考实现、opcheck验证以及量化辅助函数
 """Kernel test utils"""
 
 import itertools
@@ -36,6 +38,7 @@ ALL_OPCHECK_TEST_UTILS: tuple[str, ...] = (
 )
 
 
+# 未打包的注意力QKV输入数据结构，包含query/key/value张量及其序列长度
 class QKVInputs(NamedTuple):
     """
     Data structure for representing unpacked attention inputs,
@@ -73,6 +76,7 @@ class QKVO(NamedTuple):
     ideal_output: torch.Tensor
 
 
+# 打包后的QKV输入数据结构，将填充序列压缩为连续token序列
 class PackedQKVInputs(NamedTuple):
     """
     Data structure for representing packed attention inputs
@@ -215,6 +219,7 @@ def make_causal_mask(
     return mask
 
 
+# 带掩码注意力的"黄金"参考实现，支持基础掩码和自定义因果掩码
 def ref_masked_attention(
     query: torch.Tensor,
     key: torch.Tensor,
@@ -278,6 +283,7 @@ def ref_masked_attention(
     return out
 
 
+# 构造QKV测试张量，生成完整/预填充/解码三组输入用于自注意力和交叉注意力测试
 def make_qkv(
     batch_size: int,
     max_q_seq_len: int,
@@ -414,6 +420,7 @@ def make_qkv(
     )
 
 
+# 将带填充的batch张量打包为无填充的连续token张量
 def pack_tensor(
     unpacked_tensor: torch.Tensor, seq_lens: list[int], device: torch.device | str
 ) -> tuple[torch.Tensor, list[int]]:
@@ -571,6 +578,7 @@ def _make_metadata_tensors(
     )
 
 
+# 创建指定规格的模拟KV缓存张量
 def make_kv_cache(
     num_blocks: int,
     num_heads: int,
@@ -683,6 +691,7 @@ def split_slot_mapping(
     )
 
 
+# 构造模拟的块表和槽位映射，用于KV缓存寻址测试
 def make_block_tables_slot_mapping(
     block_size: int,
     seq_lens: list[int],
@@ -823,6 +832,7 @@ def compute_max_diff(output, output_ref):
     )
 
 
+# MoE专家层的纯PyTorch参考实现，支持量化、分块量化和路由权重等模式
 def torch_experts(
     a: torch.Tensor,
     w1: torch.Tensor,
@@ -964,6 +974,7 @@ def torch_experts(
         )
 
 
+# MoE门控+专家前向的参考实现，使用softmax选择topk专家
 def torch_moe(
     a: torch.Tensor,
     w1: torch.Tensor,
@@ -1006,6 +1017,7 @@ def torch_moe_single(a, w, score, topk):
     return (out.view(B, -1, w.shape[1])).sum(dim=1)
 
 
+# [中文注释] 支持FP8类型的opcheck封装，使用修补的allclose函数验证自定义算子
 # A special version of op check that has a restricted default set of test_utils
 # and a patched version of allclose that supports fp8 types.
 def opcheck(
@@ -1041,6 +1053,7 @@ def to_int8(tensor: torch.Tensor):
     return torch.round(tensor.clamp(min=-128, max=127)).to(dtype=torch.int8)
 
 
+# 带分组广播缩放的矩阵乘法参考实现，支持N维分组量化
 def baseline_scaled_mm(
     a: torch.Tensor,
     b: torch.Tensor,

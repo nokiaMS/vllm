@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 ResponsesRequest.to_sampling_params() 的参数映射正确性
+
 """Unit tests for ResponsesRequest.to_sampling_params() parameter mapping."""
 
 import pytest
@@ -17,6 +19,7 @@ from vllm.entrypoints.openai.responses.protocol import (
 from vllm.sampling_params import StructuredOutputsParams
 
 
+# 测试 ResponsesRequest 到 SamplingParams 的参数转换
 class TestResponsesRequestSamplingParams:
     """Test that ResponsesRequest correctly maps parameters to SamplingParams."""
 

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 MoE 模型 LoRA 对齐求和操作的正确性
 import random
 
 import pytest

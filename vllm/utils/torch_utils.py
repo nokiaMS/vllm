@@ -29,6 +29,7 @@ else:
 logger = init_logger(__name__)
 
 
+# 字符串数据类型名称到 PyTorch dtype 的映射表，用于从配置字符串解析为实际的 torch 数据类型
 STR_DTYPE_TO_TORCH_DTYPE = {
     "float32": torch.float32,
     "half": torch.half,
@@ -43,6 +44,7 @@ STR_DTYPE_TO_TORCH_DTYPE = {
     "fp8_ds_mla": torch.uint8,
 }
 
+# PyTorch dtype 到 NumPy dtype 的映射表，用于在 torch 和 numpy 之间进行数据类型转换
 TORCH_DTYPE_TO_NUMPY_DTYPE = {
     torch.float16: np.float16,
     torch.float32: np.float32,
@@ -53,6 +55,7 @@ TORCH_DTYPE_TO_NUMPY_DTYPE = {
 }
 
 
+# NVIDIA ModelOpt 量化配置到 vLLM KV 缓存数据类型的映射表
 MODELOPT_TO_VLLM_KV_CACHE_DTYPE_MAP = {
     # TODO: Add more modelopt kv cache dtype
     # mappings here when it supported by some attention backend
@@ -63,6 +66,8 @@ MODELOPT_TO_VLLM_KV_CACHE_DTYPE_MAP = {
 T = TypeVar("T")
 
 
+# 严格连续性检查：不仅要求张量是连续的，还要求步长完全符合标准 C 连续布局（排除退化步长的情况）
+# 关键算法：从最后一维开始反向计算期望步长，逐维度与实际步长比较
 def is_strictly_contiguous(t: torch.Tensor) -> bool:
     """
     Check if tensor is contiguous AND has no degenerate strides.
@@ -93,6 +98,7 @@ def is_strictly_contiguous(t: torch.Tensor) -> bool:
     return True
 
 
+# 上下文管理器：临时切换 PyTorch 默认数据类型，退出时自动恢复
 @contextlib.contextmanager
 def set_default_torch_dtype(dtype: torch.dtype):
     """Sets the default torch dtype to the given dtype."""
@@ -102,6 +108,7 @@ def set_default_torch_dtype(dtype: torch.dtype):
     torch.set_default_dtype(old_dtype)
 
 
+# 上下文管理器：临时设置 PyTorch 线程数，默认从 OMP_NUM_THREADS 读取，退出时恢复原值
 @contextlib.contextmanager
 def set_default_torch_num_threads(num_threads: int | None = None):
     """
@@ -135,6 +142,8 @@ def set_default_torch_num_threads(num_threads: int | None = None):
         torch.set_num_threads(old_num_threads)
 
 
+# 上下文管理器：通过临时清空 CUDA_VISIBLE_DEVICES 防止意外的 CUDA 初始化
+# 设计思路：某些操作不应触发 CUDA 上下文创建，此守卫在代码块内屏蔽 GPU 可见性
 @contextlib.contextmanager
 def guard_cuda_initialization():
     """Avoid unexpected CUDA initialization."""
@@ -161,17 +170,20 @@ def guard_cuda_initialization():
             os.environ["CUDA_VISIBLE_DEVICES"] = old_value
 
 
+# 获取指定数据类型的字节大小
 def get_dtype_size(dtype: torch.dtype) -> int:
     """Get the size of the data type in bytes."""
     return torch.tensor([], dtype=dtype).element_size()
 
 
+# 获取数据类型的精度等级（bool=0, int=1, float=2, complex=3），用于判断类型转换是否无损
 # bool = 0, int = 1, float = 2, complex = 3
 def _get_precision_level(dtype: torch.dtype) -> int:
     # NOTE: Complex dtypes return `is_floating_point=False`
     return (dtype != torch.bool) + dtype.is_floating_point + dtype.is_complex * 2
 
 
+# 判断从 src_dtype 转换到 tgt_dtype 是否无损：先比较精度等级，再比较同等级内的范围和分辨率
 def is_lossless_cast(src_dtype: torch.dtype, tgt_dtype: torch.dtype):
     """
     Test whether it is lossless to cast a tensor from
@@ -204,6 +216,7 @@ def is_lossless_cast(src_dtype: torch.dtype, tgt_dtype: torch.dtype):
     )
 
 
+# 找到一组 dtype 的公共广播类型：选择能无损容纳最多其他类型的 dtype
 def common_broadcastable_dtype(dtypes: Collection[torch.dtype]):
     """
     Get the common `dtype` where all of the other `dtypes` can be
@@ -215,6 +228,7 @@ def common_broadcastable_dtype(dtypes: Collection[torch.dtype]):
     )
 
 
+# 生成随机 FP8 数据：先生成 float16 随机数再转换为 FP8，避免直接随机产生 NaN/Inf
 def _generate_random_fp8(
     tensor: torch.Tensor,
     low: float,
@@ -236,6 +250,7 @@ def _generate_random_fp8(
     del tensor_tmp
 
 
+# 将 KV 缓存的数据类型配置（字符串或 dtype）解析为 torch.dtype
 def get_kv_cache_torch_dtype(
     cache_dtype: str | torch.dtype | None,
     model_dtype: str | torch.dtype | None = None,
@@ -259,6 +274,7 @@ def get_kv_cache_torch_dtype(
     return torch_dtype
 
 
+# 从量化配置中提取 KV 缓存量化算法字符串，将各种 FP8 格式名映射为 vLLM 标准缓存 dtype 字符串
 def get_kv_cache_quant_algo_string(quant_cfg: dict[str, Any]) -> str | None:
     """Get the KV cache quantization algorithm string from the quantization config.
 
@@ -312,6 +328,7 @@ def get_kv_cache_quant_algo_string(quant_cfg: dict[str, Any]) -> str | None:
     return None
 
 
+# 从量化配置中提取 KV 缓存量化算法对应的 torch.dtype
 def get_kv_cache_quant_algo_dtype(quant_cfg: dict[str, Any]) -> torch.dtype | None:
     """Get the KV cache quantization algorithm dtype from the quantization config."""
     kv_algo_str = get_kv_cache_quant_algo_string(quant_cfg)
@@ -321,6 +338,7 @@ def get_kv_cache_quant_algo_dtype(quant_cfg: dict[str, Any]) -> torch.dtype | No
     return None
 
 
+# 将 "auto" 类型的 KV 缓存 dtype 配置解析为实际的字符串值（从模型量化配置中读取）
 def resolve_kv_cache_dtype_string(
     kv_cache_dtype: str, model_config: ModelConfig
 ) -> str:
@@ -342,6 +360,7 @@ def resolve_kv_cache_dtype_string(
     return "auto"
 
 
+# 将 KV 缓存 dtype 字符串转为 torch.dtype，"auto" 时使用模型的 dtype
 def kv_cache_dtype_str_to_dtype(
     kv_cache_dtype: str, model_config: ModelConfig
 ) -> torch.dtype:
@@ -351,6 +370,7 @@ def kv_cache_dtype_str_to_dtype(
     return STR_DTYPE_TO_TORCH_DTYPE[kv_cache_dtype]
 
 
+# 统一设置 Python、NumPy 和 PyTorch（含 CUDA）的随机种子，确保结果可复现
 def set_random_seed(seed: int | None) -> None:
     if seed is not None:
         random.seed(seed)
@@ -360,6 +380,7 @@ def set_random_seed(seed: int | None) -> None:
             torch.cuda.manual_seed_all(seed)
 
 
+# 创建用于 Flash Attention 的随机 KV 缓存（支持 NHD/HND 布局），返回 key_caches 和 value_caches 列表
 def create_kv_caches_with_random_flash(
     num_blocks: int,
     block_size: int,
@@ -400,6 +421,7 @@ def create_kv_caches_with_random_flash(
     return key_caches, value_caches
 
 
+# 创建用于 Paged Attention 的随机 KV 缓存（key 使用 5D 分块布局，value 使用 4D 布局）
 def create_kv_caches_with_random(
     num_blocks: int,
     block_size: int,
@@ -448,6 +470,7 @@ def create_kv_caches_with_random(
     return key_caches, value_caches
 
 
+# 异步将数据从主机(CPU)传输到设备(GPU)：先在 CPU 上创建 pinned memory 张量，再非阻塞拷贝
 def async_tensor_h2d(
     data: list,
     dtype: torch.dtype,
@@ -459,6 +482,7 @@ def async_tensor_h2d(
     return t.to(device=target_device, non_blocking=True)
 
 
+# 将不等长的二维列表填充为等长的 NumPy 数组，使用 pad 值补齐短行
 def make_ndarray_with_pad(
     x: list[list[T]],
     pad: T,
@@ -484,6 +508,7 @@ def make_ndarray_with_pad(
     return padded_x
 
 
+# 将不等长的二维列表填充为等长的 PyTorch 张量，先通过 NumPy 填充再转换为 torch.Tensor
 def make_tensor_with_pad(
     x: list[list[T]],
     pad: T,
@@ -509,6 +534,8 @@ def make_tensor_with_pad(
     return tensor
 
 
+# 以下代码 monkey-patch torch.cuda.set_stream，用线程局部变量缓存当前 CUDA 流
+# 目的：避免反复调用 torch.cuda.current_stream()（该调用每次都创建新的流对象，开销较大）
 prev_set_stream = torch.cuda.set_stream
 
 _current_stream_tls = threading.local()
@@ -522,11 +549,13 @@ def _patched_set_stream(stream: torch.cuda.Stream) -> None:
 torch.cuda.set_stream = _patched_set_stream
 
 
+# CPU 平台的流占位符，提供空的 synchronize() 方法以兼容流接口
 class _StreamPlaceholder:
     def __init__(self):
         self.synchronize = lambda: None
 
 
+# 获取当前 CUDA 流的高性能替代方案，避免 torch.cuda.current_stream() 的对象创建开销
 def current_stream() -> torch.cuda.Stream:
     """
     replace `torch.cuda.current_stream()` with `vllm.utils.current_stream()`.
@@ -576,6 +605,7 @@ def current_stream() -> torch.cuda.Stream:
 _aux_stream: torch.cuda.Stream | None = None
 
 
+# 获取全局辅助 CUDA 流（单例模式），用于 MoE 共享专家等后台并行操作
 def aux_stream() -> torch.cuda.Stream | None:
     """
     Ensures aux_stream is initialized only once
@@ -620,6 +650,7 @@ def _cuda_device_count_stateless(cuda_visible_devices: str | None = None) -> int
     return r
 
 
+# 无状态获取 CUDA 设备数量（基于 CUDA_VISIBLE_DEVICES 缓存结果），避免初始化 CUDA 上下文
 def cuda_device_count_stateless() -> int:
     """Get number of CUDA devices, caching based on the value of
     CUDA_VISIBLE_DEVICES at the time of call.
@@ -633,6 +664,7 @@ def cuda_device_count_stateless() -> int:
     return _cuda_device_count_stateless(envs.CUDA_VISIBLE_DEVICES)
 
 
+# 创建张量的弱引用：共享数据但不阻止原始张量被垃圾回收，用于减少内存占用
 def weak_ref_tensor(tensor: Any) -> Any:
     """
     Create a weak reference to a tensor.
@@ -646,6 +678,7 @@ def weak_ref_tensor(tensor: Any) -> Any:
         return tensor
 
 
+# 批量创建张量弱引用的便捷函数，支持单个张量、列表、元组和 IntermediateTensors
 def weak_ref_tensors(
     tensors: torch.Tensor
     | list[torch.Tensor]
@@ -674,6 +707,7 @@ def weak_ref_tensors(
     raise ValueError("Invalid type for tensors")
 
 
+# 通过统一虚拟寻址(UVA)获取 CPU 张量在加速器上的视图，支持 CUDA/ROCm/XPU 平台
 def get_accelerator_view_from_cpu_tensor(cpu_tensor: torch.Tensor) -> torch.Tensor:
     """
     Get an accelerator view of a CPU tensor using Unified Virtual Addressing (UVA).
@@ -697,6 +731,7 @@ def _is_torch_equal_or_newer(torch_version: str, target: str) -> bool:
     return version.parse(torch_version) >= version.parse(target)
 
 
+# 检查当前安装的 PyTorch 版本是否大于等于目标版本
 def is_torch_equal_or_newer(target: str) -> bool:
     """Check if the installed torch version is >= the target version.
 
@@ -725,6 +760,7 @@ def _is_torch_equal(target: str) -> bool:
     )
 
 
+# 检查当前安装的 PyTorch 版本是否精确匹配目标版本（忽略 dev/cu 等后缀）
 def is_torch_equal(target: str) -> bool:
     """Check if the installed torch version is == the target version.
 
@@ -748,6 +784,8 @@ else:
     OpaqueBase = object  # type: ignore[misc, assignment]
 
 
+# 模块名称包装类，用于 torch.compile 中作为不透明类型传递模块名
+# 设计思路：避免模块名被 torch.compile 当作常量内联，从而减少每层重新编译（特别是 MoE 场景）
 class ModuleName(OpaqueBase):  # type: ignore[misc]
     """Wraps a module name string for use as a torch opaque type.
 
@@ -789,6 +827,7 @@ def supports_xpu_graph() -> bool:
 vllm_lib = Library("vllm", "FRAGMENT")  # noqa
 
 
+# 直接注册 PyTorch 自定义算子并分发到指定后端，绕过 torch.library.custom_op 的复杂调度逻辑以减少开销
 def direct_register_custom_op(
     op_name: str,
     op_func: Callable,

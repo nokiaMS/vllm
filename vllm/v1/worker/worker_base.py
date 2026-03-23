@@ -30,6 +30,9 @@ logger = init_logger(__name__)
 _R = TypeVar("_R")
 
 
+# Worker 基类，为不同硬件平台（GPU、TPU、XPU 等）提供统一的工作进程接口
+# 定义了模型加载、推理执行、KV 缓存管理、LoRA 管理等核心抽象方法
+# 同时负责管理分布式通信的控制平面，如向其他 worker 传递请求元数据
 class WorkerBase:
     """Worker interface that allows vLLM to cleanly separate implementations for
     different hardware. Also abstracts control plane communication, e.g., to
@@ -171,6 +174,10 @@ class WorkerBase:
         return
 
 
+# Worker 包装器基类，代表执行器/引擎中的一个进程
+# 负责延迟初始化实际 Worker 实例，管理 Worker 的生命周期
+# 设计思路：先实例化 Wrapper（轻量级），待环境变量配置完成后再创建真正的 Worker
+# 支持动态注入 worker_extension_cls 以扩展 Worker 功能
 class WorkerWrapperBase:
     """
     This class represents one process in an executor/engine. It is responsible

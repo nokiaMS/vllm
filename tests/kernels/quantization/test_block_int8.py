@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试块级INT8量化矩阵乘法的正确性
 
 # Adapted from https://github.com/sgl-project/sglang/blob/main/test/srt/test_block_int8.py
 import itertools
@@ -28,12 +29,14 @@ BLOCK_SIZE = [[128, 128]]
 SEEDS = [0]
 
 
+# 设置CUDA为默认设备的模块级测试夹具
 @pytest.fixture(autouse=True, scope="module")
 def setup_cuda():
     """Sets the default CUDA device for all tests in this module."""
     torch.set_default_device("cuda")
 
 
+# 测试块级INT8矩阵乘法与原生参考实现的数值一致性
 @pytest.mark.parametrize(
     "M,N,K,block_size,out_dtype,seed",
     itertools.product(M, N, K, BLOCK_SIZE, DTYPES, SEEDS),

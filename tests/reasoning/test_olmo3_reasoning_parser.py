@@ -7,6 +7,7 @@ from transformers import AutoTokenizer
 from tests.reasoning.utils import run_reasoning_extraction
 from vllm.reasoning import ReasoningParser, ReasoningParserManager
 
+# [中文注释] OLMo3推理解析器测试：验证<think>/<\/think>标记的推理内容提取
 parser_name = "olmo3"
 START_REASONING = "<think>"
 END_REASONING = "</think>"
@@ -130,6 +131,7 @@ TEST_CASES = [
 tokenizer = AutoTokenizer.from_pretrained("allenai/dolma2-tokenizer")
 
 
+# [中文注释] 参数化测试OLMo3推理提取：包括空推理、换行和多行场景
 @pytest.mark.parametrize("streaming, param_dict", TEST_CASES)
 def test_reasoning(
     streaming: bool,

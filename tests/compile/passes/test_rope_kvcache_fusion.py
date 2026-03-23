@@ -40,6 +40,7 @@ VLLM_UNIFIED_KV_CACHE_UPDATE_OP = torch.ops.vllm.unified_kv_cache_update
 FP8_DTYPE = current_platform.fp8_dtype()
 
 
+# RoPE+KVCache 融合测试模型，包含旋转编码和统一 KV cache 更新
 class QKRoPEKVCacheTestModel(torch.nn.Module):
     def __init__(
         self,
@@ -212,6 +213,7 @@ class QKRoPEKVCacheTestModel(torch.nn.Module):
     not is_aiter_found_and_supported(),
     reason="Only test on ROCm with AITER installed and supported",
 )
+# 测试 RopeKVCacheFusionPass 将 RoPE 和 KV cache 更新融合为单一操作（仅 ROCm）
 def test_rope_kvcache_fusion(
     attn_backend: AttentionBackendEnum,
     enable_rope_custom_op: bool,

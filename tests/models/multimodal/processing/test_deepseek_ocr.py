@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 回归测试：验证 DeepSeek-OCR 在 images_crop 为空时的 TensorSchema 校验
 """
 Regression test for DeepSeek-OCR TensorSchema validation with empty images_crop.
 

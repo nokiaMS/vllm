@@ -7,6 +7,7 @@ import pytest
 MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
 
 
+# [中文注释] 测试vllm bench latency CLI命令，使用Llama模型验证延迟基准测试是否正常运行
 @pytest.mark.benchmark
 def test_bench_latency():
     command = [

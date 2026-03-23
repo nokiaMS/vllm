@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试DeepSeek MLA的FP8 KV缓存收集和反量化内核cp_gather_and_upconvert_fp8_kv_cache，
+# 验证NoPE段的FP8反量化和RoPE段的BF16拷贝在不同序列长度和块大小下的正确性
 import math
 
 import pytest
@@ -15,6 +17,7 @@ GROUP_SIZE = 128  # FP8 quantization group size (one scale per group)
 ENTRY_BYTES = 656  # 512 (FP8) + 16 (4×float32 scales) + 128 (64×BF16 RoPE)
 
 
+# 逐token构建合成FP8缓存和预期BF16输出（适用于短序列）
 def _build_test_case(seq_lens, block_size, seed=42):
     """Build a synthetic FP8 cache and compute the expected BF16 output.
 
@@ -128,6 +131,7 @@ def _build_test_case(seq_lens, block_size, seed=42):
     )
 
 
+# 向量化构建合成FP8缓存（适用于大序列长度，避免逐token Python循环）
 def _build_test_case_fast(seq_lens, block_size, seed=42):
     """Vectorized test-case builder for large sequence lengths.
 
@@ -227,6 +231,7 @@ def _build_test_case_fast(seq_lens, block_size, seed=42):
         ([64] * 16, 64),  # 16 reqs, shorter prefills
     ],
 )
+# 测试FP8 KV缓存收集和反量化内核在多种序列长度和请求数下的正确性
 def test_cp_gather_and_upconvert_fp8_kv_cache(seq_lens, block_size):
     """Core correctness test: build cache, run kernel, compare output."""
     (
@@ -257,6 +262,7 @@ def test_cp_gather_and_upconvert_fp8_kv_cache(seq_lens, block_size):
     assert torch.equal(dst[:, NOPE_DIM:], expected[:, NOPE_DIM:])
 
 
+# 测试物理块非连续和乱序分配时内核是否正确跟随块表映射
 def test_cp_gather_fp8_shuffled_blocks():
     """Test that the kernel correctly follows the block table when
     physical blocks are non-contiguous and out of order.
@@ -336,6 +342,7 @@ def test_cp_gather_fp8_shuffled_blocks():
         ([128000], 64),
     ],
 )
+# 测试大序列长度（8K-128K预填充）下内核的正确性
 def test_cp_gather_fp8_large_seqlens(seq_lens, block_size):
     """Correctness test with large sequence lengths matching benchmark
     scenarios (8K-128K prefill)."""

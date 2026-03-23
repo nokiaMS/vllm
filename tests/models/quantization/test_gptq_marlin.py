@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试GPTQ与Marlin量化后端的输出一致性，验证top-k token选择的匹配度
 """Compares the outputs of gptq vs gptq_marlin.
 
 Note: GPTQ and Marlin do not have bitwise correctness.

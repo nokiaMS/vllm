@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 OpenAI 格式工具解析器的端到端集成，包括流式推理、多工具调用和 JSON Schema 验证
+
 import json
 
 import jsonschema
@@ -126,6 +128,7 @@ FUNC_ARGS_TIME = '{"city": "New York"}'
 # ==========================================================
 # Utility to extract reasoning and tool calls
 # ==========================================================
+# 从流式响应块中提取推理文本和工具调用参数
 def extract_reasoning_and_calls(chunks: list) -> tuple[str, list[str], list[str]]:
     """
     Extract accumulated reasoning text and tool call arguments
@@ -162,6 +165,7 @@ def extract_reasoning_and_calls(chunks: list) -> tuple[str, list[str], list[str]
 # ==========================================================
 # Test Scenarios
 # ==========================================================
+# 测试计算器工具调用的触发和参数准确性
 @pytest.mark.asyncio
 async def test_calculator_tool_call_and_argument_accuracy(client: openai.AsyncOpenAI):
     """Verify calculator tool call is made and arguments are accurate."""
@@ -202,6 +206,7 @@ async def test_calculator_tool_call_and_argument_accuracy(client: openai.AsyncOp
     )
 
 
+# 测试流式推理中 get_time 工具调用和推理内容的正确性
 @pytest.mark.asyncio
 async def test_streaming_tool_call_get_time_with_reasoning(client: openai.AsyncOpenAI):
     """Verify streamed reasoning and tool call behavior for get_time."""
@@ -230,6 +235,7 @@ async def test_streaming_tool_call_get_time_with_reasoning(client: openai.AsyncO
     )
 
 
+# 测试流式响应中多工具并行调用和推理内容
 @pytest.mark.asyncio
 async def test_streaming_multiple_tools(client: openai.AsyncOpenAI):
     """Test streamed multi-tool response with reasoning."""
@@ -256,6 +262,7 @@ async def test_streaming_multiple_tools(client: openai.AsyncOpenAI):
         print(f"ERROR: {e}")
 
 
+# 测试模糊指令不应触发工具调用
 @pytest.mark.asyncio
 async def test_invalid_tool_call(client: openai.AsyncOpenAI):
     """
@@ -281,6 +288,7 @@ async def test_invalid_tool_call(client: openai.AsyncOpenAI):
     )
 
 
+# 测试非确定性采样温度下模型仍能产生有效工具调用或文本输出
 @pytest.mark.asyncio
 async def test_tool_call_with_temperature(client: openai.AsyncOpenAI):
     """
@@ -305,6 +313,7 @@ async def test_tool_call_with_temperature(client: openai.AsyncOpenAI):
     print(f"Text: {message.content}")
 
 
+# 测试工具调用参数是否符合其声明的 JSON Schema
 @pytest.mark.asyncio
 async def test_tool_response_schema_accuracy(client: openai.AsyncOpenAI):
     """Validate that tool call arguments adhere to their declared JSON schema."""
@@ -338,6 +347,7 @@ async def test_tool_response_schema_accuracy(client: openai.AsyncOpenAI):
         jsonschema.validate(instance=args, schema=schema)
 
 
+# 测试不同温度参数下模型输出的语义一致性
 @pytest.mark.asyncio
 async def test_semantic_consistency_with_temperature(client: openai.AsyncOpenAI):
     """Test that temperature variation doesn't cause contradictory reasoning."""

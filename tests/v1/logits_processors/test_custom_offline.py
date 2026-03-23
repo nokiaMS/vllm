@@ -42,6 +42,7 @@ sampling_params_list = [
 ]
 
 
+# [中文注释] 辅助函数：比较加载自定义logit处理器的LLM实例与参考实例的输出。
 def _run_test(kwargs: dict, logitproc_loaded: bool) -> None:
     """Compare `LLM` instance initialized with specified `kwargs` against
     reference `LLM` instance.
@@ -102,6 +103,7 @@ def _run_test(kwargs: dict, logitproc_loaded: bool) -> None:
 
 @create_new_process_for_each_test()
 @pytest.mark.parametrize("logitproc_source", list(CustomLogitprocSource))
+# [中文注释] 测试用例：验证通过入口点/FQCN/类对象加载自定义logit处理器的离线LLM接口。
 def test_custom_logitsprocs(monkeypatch, logitproc_source: CustomLogitprocSource):
     """Test offline Python interface for passing custom logitsprocs
 
@@ -167,6 +169,7 @@ def test_custom_logitsprocs(monkeypatch, logitproc_source: CustomLogitprocSource
 
 
 @create_new_process_for_each_test()
+# [中文注释] 测试用例：验证按请求自定义logit处理器的离线LLM接口。
 def test_custom_logitsprocs_req(monkeypatch):
     """Test passing request-level logits processor to offline Python interface
 
@@ -209,6 +212,7 @@ def test_custom_logitsprocs_req(monkeypatch):
         CustomLogitprocSource.LOGITPROC_SOURCE_CLASS,
     ],
 )
+# [中文注释] 测试用例：验证pooling和投机解码模型正确拒绝自定义logit处理器。
 def test_rejects_custom_logitsprocs(
     monkeypatch, model_scenario: str, logitproc_source: CustomLogitprocSource
 ):

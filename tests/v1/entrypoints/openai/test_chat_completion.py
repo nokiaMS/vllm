@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试OpenAI Chat Completion API：无效JSON schema、无效正则、无效语法和空语法的错误处理
 
 import openai  # use the official client for correctness check
 import pytest
@@ -40,6 +41,7 @@ async def client(server):
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试无效JSON schema输入返回错误
 async def test_invalid_json_schema(client: openai.AsyncOpenAI, model_name: str) -> None:
     invalid_json_schema = {
         "$defs": {
@@ -81,6 +83,7 @@ async def test_invalid_json_schema(client: openai.AsyncOpenAI, model_name: str) 
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试无效正则表达式输入返回错误
 async def test_invalid_regex(client: openai.AsyncOpenAI, model_name: str):
     prompt = (
         "Generate an email address for Alan Turing, who works in Enigma."
@@ -106,6 +109,7 @@ async def test_invalid_regex(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试无效语法输入返回错误
 async def test_invalid_grammar(client: openai.AsyncOpenAI, model_name: str):
     invalid_simplified_sql_grammar = """
         root ::= select_statementinvalidsyntax
@@ -145,6 +149,7 @@ async def test_invalid_grammar(client: openai.AsyncOpenAI, model_name: str):
     "model_name",
     [MODEL_NAME],
 )
+# [中文注释] 测试空语法字符串输入返回错误
 async def test_empty_grammar(client: openai.AsyncOpenAI, model_name: str) -> None:
     prompt = "Say hello"
     with pytest.raises((openai.BadRequestError, openai.APIError)):

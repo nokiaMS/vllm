@@ -10,6 +10,9 @@ from tests.v1.attention.utils import BatchSpec, create_common_attn_metadata
 from vllm.v1.attention.backends.utils import make_local_attention_virtual_batches
 
 
+# 测试分块局部注意力的虚拟批次生成逻辑，验证查询和键值序列长度及局部块表的正确性
+
+# 局部注意力测试数据定义：输入参数和期望的输出值
 @dataclass
 class LocalAttentionTestData:
     # Input parameters

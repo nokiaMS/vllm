@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试gemma-3n模型的KV共享快速预填充功能，验证启用/禁用时生成结果的正确性
 
 import random
 
@@ -15,6 +16,7 @@ from ....utils import check_answers, fork_new_process_for_each_test, prep_prompt
 SEED = 42
 
 
+# [中文注释] 生成测试用的提示词列表，包含重复单词和造句两种类型
 @pytest.fixture
 def test_prompts():
     """
@@ -49,6 +51,7 @@ use_fork_for_test = (
 )
 
 
+# [中文注释] 测试KV共享快速预填充在eager和编译模式下的正确性
 @use_fork_for_test
 @pytest.mark.parametrize("kv_sharing_fast_prefill", [False, True])
 @pytest.mark.parametrize("enforce_eager", [True, False])

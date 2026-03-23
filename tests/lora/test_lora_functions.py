@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 LoRA 辅助函数（权重转换、配置解析等）
 """
 Script to test add_lora, remove_lora, pin_lora, list_loras functions.
 """

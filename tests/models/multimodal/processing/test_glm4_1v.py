@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 GLM-4.1V 视觉语言模型的多模态预处理，验证每帧 token 数和视频处理的正确性
 
 import pytest
 

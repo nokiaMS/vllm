@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试自定义 AllReduce 通信操作（包括 eager 模式和 CUDA Graph 模式）
 
 import random
 

@@ -50,10 +50,12 @@ _empty_model_meta = ModelMeta(
 )
 
 
+# MTEB 交叉编码器的混入类：提供 MTEB 评估所需的模型元数据
 class MtebCrossEncoderMixin(mteb.CrossEncoderProtocol):
     mteb_model_meta = _empty_model_meta
 
 
+# vLLM MTEB 交叉编码器：将 vLLM 模型封装为 MTEB 重排序评估兼容的交叉编码器
 class VllmMtebCrossEncoder(MtebCrossEncoderMixin):
     def __init__(self, vllm_model):
         self.llm = vllm_model
@@ -88,6 +90,7 @@ class VllmMtebCrossEncoder(MtebCrossEncoderMixin):
         return scores
 
 
+# 评分 API 客户端 MTEB 编码器：通过 HTTP 评分接口进行 MTEB 重排序评估
 class ScoreClientMtebEncoder(MtebCrossEncoderMixin):
     mteb_model_meta = _empty_model_meta
 
@@ -125,6 +128,7 @@ class ScoreClientMtebEncoder(MtebCrossEncoderMixin):
         return response["data"][0]["score"]
 
 
+# 重排序 API 客户端 MTEB 编码器：通过 HTTP 重排序接口进行 MTEB 评估
 class RerankClientMtebEncoder(ScoreClientMtebEncoder):
     def get_score(self, query, corpus):
         response = requests.post(
@@ -139,6 +143,7 @@ class RerankClientMtebEncoder(ScoreClientMtebEncoder):
         return response["results"][0]["relevance_score"]
 
 
+# HuggingFace MTEB 交叉编码器：将 HF 模型封装为 MTEB 评估兼容的交叉编码器，支持聊天模板
 class HFMtebCrossEncoder(MtebCrossEncoderMixin, HfRunner):
     chat_template: str | None = None
 
@@ -183,6 +188,7 @@ class HFMtebCrossEncoder(MtebCrossEncoderMixin, HfRunner):
             return outputs_tensor.cpu().numpy()
 
 
+# 辅助函数：运行 MTEB 重排序任务评估，先用 BM25 检索再用交叉编码器重排序
 def run_mteb_rerank(cross_encoder: mteb.CrossEncoderProtocol, tasks, languages):
     with tempfile.TemporaryDirectory() as prediction_folder:
         bm25s = mteb.get_model("bm25s")
@@ -224,6 +230,7 @@ def run_mteb_rerank(cross_encoder: mteb.CrossEncoderProtocol, tasks, languages):
     return main_score
 
 
+# 核心测试函数：对重排序模型执行完整的 MTEB 评估流程，包括配置验证和分数对比
 def mteb_test_rerank_models(
     vllm_runner,
     model_info: RerankModelInfo,

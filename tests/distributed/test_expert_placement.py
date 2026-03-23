@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试专家放置策略（round_robin），验证专家到 GPU 的映射关系
 
 import pytest
 

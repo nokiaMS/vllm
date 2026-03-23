@@ -6,6 +6,7 @@ from vllm.v1.executor import UniProcExecutor
 from vllm.v1.worker.worker_base import WorkerWrapperBase
 
 
+# 用于 RunAI 流式加载器测试的虚拟执行器，支持在测试中进行 monkey-patch
 # This is a dummy executor for patching in test_runai_model_streamer_s3.py.
 # We cannot use vllm_runner fixture here, because it spawns worker process.
 # The worker process reimports the patched entities, and the patch is not applied.

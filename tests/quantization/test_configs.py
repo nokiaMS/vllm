@@ -13,6 +13,8 @@ from vllm.config import ModelConfig
 from vllm.platforms import current_platform
 
 
+# 测试 AutoGPTQ/AutoAWQ 量化配置的自动检测和 Marlin 格式兼容性
+
 @dataclass
 class ModelPair:
     model_marlin: str

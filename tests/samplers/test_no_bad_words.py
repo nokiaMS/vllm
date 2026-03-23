@@ -11,6 +11,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
 
+# [中文注释] 辅助函数：使用指定bad_words参数生成token并返回输出token ID列表
 def _generate(
     llm: LLM,
     prompt: str,
@@ -34,6 +35,7 @@ def _generate(
     return output_token_ids
 
 
+# [中文注释] 测试单token bad_words过滤：验证指定token被排除在生成结果之外
 class TestOneTokenBadWord:
     MODEL = "hmellor/tiny-random-LlamaForCausalLM"
 
@@ -68,6 +70,7 @@ class TestOneTokenBadWord:
         return self.tokenizer(prompt, add_special_tokens=add_special_tokens).input_ids
 
 
+# [中文注释] 测试双token bad_words过滤：验证多token序列和组合bad_words的正确屏蔽
 class TestTwoTokenBadWord:
     # Another model (with a different tokenizer behaviour)
     MODEL = "distilbert/distilgpt2"

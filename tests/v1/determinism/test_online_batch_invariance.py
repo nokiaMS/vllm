@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 在线批次不变性测试：通过 HTTP 接口向 vLLM 服务器发送请求，比较 BS=1 与 BS=N 的结果一致性
 """
 HTTP-based batch invariance test: send requests to a running
 vLLM server and compare BS=1 vs BS=N results (tokens and per-step logprobs).
@@ -22,6 +23,7 @@ from utils import BACKENDS, _random_prompt, resolve_model_name, skip_unsupported
 from tests.utils import RemoteOpenAIServer
 
 
+# 发送补全请求到 OpenAI 兼容接口，支持重试机制
 def _request_completion(
     client: openai.OpenAI,
     model: str,
@@ -50,6 +52,7 @@ def _request_completion(
     return None
 
 
+# 从补全响应中提取 token 列表和对应的 logprobs
 def _extract_tokens_and_logprobs(
     choice: dict[str, Any],
 ) -> tuple[list[Any], list[float] | None]:
@@ -62,6 +65,7 @@ def _extract_tokens_and_logprobs(
     return tokens, token_logprobs
 
 
+# 在单进程中对比 BS=1 逐条请求与 BS=N 批量请求的 token 和 logprobs 一致性
 def _compare_bs1_vs_bsn_single_process(
     prompts: list[str],
     sp_kwargs: dict[str, Any],
@@ -133,6 +137,7 @@ def _compare_bs1_vs_bsn_single_process(
                 )
 
 
+# 端到端在线测试：启动 vLLM 服务器并验证 BS=1 与 BS=N 的 logprobs 按位一致
 @skip_unsupported
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_logprobs_bitwise_batch_invariance_bs1_vs_bsN(

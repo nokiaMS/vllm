@@ -6,6 +6,7 @@ import torch
 from vllm.multimodal.inputs import PlaceholderRange
 
 
+# [中文注释] 测试PlaceholderRange.get_num_embeds：根据is_embed掩码计算嵌入数量
 @pytest.mark.parametrize(
     "is_embed,expected",
     [
@@ -22,6 +23,7 @@ def test_placeholder_range_get_num_embeds(is_embed, expected):
     assert pr.get_num_embeds() == expected
 
 
+# [中文注释] 测试PlaceholderRange.embeds_cumsum：计算嵌入的累积和并验证缓存属性
 @pytest.mark.parametrize(
     "is_embed,expected",
     [

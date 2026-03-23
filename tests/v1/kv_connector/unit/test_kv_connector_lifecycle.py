@@ -15,6 +15,7 @@ from vllm.v1.worker.kv_connector_model_runner_mixin import KVConnectorModelRunne
 from .utils import create_vllm_config
 
 
+# [中文注释] 辅助函数：创建空的SchedulerOutput，用于测试元数据绑定/清理。
 def _make_empty_scheduler_output():
     return SchedulerOutput(
         scheduled_new_reqs=[],
@@ -30,6 +31,7 @@ def _make_empty_scheduler_output():
     )
 
 
+# [中文注释] 测试用例：验证KVConnectorModelRunnerMixin正确绑定和清理连接器元数据。
 def test_kv_connector_mixin_clears_metadata():
     vllm_config = create_vllm_config()
     vllm_config.kv_transfer_config.kv_connector = "TestExampleConnector"

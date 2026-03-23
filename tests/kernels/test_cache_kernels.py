@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试KV缓存相关CUDA内核，验证gather_and_maybe_dequant_cache在边界条件下的正确性
 """Unit tests for CUDA kernels in cache_kernels.cu."""
 
 import pytest
@@ -14,6 +15,7 @@ except ImportError:
 
 
 @pytest.mark.skipif(torch.accelerator.device_count() < 1, reason="Need CUDA device")
+# 测试gather_and_maybe_dequant_cache内核在越界block_table访问时不崩溃（Issue #27909）
 def test_gather_cache_oob():
     """
     Tests for OOB read in gather_and_maybe_dequant_cache (Issue #27909).

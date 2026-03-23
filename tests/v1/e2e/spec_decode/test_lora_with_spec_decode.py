@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件测试LoRA适配器与推测解码结合时的批量推理正确性
 """
 This script contains:
 1. test lora with speculative decoding for batch inference
@@ -38,6 +39,7 @@ Numbers should be represented as integers only.
 SEED = 42
 
 
+# [中文注释] 测试纯LoRA与LoRA+推测解码的输出一致性，预期至少90%匹配
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="CUDA not available")
 @pytest.mark.parametrize(
     "model_setup",

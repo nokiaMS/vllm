@@ -17,6 +17,7 @@ from .utils import (
 # test: request a chat completion that should return tool calls, so we know they
 # are parsable
 @pytest.mark.asyncio
+# [中文注释] 测试单次工具调用的正确性（非流式和流式），验证函数名、参数解析及流式结果一致性
 async def test_tool_call_and_choice(client: openai.AsyncOpenAI):
     models = await client.models.list()
     model_name: str = models.data[0].id
@@ -144,6 +145,7 @@ async def test_tool_call_and_choice(client: openai.AsyncOpenAI):
 # test: providing tools and results back to model to get a non-tool response
 # (streaming/not)
 @pytest.mark.asyncio
+# [中文注释] 测试将工具调用结果回传模型后获取文本响应（非流式和流式），验证响应包含温度数据
 async def test_tool_call_with_results(client: openai.AsyncOpenAI):
     models = await client.models.list()
     model_name: str = models.data[0].id

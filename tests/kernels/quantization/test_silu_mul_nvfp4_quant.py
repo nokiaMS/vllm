@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试SiLU激活乘法与NVFP4量化融合操作的正确性（需要Blackwell SM100+）
 import pytest
 import torch
 
@@ -27,6 +28,7 @@ SHAPES = [(128, 256), (128, 128), (256, 256), (256, 128)]
 BLOCK_SIZE = 16
 
 
+# 测试SiLU激活乘法与NVFP4量化融合内核与分步操作的数值一致性
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("shape", SHAPES)
 @torch.inference_mode()

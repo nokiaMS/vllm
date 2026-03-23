@@ -11,6 +11,7 @@ from vllm.config import CompilationConfig, CompilationMode, CUDAGraphMode
 from .common import FUSION_LOG_PATTERNS, AttentionBackendCase, Matches
 
 
+# 使用指定编译配置运行 LLM 推理，用于 E2E 融合测试
 def run_model(compile_config: int | CompilationConfig, model: str, **model_kwargs):
     """Run a model with the given compilation config for E2E fusion tests."""
     compilation_config = (
@@ -53,6 +54,7 @@ def run_model(compile_config: int | CompilationConfig, model: str, **model_kwarg
     )
 
 
+# E2E 融合测试 fixture，运行模型后从日志验证各融合 pass 的匹配数量
 @pytest.fixture
 def run_e2e_fusion_test(monkeypatch, caplog_mp_spawn):
     def run(

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试随机种子行为：验证 seed_everything 能让 random、numpy、torch 生成可重复结果]
 import random
 
 import numpy as np
@@ -8,6 +9,7 @@ import torch
 from vllm.platforms.interface import Platform
 
 
+# [测试设置相同种子后，random/numpy/torch 三个库生成的随机数完全一致]
 def test_seed_behavior():
     # Test with a specific seed
     Platform.seed_everything(42)

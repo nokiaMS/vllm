@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试FlashInfer FP8缩放矩阵乘法内核的正确性（需要Blackwell SM100+）
 import pytest
 import torch
 
@@ -24,6 +25,7 @@ SEEDS = [42]
 CUDA_DEVICES = ["cuda:0"]
 
 
+# 测试FlashInfer FP8 GEMM在含/不含偏置和自动调优模式下的正确性
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("shape", SHAPES)
 @pytest.mark.parametrize("use_bias", [True, False])

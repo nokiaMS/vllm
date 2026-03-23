@@ -12,6 +12,7 @@ import torch
 from vllm.model_executor.layers.fused_moe.utils import count_expert_num_tokens
 
 
+# [中文注释] 测试张量容器：包含topk_ids和expert_map，用于专家token计数测试
 @dataclasses.dataclass
 class TestTensors:
     topk_ids: torch.Tensor
@@ -50,6 +51,7 @@ class TestTensors:
         return TestTensors(topk_ids=self.topk_ids.clone(), expert_map=expert_map)
 
 
+# [中文注释] 参考实现：使用Python循环统计每个专家分配到的token数量
 def ref_impl(tt: TestTensors, expert_num_tokens: torch.Tensor):
     # do the reference in cpu
     tt.to_device("cpu")
@@ -65,6 +67,7 @@ def ref_impl(tt: TestTensors, expert_num_tokens: torch.Tensor):
         expert_num_tokens[eid] += count
 
 
+# [中文注释] 核心测试逻辑：比较CUDA内核与参考实现的专家token计数结果
 def do_test_compute_expert_num_tokens(
     num_tokens: int,
     num_topk: int,
@@ -115,6 +118,7 @@ def do_test_compute_expert_num_tokens(
 @pytest.mark.parametrize("num_experts", [64])
 @pytest.mark.parametrize("ep_size", [1, 2, 4])
 @pytest.mark.parametrize("topk_ids_dtype", [torch.int64])
+# [中文注释] 测试compute_expert_num_tokens在不同token数、专家数和topk配置下的正确性
 def test_compute_expert_num_tokens(
     num_tokens: int,
     num_topk: int,
@@ -131,6 +135,7 @@ def test_compute_expert_num_tokens(
 @pytest.mark.parametrize("num_experts", [32])
 @pytest.mark.parametrize("ep_size", [2])
 @pytest.mark.parametrize("topk_ids_dtype", [torch.int64])
+# [中文注释] 测试从numel计算专家token数量的功能（带expert_map映射）
 def test_compute_expert_num_tokens_from_numel(
     numel: int, num_experts: int, ep_size: int, topk_ids_dtype: torch.dtype
 ):

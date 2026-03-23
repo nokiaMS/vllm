@@ -24,6 +24,9 @@ from vllm.v1.attention.backends.mamba_attn import (
 from vllm.v1.kv_cache_interface import MambaSpec
 
 
+# 回归测试：验证 update_block_table 将 block_idx 张量正确复制到当前构建器的持久缓冲区
+
+# 用于测试的最小具体 Mamba 元数据构建器子类
 class _ConcreteMambaBuilder(
     BaseMambaAttentionMetadataBuilder[BaseMambaAttentionMetadata]
 ):
@@ -32,6 +35,7 @@ class _ConcreteMambaBuilder(
     metadata_cls = BaseMambaAttentionMetadata
 
 
+# 创建最小模拟 VllmConfig，仅包含构建器需要访问的字段
 def _make_vllm_config(block_size, max_model_len, max_num_seqs):
     """Create a minimal mock VllmConfig with only the fields the builder
     accesses, avoiding any model download / HF config inspection."""

@@ -51,6 +51,7 @@ NUM_MAPPINGS = [3]
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("device", CUDA_DEVICES)
 @torch.inference_mode()
+# [中文注释] 测试用例：验证CpuGpuOffloadingHandlers在不同后端、块大小和层数下的GPU/CPU双向传输正确性。
 def test_transfer(
     default_vllm_config,
     gpu_to_cpu: bool,

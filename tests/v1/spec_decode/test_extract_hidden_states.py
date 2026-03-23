@@ -28,6 +28,7 @@ from vllm.v1.worker.gpu_input_batch import CachedRequestState, InputBatch
 model_dir = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
 
+# [中文注释] 辅助函数：创建ExtractHiddenStates提议器实例用于测试
 def _create_proposer(
     num_speculative_tokens: int = 1,
     layer_ids: list[int] | None = None,
@@ -68,6 +69,7 @@ def _create_proposer(
     return ExtractHiddenStatesProposer(vllm_config=vllm_config, device=device)
 
 
+# [中文注释] 测试ExtractHiddenStates提议器的初始化和隐藏层ID设置
 def test_proposer_initialization():
     """Test that the proposer initializes correctly with the right parameters."""
     layer_ids = [1, 2, 3, 4]
@@ -86,6 +88,7 @@ def test_proposer_initialization():
     assert proposer.hidden_states.shape == expected_shape
 
 
+# [中文注释] 测试缺少层ID时提议器初始化的错误处理
 def test_proposer_initialization_missing_layer_ids():
     """Test that initialization fails when layer_ids are not provided."""
     model_config = ModelConfig(model=model_dir, runner="generate", max_model_len=100)
@@ -121,6 +124,7 @@ def test_proposer_initialization_missing_layer_ids():
         ExtractHiddenStatesProposer(vllm_config=vllm_config, device=device)
 
 
+# [中文注释] 测试带填充的下一个token ID准备逻辑
 def test_prepare_next_token_ids_padded():
     """
     Test for prepare_next_token_ids_padded with extract_hidden_states.
@@ -198,6 +202,7 @@ def test_prepare_next_token_ids_padded():
     assert torch.equal(valid_sampled_tokens_count, expected_valid_sampled_tokens_count)
 
 
+# [中文注释] 测试ExtractHiddenStates提议器的token提议功能
 def test_propose():
     """
     Test the propose() method of ExtractHiddenStatesProposer.
@@ -288,6 +293,7 @@ def test_propose():
 
 
 @pytest.mark.parametrize("num_hidden_layers", [1, 4, 8])
+# [中文注释] 参数化测试：验证不同隐藏层数量下的提议功能
 def test_propose_different_layer_counts(num_hidden_layers):
     """Test that propose works correctly with different numbers of hidden layers."""
     device = torch.device(current_platform.device_type)

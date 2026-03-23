@@ -46,6 +46,7 @@ from vllm.v1.structured_output import StructuredOutputManager
 EOS_TOKEN_ID = 50256
 
 
+# [中文注释] 辅助函数：断言调度器为空状态（无请求、无泄漏），验证资源清理是否完整。
 def assert_scheduler_empty(scheduler: Scheduler):
     """Confirm the scheduler is "empty" - i.e. no leaks."""
     # Scheduler Metadata.
@@ -85,6 +86,7 @@ def assert_scheduler_empty(scheduler: Scheduler):
         assert block.ref_cnt == 0
 
 
+# [中文注释] 辅助函数：创建用于测试的VllmConfig配置对象，包含模型、调度器、缓存和KV传输配置。
 def create_vllm_config(
     model: str = "facebook/opt-125m",
     max_num_seqs: int = 16,
@@ -140,6 +142,7 @@ def create_vllm_config(
     )
 
 
+# [中文注释] 辅助函数：根据VllmConfig初始化测试用调度器实例。
 def create_scheduler(
     vllm_config: VllmConfig,
     num_blocks: int = 10000,
@@ -181,6 +184,7 @@ _request_count = count(1)
 _none_hash_initialized = False
 
 
+# [中文注释] 辅助函数：创建用于测试的虚拟请求，支持远程decode/prefill配置。
 def create_request(
     request_id: int | None = None,
     num_tokens: int = 10,
@@ -239,6 +243,7 @@ def create_request(
     return req
 
 
+# [中文注释] 辅助函数：创建测试用的ModelRunnerOutput，包含采样token和KV连接器输出。
 def create_model_runner_output(
     reqs: list[Request],
     finished_sending: set[str] | None = None,
@@ -283,6 +288,7 @@ def create_model_runner_output(
     )
 
 
+# [中文注释] 测试用ExampleConnector包装类：拦截并记录所有连接器方法调用，用于验证调用行为。
 class TestExampleConnector(ExampleConnector):
     def __init__(self, config: VllmConfig, role, kv_cache_config):
         self.name = config.kv_transfer_config.kv_connector_extra_config["name"]
@@ -341,17 +347,20 @@ class TestExampleConnector(ExampleConnector):
 
 
 @dataclass(frozen=True)
+# [中文注释] Mock KV配置数据类：存储匹配token数和异步模式标志。
 class MockKVConfig:
     matched_tokens: int = 0
     is_async: bool = False
 
 
+# [中文注释] Mock KV连接器元数据类：为调度器测试提供简单的请求列表存储。
 class MockKVConnectorMetadata(KVConnectorMetadata):
     def __init__(self):
         # Scheduler tests check metadata.requests
         self.requests: list = []
 
 
+# [中文注释] Mock KV连接器：用于调度器测试，支持同步和异步模式的KV加载模拟。
 class MockKVConnector(KVConnectorBase_V1):
     """Mock KV connector for scheduler tests, supporting both sync and async mode."""
 
@@ -421,6 +430,7 @@ KVConnectorFactory.register_connector(
 )
 
 
+# [中文注释] 辅助函数：创建KVCacheConfig，支持HMA（混合内存架构）和滑动窗口配置。
 def make_kv_cache_config(
     block_size: int,
     hma_enabled: bool = False,

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [CI 测试环境变量模块：定义仅在部分测试中生效的 CI 环境变量，支持懒加载求值]
 """
 These envs only work for a small part of the tests, fix what you need!
 """
@@ -34,6 +35,7 @@ environment_variables: dict[str, Callable[[], Any]] = {
 }
 
 
+# [懒加载属性访问：当访问模块属性时，动态求值对应的环境变量]
 def __getattr__(name: str):
     # lazy evaluation of environment variables
     if name in environment_variables:
@@ -41,10 +43,12 @@ def __getattr__(name: str):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
+# [列出所有可用的环境变量名称]
 def __dir__():
     return list(environment_variables.keys())
 
 
+# [检查指定的环境变量是否在 os.environ 中被显式设置]
 def is_set(name: str):
     """Check if an environment variable is explicitly set."""
     if name in environment_variables:

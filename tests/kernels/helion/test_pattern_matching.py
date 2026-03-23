@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试HelionKernelWrapper与make_fx追踪和inductor模式匹配的集成，
+# 验证HOP节点的符号化追踪和模式替换功能
 """Test make_fx tracing and inductor pattern matching with HelionKernelWrapper."""
 
 import contextlib
@@ -63,6 +65,7 @@ def _helion_mock_context():
         yield
 
 
+# 测试make_fx符号化追踪和inductor模式匹配替换Helion HOP节点
 class TestMakeFxHop:
     def setup_method(self):
         helion_kernel_side_table.reset_table()

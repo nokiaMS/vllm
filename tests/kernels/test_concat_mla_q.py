@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试MLA（Multi-head Latent Attention）查询拼接内核concat_mla_q的正确性，
+# 覆盖连续输入、转置输入、split视图、零token和位级精确拷贝等场景
 import pytest
 import torch
 
@@ -18,6 +20,7 @@ DTYPES = [torch.bfloat16, torch.float16]
 @pytest.mark.parametrize("nope_dim", NOPE_DIM)
 @pytest.mark.parametrize("rope_dim", ROPE_DIM)
 @pytest.mark.parametrize("dtype", DTYPES)
+# 测试连续内存布局输入下MLA查询拼接的正确性
 def test_concat_mla_q_contiguous(num_tokens, num_heads, nope_dim, rope_dim, dtype):
     """Test with contiguous inputs (standard layout)."""
     torch.manual_seed(42)
@@ -39,6 +42,7 @@ def test_concat_mla_q_contiguous(num_tokens, num_heads, nope_dim, rope_dim, dtyp
 @pytest.mark.parametrize("nope_dim", NOPE_DIM)
 @pytest.mark.parametrize("rope_dim", ROPE_DIM)
 @pytest.mark.parametrize("dtype", DTYPES)
+# 测试转置（非连续）nope输入下MLA查询拼接的正确性
 def test_concat_mla_q_transposed_nope(num_tokens, num_heads, nope_dim, rope_dim, dtype):
     """Test with transposed nope input (simulates BMM output after transpose).
 
@@ -66,6 +70,7 @@ def test_concat_mla_q_transposed_nope(num_tokens, num_heads, nope_dim, rope_dim,
 @pytest.mark.parametrize("num_tokens", NUM_TOKENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("dtype", DTYPES)
+# 测试从split视图获取的非连续rope输入下的拼接正确性
 def test_concat_mla_q_split_rope(num_tokens, num_heads, dtype):
     """Test with rope from a split (simulates the actual code path).
 
@@ -99,6 +104,7 @@ def test_concat_mla_q_split_rope(num_tokens, num_heads, dtype):
     torch.testing.assert_close(q_out, ref, atol=0, rtol=0)
 
 
+# 测试零token边界情况下内核不崩溃
 def test_concat_mla_q_zero_tokens():
     """Test with zero tokens (edge case)."""
     ql_nope = torch.empty(0, 128, 512, dtype=torch.bfloat16, device="cuda")
@@ -109,6 +115,7 @@ def test_concat_mla_q_zero_tokens():
 
 
 @pytest.mark.parametrize("num_tokens", [1, 64])
+# 测试位级精确拷贝，验证纯数据搬移无计算误差
 def test_concat_mla_q_values_preserved(num_tokens):
     """Verify exact bit-level preservation (no computation, pure copy).
 

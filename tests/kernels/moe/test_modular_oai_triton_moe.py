@@ -48,12 +48,14 @@ MNK = [
 ]
 
 
+# [中文注释] 将交错排列的权重恢复为原始顺序（反shuffle）
 def unshuffle_weight(w: torch.Tensor):
     first = w[..., ::2]
     second = w[..., 1::2]
     return torch.concat((first, second), dim=-1)
 
 
+# [中文注释] 创建OAI Triton MoE测试权重：生成MXFP4量化的w1和w2权重
 def make_weights(dtype, k, n, e):
     w1 = torch.randn((e, k, 2 * n), dtype=dtype, device="cuda")
     w1_bias = torch.randn((e, 2 * n), dtype=dtype, device="cuda")
@@ -122,6 +124,7 @@ def make_weights(dtype, k, n, e):
     )
 
 
+# [中文注释] SwiGLU激活函数参考实现
 def swiglu(x, alpha: float = 1.702, limit: float = 1.0):
     # Note we add an extra bias of 1 to the linear layer
     x_glu, x_linear = torch.chunk(x, 2, dim=-1)
@@ -133,6 +136,7 @@ def swiglu(x, alpha: float = 1.702, limit: float = 1.0):
     return out_glu * (x_linear + 1)
 
 
+# [中文注释] Torch MoE参考实现：使用MXFP4量化逐专家计算，作为OAI Triton的对比基准
 def torch_moe_impl(
     hidden_states: torch.Tensor,  # (M, K)
     w1: torch.Tensor,  # (E, K, 2N)
@@ -156,6 +160,7 @@ def torch_moe_impl(
     return hidden_states
 
 
+# [中文注释] 使用模块化OAI Triton内核运行MoE计算（支持融合和非融合两种模式）
 def oai_triton_moe_impl(
     x: torch.Tensor,
     w1: torch.Tensor,
@@ -214,6 +219,7 @@ def oai_triton_moe_impl(
 @pytest.mark.parametrize("num_experts", [32, 128])
 @pytest.mark.parametrize("topk", [4])
 @pytest.mark.parametrize("unfused", [True, False])
+# [中文注释] 测试模块化OAI Triton MoE内核与参考实现在MXFP4量化下的数值一致性
 def test_oai_triton_moe(
     dtype: torch.dtype,
     m: int,

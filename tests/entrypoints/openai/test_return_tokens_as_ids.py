@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 return_tokens_as_token_ids 功能：token 以 "token_id:xxx" 格式返回并可正确解码]
 
 # Separate these tests out from test_completion and test_chat, because they
 # require launching a second server with a different flag. Running both servers
@@ -50,6 +51,7 @@ def server_fixture(request, default_server_args):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("server_fixture", [True, False], indirect=True)
+# [测试补全接口中 token 以 ID 格式返回并与 tokenizer 解码一致]
 async def test_completion_return_tokens_as_token_ids_completion(server_fixture):
     server, use_server_flag = server_fixture
     request_args = {}
@@ -90,6 +92,7 @@ async def test_completion_return_tokens_as_token_ids_completion(server_fixture):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("server_fixture", [True, False], indirect=True)
+# [测试聊天补全接口中 token 以 ID 格式返回的正确性]
 async def test_chat_return_tokens_as_token_ids_completion(server_fixture):
     server, use_server_flag = server_fixture
     request_args = {}
@@ -123,6 +126,7 @@ async def test_chat_return_tokens_as_token_ids_completion(server_fixture):
         assert tokenizer.decode(token_ids, skip_special_tokens=True) == text
 
 
+# [测试 Responses API 中 return_tokens_as_token_ids 与 logprobs 的集成]
 def test_responses_api_logprobs_with_return_tokens_as_token_ids():
     """Test that return_tokens_as_token_ids works in Responses API logprobs."""
     from unittest.mock import MagicMock

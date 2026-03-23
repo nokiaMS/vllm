@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Phi-4 多模态模型的预处理参数，验证图像 token 数量计算
 """Tests for phi4mm's multimodal preprocessing kwargs."""
 
 import pytest

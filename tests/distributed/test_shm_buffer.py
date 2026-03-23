@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试共享内存环形缓冲区（SingleWriterShmRingBuffer）的分配、释放和访问操作
 
 import traceback
 import unittest

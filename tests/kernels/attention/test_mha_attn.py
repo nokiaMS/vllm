@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试多模态编码器注意力(MMEncoderAttention)层的后端选择和前向计算正确性
 """
 Test:
 
@@ -26,6 +27,7 @@ from vllm.v1.attention.backends.registry import AttentionBackendEnum
 from vllm.v1.attention.selector import _cached_get_attn_backend
 
 
+# 每个测试用例前清除注意力后端LRU缓存
 @pytest.fixture(autouse=True)
 def clear_cache():
     """Clear lru cache to ensure each test case runs without caching."""
@@ -39,6 +41,7 @@ if current_platform.is_rocm():
     devices.append("hip")
 
 
+# 测试不同平台（CPU/CUDA/ROCm/Turing）下MMEncoderAttention的后端选择逻辑
 @pytest.mark.parametrize("device", devices)
 def test_mha_attn_platform(default_vllm_config, device: str):
     """
@@ -99,6 +102,7 @@ def test_mha_attn_platform(default_vllm_config, device: str):
             assert attn.attn_backend == AttentionBackendEnum.TORCH_SDPA
 
 
+# 基于PyTorch的缩放点积注意力参考实现（无掩码）
 def ref_attention(
     query: torch.Tensor,
     key: torch.Tensor,
@@ -135,6 +139,7 @@ DTYPES = (
 CUDA_DEVICES = ["cuda"]
 
 
+# 测试MMEncoderAttention前向计算在不同头数、head_size和数据类型下与参考实现的一致性
 @pytest.mark.parametrize("batch_size", BATCH_SIZES)
 @pytest.mark.parametrize("seq_len", SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
@@ -188,6 +193,7 @@ def test_mha_attn_forward(
     torch.testing.assert_close(output, ref_output, **tol_kwargs)
 
 
+# 测试MMEncoderAttention变长序列前向计算（使用cu_seqlens分段注意力）
 @pytest.mark.parametrize("var_seq_len", VAR_SEQ_LENS)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("num_kv_heads", NUM_KV_HEADS)
@@ -244,6 +250,7 @@ def test_mha_attn_varlen_forward(
     torch.testing.assert_close(output, ref_output, atol=1e-2, rtol=1e-2)
 
 
+# 测试MMEncoderAttention变长序列在FlashInfer后端下的前向计算（head_size=72非标准配置）
 @pytest.mark.parametrize("var_seq_len", VAR_SEQ_LENS)
 @pytest.mark.parametrize(
     "dtype",

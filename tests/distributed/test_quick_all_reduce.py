@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 ROCm 平台的 QuickReduce AllReduce 操作（支持多种量化模式）
 
 import multiprocessing
 import random

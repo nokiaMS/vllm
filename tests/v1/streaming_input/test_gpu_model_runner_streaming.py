@@ -19,6 +19,7 @@ from vllm.v1.worker.gpu_model_runner import GPUModelRunner
 pytestmark = pytest.mark.cpu_test
 
 
+# [中文注释] 测试夹具：创建带InputBatch的模拟GPUModelRunner，用于流式请求更新测试
 @pytest.fixture
 def mock_model_runner_with_input_batch():
     """Create a mock GPUModelRunner with a real InputBatch for e2e testing."""
@@ -46,6 +47,7 @@ def mock_model_runner_with_input_batch():
     return runner
 
 
+# [中文注释] 端到端测试：验证流式请求更新的基本流程（token追加和位置更新）
 def test_e2e_streaming_request_update_basic_flow(mock_model_runner_with_input_batch):
     """Test that streaming session are updated correctly.
 
@@ -117,6 +119,7 @@ def test_e2e_streaming_request_update_basic_flow(mock_model_runner_with_input_ba
     assert req_id not in runner.input_batch.req_id_to_index
 
 
+# [中文注释] 端到端测试：验证带多模态特征的流式请求更新逻辑
 def test_e2e_streaming_with_multimodal_features(mock_model_runner_with_input_batch):
     """Test that streaming session with multimodal features are updated correctly.
 

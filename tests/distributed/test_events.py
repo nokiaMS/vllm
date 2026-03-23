@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试分布式 KV 缓存事件发布/订阅机制（基本发布、重放、缓冲区限制、主题过滤、高吞吐等）
 import threading
 import time
 

@@ -8,6 +8,8 @@ from huggingface_hub import snapshot_download
 
 from vllm.plugins.lora_resolvers.filesystem_resolver import FilesystemResolver
 
+# 测试文件系统 LoRA 适配器解析器的适配器查找和验证功能
+
 MODEL_NAME = "Qwen/Qwen3-0.6B"
 LORA_NAME = "charent/self_cognition_Alice"
 PA_NAME = "swapnilbp/llama_tweet_ptune"

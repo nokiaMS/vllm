@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 困惑度（PPL）测试工具：使用WikiText-2数据集计算vLLM与HuggingFace的PPL并进行对比
 # Adapted from https://huggingface.co/docs/transformers/perplexity
 from typing import cast
 
@@ -20,6 +21,7 @@ MAX_LENGTH = 1024
 
 
 @torch.inference_mode
+# 在WikiText-2数据集上执行困惑度测试，验证vLLM的PPL不超过HF太多
 def wikitext_ppl_test(
     hf_runner,
     vllm_runner,

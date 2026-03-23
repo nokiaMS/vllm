@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件验证推测解码生成过程中不发生隐式GPU-CPU同步
 """
 Test that verifies no implicit GPU-CPU synchronization occurs during
 speculative decoding generation under expected conditions.
@@ -13,6 +14,7 @@ import pytest
 import torch
 
 
+# [中文注释] fixture：补丁CommonAttentionMetadata.seq_lens_cpu以检测懒初始化同步
 @pytest.fixture
 def sync_tracker():
     """
@@ -47,6 +49,7 @@ def sync_tracker():
     # Apply patch
     CommonAttentionMetadata.seq_lens_cpu = property(tracking_seq_lens_cpu)
 
+    # [中文注释] 同步跟踪器：提供计数和断言无同步方法
     class SyncTracker:
         @property
         def count(self) -> int:
@@ -85,6 +88,7 @@ SPEC_DECODE_CONFIGS = [
 ]
 
 
+# [中文注释] 测试推测解码过程中不发生隐式GPU-CPU同步，覆盖Eagle3和Eagle-MLA配置
 @pytest.mark.parametrize(
     "model,spec_model,method,num_spec_tokens",
     SPEC_DECODE_CONFIGS,

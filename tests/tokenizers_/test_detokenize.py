@@ -47,6 +47,7 @@ TOKENIZERS = [
 ]
 
 
+# [中文注释] 执行增量解码测试，支持快速和慢速去分词器，验证流式输出的正确性
 def _run_incremental_decode(
     tokenizer,
     all_input_ids,
@@ -89,6 +90,7 @@ def _run_incremental_decode(
     return output_text, detokenizer.output_token_ids
 
 
+# [中文注释] fixture：根据名称加载Mistral或HF分词器
 @pytest.fixture
 def tokenizer(tokenizer_name):
     return (
@@ -98,6 +100,7 @@ def tokenizer(tokenizer_name):
     )
 
 
+# [中文注释] 测试Mistral V3-Tekken分词器的边界情况：缅甸文和特殊emoji字符
 @pytest.mark.parametrize("tokenizer_name", ["mistralai/Pixtral-12B-2409"])
 @pytest.mark.parametrize(
     "truth",
@@ -127,6 +130,7 @@ def test_mistral_edge_case(tokenizer, truth):
     assert out_ids == all_input_ids[starting_index:]
 
 
+# [中文注释] fixture：为Mistral分词器跳过skip_special_tokens=False的测试
 @pytest.fixture
 def skip_special_tokens(request, tokenizer_name) -> Generator[bool, Any, None]:
     if "mistral" in tokenizer_name:
@@ -139,6 +143,7 @@ def skip_special_tokens(request, tokenizer_name) -> Generator[bool, Any, None]:
         yield bool(request.param)
 
 
+# [中文注释] 测试流式增量解码：验证多种分词器、特殊token选项和快慢模式的正确性
 @pytest.mark.parametrize("truth", TRUTH)
 @pytest.mark.parametrize("with_prompt", [True, False])
 @pytest.mark.parametrize("tokenizer_name", TOKENIZERS)
@@ -222,6 +227,7 @@ def test_decode_streaming(
     assert out_ids == all_input_ids[starting_index:]
 
 
+# [中文注释] 测试超出词表（OOV）token的增量解码返回空文本
 @pytest.mark.parametrize("tokenizer_name", TOKENIZERS)
 @pytest.mark.parametrize("fast", (True, False))
 def test_oov_decode(tokenizer, fast):

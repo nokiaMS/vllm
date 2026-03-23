@@ -175,6 +175,7 @@ from vllm.multimodal.utils import argsort_mm_positions, group_and_batch_mm_items
         ),
     ],
 )
+# [中文注释] 测试多模态位置排序：验证按offset排序的模态索引
 def test_argsort_mm_positions(case):
     mm_positions = case["mm_positions"]
     expected_modality_idxs = case["expected_modality_idxs"]
@@ -184,6 +185,7 @@ def test_argsort_mm_positions(case):
     assert modality_idxs == expected_modality_idxs
 
 
+# [中文注释] 测试按字段集分组和批量化多模态项
 def test_group_and_batch_mm_items_split_by_fieldset():
     elem = MultiModalFieldElem(
         data=torch.empty(1, dtype=torch.uint8),
@@ -199,6 +201,7 @@ def test_group_and_batch_mm_items_split_by_fieldset():
     assert [num_items for num_items, _ in res] == [2, 1, 1, 1]
 
 
+# [中文注释] 测试按共享数据分组的多模态项批量化
 def test_group_and_batch_mm_items_split_by_shared_data():
     elem1 = MultiModalFieldElem(
         data=torch.zeros(1, dtype=torch.uint8),

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 LoRA 工具函数的正确性
 
 from collections import OrderedDict
 from typing import NamedTuple

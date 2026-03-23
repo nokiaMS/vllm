@@ -15,6 +15,7 @@ from vllm.model_executor.layers.fused_moe.router.fused_topk_router import fused_
 from vllm.platforms import current_platform
 
 
+# [中文注释] 使用原生torch实现的TopK路由参考函数（softmax + topk选择）
 def torch_topk(
     gating_output: torch.Tensor,
     topk: int,
@@ -54,6 +55,7 @@ def torch_topk(
 @pytest.mark.parametrize("renormalize", [True, False])
 @pytest.mark.parametrize("scoring_func", ["softmax", "sigmoid"])
 @pytest.mark.parametrize("dtype", [torch.bfloat16, torch.half, torch.float32])
+# [中文注释] 测试融合TopK路由内核（softmax/sigmoid模式）与参考实现的一致性
 def test_fused_topk(
     num_tokens: int,
     hidden_size: int,
@@ -98,6 +100,7 @@ def test_fused_topk(
 @pytest.mark.parametrize("renormalize", [True, False])
 @pytest.mark.parametrize("scoring_func", ["softmax", "sigmoid"])
 @pytest.mark.parametrize("dtype", [torch.bfloat16, torch.half, torch.float32])
+# [中文注释] 测试带偏置的融合TopK路由内核的正确性
 def test_fused_topk_bias(
     num_tokens: int,
     hidden_size: int,

@@ -21,6 +21,7 @@ from vllm.tool_parsers.minimax_tool_parser import MinimaxToolParser
 MODEL = "MiniMaxAi/MiniMax-M1-40k"
 
 
+# [中文注释] 加载MiniMax工具解析器分词器夹具
 @pytest.fixture(scope="module")
 def minimax_tokenizer():
     return get_tokenizer(tokenizer_name=MODEL)

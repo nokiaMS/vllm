@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [中文注释] 本文件对ECExampleConnector进行单元测试：初始化、缓存存在性、状态管理、保存/加载、文件名生成和元数据生命周期
 """
 Unit tests for ECExampleConnector.
 """
@@ -23,6 +24,7 @@ from vllm.v1.core.sched.output import SchedulerOutput
 
 
 # ------------------ Mock Classes ------------------ #
+# [中文注释] 模拟请求类，用于测试多模态哈希和token计数
 class MockRequest:
     def __init__(self, request_id, mm_hashes: list[str], token_counts: list[int]):
         assert len(mm_hashes) == len(token_counts)
@@ -81,6 +83,7 @@ def mock_request_with_3_mm():
 
 
 # ------------------ Unit Tests ------------------ #
+# [中文注释] 测试ECExampleConnector的基本初始化和角色设置
 class TestECExampleConnectorBasics:
     """Test basic EC connector functionality."""
 
@@ -122,6 +125,7 @@ class TestECExampleConnectorBasics:
         assert worker_connector.role == ECConnectorRole.WORKER
 
 
+# [中文注释] 测试缓存存在性检查：全部命中、部分命中、无命中场景
 class TestCacheExistence:
     """Test cache existence checking using has_cache_item() API."""
 
@@ -218,6 +222,7 @@ class TestCacheExistence:
         assert not result[2]  # Third doesn't exist
 
 
+# [中文注释] 测试连接器状态管理：缓存注册、metadata绑定和状态清除
 class TestStateManagement:
     """Test connector state management."""
 
@@ -318,6 +323,7 @@ class TestStateManagement:
         assert len(metadata2.mm_datas) == 0
 
 
+# [中文注释] 测试缓存保存功能：验证safetensors文件写入和内容正确性
 class TestCacheSaving:
     """Test encoder cache saving (producer only)."""
 
@@ -370,6 +376,7 @@ class TestCacheSaving:
         assert not result, "Consumer should not save caches"
 
 
+# [中文注释] 测试缓存加载功能：验证从safetensors文件正确恢复张量数据
 class TestCacheLoading:
     """Test encoder cache loading (consumer)."""
 
@@ -478,6 +485,7 @@ class TestCacheLoading:
         assert len(encoder_cache) == 0
 
 
+# [中文注释] 测试缓存文件名生成逻辑：基于哈希值和层名的命名规则
 class TestFilenameGeneration:
     """Test filename and path generation."""
 
@@ -522,6 +530,7 @@ class TestFilenameGeneration:
         assert filename1 == filename2
 
 
+# [中文注释] 测试元数据绑定生命周期：从调度到生产者/消费者的完整流程
 class TestMetadataBindingLifecycle:
     """Test metadata binding and clearing lifecycle."""
 
@@ -578,6 +587,7 @@ class TestMetadataBindingLifecycle:
             connector._get_connector_metadata()
 
 
+# [中文注释] 测试边界情况：空请求、重复调度、未注册缓存等异常场景
 class TestEdgeCases:
     """Test edge cases and error handling."""
 

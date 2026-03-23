@@ -52,6 +52,7 @@ MNK_FACTORS = [
 vllm_config = VllmConfig(parallel_config=ParallelConfig(pipeline_parallel_size=1))
 
 
+# [中文注释] CUTLASS MoE测试张量容器：包含输入激活、权重和stride信息
 @dataclasses.dataclass
 class MOETensors:
     a: torch.Tensor
@@ -85,6 +86,7 @@ class MOETensors:
 
 
 @dataclasses.dataclass
+# [中文注释] 8位量化CUTLASS MoE张量容器，额外包含FP8量化的权重缩放因子
 class MOETensors8Bit(MOETensors):
     # quantized
     a_q: torch.Tensor | None = None  # a -> a_q
@@ -156,6 +158,7 @@ class MOETensors8Bit(MOETensors):
         )
 
 
+# [中文注释] 使用expert_map运行CUTLASS MoE并与参考实现比较结果
 def run_with_expert_maps(
     num_experts: int,
     num_local_experts: int,
@@ -221,6 +224,7 @@ def run_with_expert_maps(
     return out_tensor
 
 
+# [中文注释] 运行8位量化CUTLASS MoE内核并与fused_experts参考结果比较
 def run_8_bit(
     moe_tensors: MOETensors8Bit,
     topk_weights: torch.Tensor,
@@ -308,6 +312,7 @@ def run_8_bit(
     ),
     reason="Grouped gemm is not supported on this GPU type.",
 )
+# [中文注释] 测试CUTLASS 8位FP8 MoE内核（无CUDA图模式）的计算正确性
 def test_cutlass_moe_8_bit_no_graph(
     m: int,
     n: int,
@@ -363,6 +368,7 @@ def test_cutlass_moe_8_bit_no_graph(
     ),
     reason="Grouped gemm is not supported on this GPU type.",
 )
+# [中文注释] 测试CUTLASS 8位FP8 MoE内核在CUDA图模式下的计算正确性
 def test_cutlass_moe_8_bit_cuda_graph(
     m: int,
     n: int,
@@ -418,6 +424,7 @@ def test_cutlass_moe_8_bit_cuda_graph(
     ),
     reason="Grouped gemm is not supported on this GPU type.",
 )
+# [中文注释] 测试CUTLASS 8位FP8 MoE在专家并行（EP）模式下的正确性
 def test_cutlass_moe_8_bit_EP(
     m: int,
     n: int,
@@ -462,6 +469,7 @@ LARGE_MNK_FACTORS = [
     ),
     reason="Grouped gemm is not supported on this GPU type.",
 )
+# [中文注释] 测试CUTLASS 8位FP8 MoE在大规模专家并行（EP=4/8）下的正确性
 def test_cutlass_moe_8_bit_EP_large(
     m: int,
     n: int,
@@ -499,6 +507,7 @@ def test_cutlass_moe_8_bit_EP_large(
     ),
     reason="Grouped gemm is not supported on this GPU type.",
 )
+# [中文注释] 测试run_cutlass_moe_fp8底层API的FP8 MoE计算正确性
 def test_run_cutlass_moe_fp8(
     m: int,
     n: int,

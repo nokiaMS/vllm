@@ -13,6 +13,7 @@ from vllm.v1.spec_decode.ngram_proposer import (
 )
 
 
+# [中文注释] 测试最长匹配ngram查找和token提议功能
 def test_find_longest_matched_ngram_and_propose_tokens():
     tokens = np.array([1, 2, 3, 4, 1, 2, 3, 5, 6])
     result = _find_longest_matched_ngram_and_propose_tokens(
@@ -62,6 +63,7 @@ def test_find_longest_matched_ngram_and_propose_tokens():
     )
 
 
+# [中文注释] 测试Ngram提议器的端到端功能（创建、初始化、提议）
 def test_ngram_proposer():
     def get_ngram_proposer(min_n: int, max_n: int, k: int) -> NgramProposer:
         # Dummy model config. Just to set max_model_len.

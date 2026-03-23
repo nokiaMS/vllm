@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试弹性专家并行（Elastic EP）的动态扩缩容功能，验证扩缩容前后的推理精度
 
 import os
 import subprocess

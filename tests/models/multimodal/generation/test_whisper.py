@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试 Whisper 编码器-解码器语音识别模型，包括束搜索、分布式推理和编码器缓存清理
 
 from collections.abc import Sequence
 from typing import Any

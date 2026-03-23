@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试逐行top-k选择CUDA内核的正确性，
+# 覆盖prefill和decode阶段、大词表、DeepSeek混合top-k以及不同数据生成模式
 import numpy as np
 import pytest
 import torch
@@ -16,6 +18,7 @@ NEXT_N = [1, 8]
 DATA_GENERATION = ["random", "10LSBits"]
 
 
+# 创建随机logits张量，支持纯随机和10位低位随机两种生成模式
 def create_random_logits(
     row_starts: torch.Tensor,
     row_ends: torch.Tensor,
@@ -56,6 +59,7 @@ def create_random_logits(
     return logits
 
 
+# 创建行起止索引用于测试
 def create_row_boundaries(
     seq_len: int, vocab_size: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -65,6 +69,7 @@ def create_row_boundaries(
     return row_starts, row_ends
 
 
+# 对比CUDA top-k结果与torch.topk参考结果，允许值相同但索引不同的情况
 def compare_top_k_results(
     logits: torch.Tensor,
     cuda_indices: torch.Tensor,
@@ -127,6 +132,7 @@ def compare_top_k_results(
 @pytest.mark.parametrize("clean_logits", [True, False])
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="This test requires CUDA")
 @torch.inference_mode()
+# 测试prefill阶段的逐行top-k选择内核正确性
 def test_top_k_per_row(
     num_rows: int,
     top_k: int,
@@ -174,6 +180,7 @@ def test_top_k_per_row(
     ), "CUDA top_k_per_row_prefill results don't match torch.topk"
 
 
+# decode阶段top-k测试辅助函数
 def _run_top_k_per_row_decode_test(
     top_k: int,
     batch_size: int,
@@ -242,6 +249,7 @@ def _run_top_k_per_row_decode_test(
 @pytest.mark.parametrize("data_generation", DATA_GENERATION)
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="This test requires CUDA")
 @torch.inference_mode()
+# 测试decode阶段的逐行top-k选择内核正确性
 def test_top_k_per_row_decode(
     top_k: int,
     batch_size: int,
@@ -262,6 +270,7 @@ def test_top_k_per_row_decode(
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="This test requires CUDA")
 @pytest.mark.parametrize("clean_logits", [True, False])
 @torch.inference_mode()
+# 测试大词表（300K）下decode阶段top-k的正确性
 def test_top_k_per_row_decode_large_vocab_size(clean_logits: bool) -> None:
     """
     Test top_k_per_row_decode with large vocabulary size.
@@ -280,6 +289,7 @@ def test_top_k_per_row_decode_large_vocab_size(clean_logits: bool) -> None:
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="This test requires CUDA")
 @pytest.mark.parametrize("clean_logits", [True, False])
 @torch.inference_mode()
+# 测试DeepSeek混合top-k策略：短序列用decode内核，长序列用large_context_topk内核
 def test_deepseek_hybrid_topk(clean_logits: bool) -> None:
     torch.set_default_device("cuda:0")
 

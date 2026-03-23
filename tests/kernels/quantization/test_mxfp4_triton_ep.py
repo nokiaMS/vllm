@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试MXFP4 Triton内核在专家并行(EP)场景下expert_map重映射的正确性
 """
 Tests that triton_kernel_moe_forward correctly applies expert_map
 remapping when expert parallelism (EP) is enabled.
@@ -23,6 +24,7 @@ from vllm.model_executor.layers.quantization.mxfp4 import (
 )
 
 
+# 创建模拟的MoE配置对象用于测试
 def _make_mock_moe_config(ep_size: int = 1) -> MagicMock:
     """Create a mock FusedMoEConfig with the given EP size."""
     parallel_config = MagicMock()
@@ -35,6 +37,7 @@ def _make_mock_moe_config(ep_size: int = 1) -> MagicMock:
     return moe_config
 
 
+# 验证Triton后端在所有EP配置下is_monolithic始终为True
 class TestMxfp4TritonIsMonolithic:
     """Verify that is_monolithic is always True for the TRITON backend,
     regardless of EP size, since triton_kernel_moe_forward now handles

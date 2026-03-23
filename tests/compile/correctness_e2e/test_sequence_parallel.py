@@ -29,6 +29,7 @@ logger = init_logger("test_sequence_parallel")
 VLLM_MULTI_NODE = os.getenv("VLLM_MULTI_NODE", "0") == "1"
 
 
+# 并行配置参数的命名元组，包含 TP/PP 大小、融合选项、eager 模式等
 class ParallelSetup(NamedTuple):
     tp_size: int
     pp_size: int
@@ -38,11 +39,13 @@ class ParallelSetup(NamedTuple):
     chunked_prefill: bool
 
 
+# 序列并行测试选项，控制是否仅在多节点环境运行及加载格式
 class SPTestOptions(NamedTuple):
     multi_node_only: bool
     load_format: str | None = None
 
 
+# 序列并行测试设置，包含多种预设配置工厂方法（detailed/fast/fp8_quant）
 @dataclass
 class SPTestSettings:
     parallel_setups: list[ParallelSetup]
@@ -158,6 +161,7 @@ class SPTestSettings:
                 )
 
 
+# 比较开启序列并行与普通 TP 的输出结果，验证正确性
 def _compare_sp(
     model_id: str,
     parallel_setup: ParallelSetup,
@@ -317,6 +321,7 @@ SP_TEST_MODELS = [
 @pytest.mark.parametrize("use_inductor_graph_partition", [True, False])
 @pytest.mark.parametrize("fuse_gemm_comms", [False])  # TODO: enable async TP
 @create_new_process_for_each_test()
+# 端到端测试 TP+序列并行的文本生成正确性，支持 Inductor 图分区
 def test_tp_sp_generation(
     model_id: str,
     parallel_setup: ParallelSetup,

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# 测试级联Flash Attention（Cascade Attention）的merge内核和完整级联注意力流程
 
 
 import pytest
@@ -28,6 +29,7 @@ BLOCK_SIZES = [16]
 DTYPES = [torch.float16, torch.bfloat16]
 
 
+# 测试注意力状态合并(merge)内核与参考实现的数值一致性
 @pytest.mark.parametrize("num_tokens", [1, 39, 16912])
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)
@@ -78,6 +80,7 @@ CASES = [
 ]
 
 
+# 测试完整级联注意力流程（共享前缀+独立后缀）与标准注意力的数值一致性
 @pytest.mark.parametrize("seq_lens_and_common_prefix", CASES)
 @pytest.mark.parametrize("num_heads", NUM_HEADS)
 @pytest.mark.parametrize("head_size", HEAD_SIZES)

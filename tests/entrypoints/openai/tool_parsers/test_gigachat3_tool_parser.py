@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试 GigaChat3 工具解析器的流式和非流式工具调用提取功能
+
 import json
 
 import pytest
@@ -69,6 +71,7 @@ COMPLEX_FUNCTION_CALL = FunctionCall(
 )
 
 
+# 测试当模型输出不包含工具调用时，解析器正确返回普通文本内容
 @pytest.mark.parametrize("streaming", [True, False])
 def test_no_tool_call(streaming: bool, default_tokenizer: TokenizerLike):
     tool_parser: ToolParser = ToolParserManager.get_tool_parser("gigachat3")(
@@ -128,6 +131,7 @@ TEST_CASES = [
 ]
 
 
+# 参数化测试简单、无参、复杂工具调用在流式和非流式模式下的正确提取
 @pytest.mark.parametrize(
     "streaming, model_output, expected_tool_calls, expected_content", TEST_CASES
 )
@@ -154,6 +158,7 @@ def test_tool_call(
         assert actual_args == expected_args
 
 
+# 测试流式模式下大步长（非逐 token）增量输入时的工具调用提取
 def test_streaming_tool_call_with_large_steps(default_tokenizer: TokenizerLike):
     tool_parser: ToolParser = ToolParserManager.get_tool_parser("gigachat3")(
         default_tokenizer

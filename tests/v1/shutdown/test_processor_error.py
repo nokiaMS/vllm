@@ -20,6 +20,7 @@ MODELS = ["meta-llama/Llama-3.2-1B"]
 @pytest.mark.asyncio
 @pytest.mark.timeout(SHUTDOWN_TEST_TIMEOUT_SEC)
 @pytest.mark.parametrize("model", MODELS)
+# [中文注释] 测试AsyncLLM在处理器错误（空token提示）后能正确传播异常且不影响后续请求
 async def test_async_llm_processor_error(model: str) -> None:
     """Test that AsyncLLM propagates a processor error.
     Test empty tokens prompt (failure) and non-empty prompt (no failure.)

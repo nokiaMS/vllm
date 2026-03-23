@@ -10,6 +10,7 @@ from vllm.compilation.passes.utility.split_coalescing import SplitCoalescingPass
 from vllm.config import CompilationConfig, CompilationMode, PassConfig, VllmConfig
 
 
+# 模拟 CSE 无法合并的多次 split_with_sizes 调用的模型
 class SplitCoalescingModel(torch.nn.Module):
     """Model with 3 separate split_with_sizes calls on the same input,
     simulating the B200+FP8 graph where CSE fails to merge them."""
@@ -27,6 +28,7 @@ class SplitCoalescingModel(torch.nn.Module):
 
 
 @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+# 测试 SplitCoalescingPass 将多次相同 split 合并为一次
 def test_split_coalescing(dtype):
     torch.set_default_device("cuda")
     torch.set_default_dtype(dtype)

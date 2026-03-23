@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+# 测试融合QK归一化+旋转位置编码（RoPE）内核fused_qk_norm_rope的正确性，
+# 验证融合实现与分步RMSNorm+RoPE参考实现在不同neox风格、eps和旋转比例下的一致性
 import pytest
 import torch
 
@@ -18,6 +20,7 @@ PARTIAL_ROPE = [True, False]
 CUDA_DEVICES = ["cuda:0"]
 
 
+# 参考实现：分步执行QK头RMSNorm归一化和旋转位置编码
 def _apply_qk_norm_rope(
     qkv: torch.Tensor,
     positions: torch.Tensor,
@@ -56,6 +59,7 @@ def _apply_qk_norm_rope(
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("rotary_ratio", [1.0, 0.5, 0.25])
 @torch.inference_mode()
+# 测试融合QK归一化+RoPE内核与分步参考实现的数值一致性
 def test_fused_qk_norm_rope_matches_reference(
     default_vllm_config,
     device: str,

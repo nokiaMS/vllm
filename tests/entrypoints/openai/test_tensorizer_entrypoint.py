@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# [测试 Tensorizer 格式加载模型的 API 服务端点：序列化模型和 LoRA 后启动补全]
 import gc
 import os
 import tempfile
@@ -23,6 +24,7 @@ MODEL_NAME = "unsloth/llama-3.2-1b-Instruct"
 LORA_PATH = "davzoku/finqa_adapter_1b"
 
 
+# [清理 GPU 缓存和垃圾回收]
 def _cleanup():
     gc.collect()
     torch.accelerator.empty_cache()
@@ -44,6 +46,7 @@ def model_uri(tmp_dir):
     yield f"{tmp_dir}/model.tensors"
 
 
+# [将模型和 LoRA 适配器序列化为 Tensorizer 格式]
 @pytest.fixture(scope="module")
 def tensorize_model_and_lora(tmp_dir, model_uri):
     tensorizer_config = TensorizerConfig(tensorizer_uri=model_uri, lora_dir=tmp_dir)
@@ -91,6 +94,7 @@ async def client(server):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", [MODEL_NAME])
+# [测试 Tensorizer 加载模型后的单条补全请求]
 async def test_single_completion(client: openai.AsyncOpenAI, model_name: str):
     _cleanup()
     completion = await client.completions.create(

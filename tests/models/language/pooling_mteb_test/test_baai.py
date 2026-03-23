@@ -98,11 +98,13 @@ RERANK_MODELS = [
 ]
 
 
+# 测试 BAAI 嵌入模型（BGE 系列）在 MTEB STS12 基准上的评分是否与 SentenceTransformers 一致
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_mteb(hf_runner, vllm_runner, model_info: EmbedModelInfo) -> None:
     mteb_test_embed_models(hf_runner, vllm_runner, model_info)
 
 
+# 测试 BAAI 嵌入模型的输出正确性：与 HuggingFace 模型的嵌入输出进行逐一比较
 @pytest.mark.parametrize("model_info", MODELS)
 def test_embed_models_correctness(
     hf_runner, vllm_runner, model_info: EmbedModelInfo, example_prompts
@@ -110,6 +112,7 @@ def test_embed_models_correctness(
     correctness_test_embed_models(hf_runner, vllm_runner, model_info, example_prompts)
 
 
+# 测试 BAAI 重排序模型在 MTEB NFCorpus 基准上的重排序性能
 @pytest.mark.parametrize("model_info", RERANK_MODELS)
 def test_rerank_models_mteb(vllm_runner, model_info: RerankModelInfo) -> None:
     mteb_test_rerank_models(vllm_runner, model_info)

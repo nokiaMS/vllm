@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: Apache-2.0
-# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# SPDX-License-Identifier: Apache-2.0  # Apache-2.0许可证标识
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project  # 版权声明
 
 # Adapted from
 # https://github.com/huggingface/transformers/blob/v4.28.0/src/transformers/models/llama/modeling_llama.py
@@ -23,56 +23,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import torch
-import torch.nn as nn
+import torch  # 导入PyTorch张量计算库
+import torch.nn as nn  # 导入PyTorch神经网络模块
 
-from vllm.config import VllmConfig
-from vllm.model_executor.layers.logits_processor import LogitsProcessor
-from vllm.model_executor.models.llama import (
-    LlamaDecoderLayer,
-    LlamaForCausalLM,
-    LlamaModel,
+from vllm.config import VllmConfig  # 导入vLLM配置类
+from vllm.model_executor.layers.logits_processor import LogitsProcessor  # 导入logits处理器
+from vllm.model_executor.models.llama import (  # 从Llama模型导入基础组件
+    LlamaDecoderLayer,  # 导入Llama解码层
+    LlamaForCausalLM,  # 导入Llama因果语言模型
+    LlamaModel,  # 导入Llama基础模型
 )
 
 
 class TeleFLMModel(LlamaModel):
+    """TeleFLM模型，继承自LlamaModel，支持µScaling（mup）缩放技术。"""
+
     def __init__(
         self,
         *,
-        vllm_config: VllmConfig,
-        prefix: str = "",
-        layer_type: type[nn.Module] = LlamaDecoderLayer,
+        vllm_config: VllmConfig,  # vLLM配置对象
+        prefix: str = "",  # 参数名前缀
+        layer_type: type[nn.Module] = LlamaDecoderLayer,  # 解码层类型，默认为Llama解码层
     ):
-        super().__init__(vllm_config=vllm_config, prefix=prefix, layer_type=layer_type)
+        """初始化TeleFLM模型，设置µScaling相关参数。"""
+        super().__init__(vllm_config=vllm_config, prefix=prefix, layer_type=layer_type)  # 调用父类Llama模型初始化
         """
-        This implementation is based on the µScaling paper presented at  
-        the ICLR 2025 Workshop:  
+        This implementation is based on the µScaling paper presented at
+        the ICLR 2025 Workshop:
         NanoLM: An Affordable LLM Study Benchmark \
         via Accurate Loss Prediction across Scales
-        by Yiqun Yao et al.  
-        Available at: https://openreview.net/forum?id=IwaPYg1SCA  
+        by Yiqun Yao et al.
+        Available at: https://openreview.net/forum?id=IwaPYg1SCA
         arXiv preprint: https://arxiv.org/abs/2304.06875
         """
-        self.use_mup = self.config.use_mup
-        if self.use_mup:
-            self.input_mult = self.config.input_mult
+        self.use_mup = self.config.use_mup  # 是否使用µP（µ参数化）
+        if self.use_mup:  # 如果启用µP
+            self.input_mult = self.config.input_mult  # 输入缩放因子
 
     def embed_input_ids(self, input_ids: torch.Tensor) -> torch.Tensor:
-        embedding = self.embed_tokens(input_ids)
-        if self.use_mup:
-            embedding = embedding * self.input_mult
-        return embedding
+        """将输入token ID转换为嵌入向量，如果启用µP则进行缩放。"""
+        embedding = self.embed_tokens(input_ids)  # 通过嵌入层获取token嵌入
+        if self.use_mup:  # 如果启用µP缩放
+            embedding = embedding * self.input_mult  # 乘以输入缩放因子
+        return embedding  # 返回嵌入向量
 
 
 class TeleFLMForCausalLM(LlamaForCausalLM):
+    """TeleFLM因果语言模型，继承自LlamaForCausalLM，支持µScaling输出缩放。"""
+
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
-        super().__init__(vllm_config=vllm_config, prefix=prefix)
+        """初始化TeleFLM因果语言模型，设置µP输出缩放参数。"""
+        super().__init__(vllm_config=vllm_config, prefix=prefix)  # 调用父类Llama因果语言模型初始化
         # mup
-        self.use_mup = self.config.use_mup
-        if self.use_mup:
-            self.mup_scale_factor = self.config.mup_scale_factor
-            self.output_mult = self.config.output_mult / self.mup_scale_factor
-            logit_scale = self.output_mult
-            self.logits_processor = LogitsProcessor(
-                self.config.vocab_size, scale=logit_scale
+        self.use_mup = self.config.use_mup  # 是否使用µP参数化
+        if self.use_mup:  # 如果启用µP
+            self.mup_scale_factor = self.config.mup_scale_factor  # µP缩放因子
+            self.output_mult = self.config.output_mult / self.mup_scale_factor  # 计算输出缩放系数
+            logit_scale = self.output_mult  # logit缩放值
+            self.logits_processor = LogitsProcessor(  # 创建logits处理器
+                self.config.vocab_size, scale=logit_scale  # 传入词表大小和缩放值
             )

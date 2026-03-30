@@ -1,21 +1,21 @@
-# SPDX-License-Identifier: Apache-2.0
-# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# SPDX-License-Identifier: Apache-2.0  # Apache-2.0 开源许可证标识
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project  # 版权声明
 
-import itertools
-from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import Literal, overload
+import itertools  # 导入迭代工具模块
+from collections.abc import Sequence  # 导入序列抽象基类
+from dataclasses import dataclass  # 导入数据类装饰器
+from typing import Literal, overload  # 导入字面量类型和重载装饰器
 
-from vllm.distributed.kv_events import KVCacheEvent
-from vllm.logger import init_logger
-from vllm.v1.core.kv_cache_coordinator import get_kv_cache_coordinator
-from vllm.v1.core.kv_cache_metrics import KVCacheMetricsCollector
-from vllm.v1.core.kv_cache_utils import KVCacheBlock
-from vllm.v1.kv_cache_interface import KVCacheConfig
-from vllm.v1.metrics.stats import PrefixCacheStats
-from vllm.v1.request import Request
+from vllm.distributed.kv_events import KVCacheEvent  # 导入 KV 缓存事件基类
+from vllm.logger import init_logger  # 导入日志初始化函数
+from vllm.v1.core.kv_cache_coordinator import get_kv_cache_coordinator  # 导入协调器工厂函数
+from vllm.v1.core.kv_cache_metrics import KVCacheMetricsCollector  # 导入指标收集器
+from vllm.v1.core.kv_cache_utils import KVCacheBlock  # 导入 KV 缓存 block 类
+from vllm.v1.kv_cache_interface import KVCacheConfig  # 导入 KV 缓存配置类
+from vllm.v1.metrics.stats import PrefixCacheStats  # 导入前缀缓存统计类
+from vllm.v1.request import Request  # 导入请求类
 
-logger = init_logger(__name__)
+logger = init_logger(__name__)  # 初始化当前模块的日志记录器
 
 
 # [中文注释] KVCacheBlocks — Scheduler 与 KVCacheManager 之间的接口数据结构。
@@ -30,7 +30,7 @@ class KVCacheBlocks:
     structure from the Scheduler.
     """
 
-    blocks: tuple[Sequence[KVCacheBlock], ...]
+    blocks: tuple[Sequence[KVCacheBlock], ...]  # 按 kv_cache_group 分组的 block 元组
     """
     `blocks[i][j]` refers to the i-th kv_cache_group
     and the j-th block of tokens.We don't use block of
@@ -46,10 +46,10 @@ class KVCacheBlocks:
     """
 
     def __add__(self, other: "KVCacheBlocks") -> "KVCacheBlocks":
-        """Adds two KVCacheBlocks instances."""
+        """合并两个 KVCacheBlocks 实例（按 group 拼接 block 列表）"""
         return KVCacheBlocks(
             tuple(
-                list(itertools.chain(blk1, blk2))
+                list(itertools.chain(blk1, blk2))  # 将两个 group 的 block 列表拼接
                 for blk1, blk2 in zip(self.blocks, other.blocks)
             )
         )
@@ -68,43 +68,33 @@ class KVCacheBlocks:
 
     def get_block_ids(
         self,
-        allow_none: bool = False,
+        allow_none: bool = False,  # 是否允许返回 None
     ) -> tuple[list[int], ...] | None:
-        """
-        Converts the KVCacheBlocks instance to block_ids.
-
-        Returns:
-            tuple[list[int], ...]: A tuple of lists where:
-                - the outer tuple corresponds to KV cache groups
-                - each inner list contains the block_ids of the blocks in that
-                  group
-        """
-        if allow_none and all(len(group) == 0 for group in self.blocks):
-            return None
-        return tuple([blk.block_id for blk in group] for group in self.blocks)
+        """将 KVCacheBlocks 转换为 block_id 元组"""
+        if allow_none and all(len(group) == 0 for group in self.blocks):  # 所有 group 都为空
+            return None  # 返回 None
+        return tuple([blk.block_id for blk in group] for group in self.blocks)  # 提取每个 block 的 ID
 
     def get_unhashed_block_ids(self) -> list[int]:
-        """Get block_ids of unhashed blocks from KVCacheBlocks instance."""
-        assert len(self.blocks) == 1, "Only one group is supported"
-        return [block.block_id for block in self.blocks[0] if block.block_hash is None]
+        """获取未缓存（无 hash）的 block ID 列表（仅支持单 group）"""
+        assert len(self.blocks) == 1, "Only one group is supported"  # 确保只有一个 group
+        return [block.block_id for block in self.blocks[0] if block.block_hash is None]  # 过滤无 hash 的 block
 
     def get_unhashed_block_ids_all_groups(self) -> list[list[int]]:
-        """Get block_ids of unhashed blocks from KVCacheBlocks instance."""
+        """获取所有 group 中未缓存的 block ID 列表"""
         # Skip padding blocks.
         return [
             [
-                block.block_id
-                for block in group
-                if block.block_hash is None and not block.is_null
+                block.block_id  # 提取 block ID
+                for block in group  # 遍历 group 中的 block
+                if block.block_hash is None and not block.is_null  # 过滤无 hash 且非 null 的
             ]
-            for group in self.blocks
+            for group in self.blocks  # 遍历每个 group
         ]
 
     def new_empty(self) -> "KVCacheBlocks":
-        """
-        Creates a new KVCacheBlocks instance with no blocks.
-        """
-        return KVCacheBlocks(tuple(() for _ in range(len(self.blocks))))
+        """创建一个不包含任何 block 的空 KVCacheBlocks 实例"""
+        return KVCacheBlocks(tuple(() for _ in range(len(self.blocks))))  # 每个 group 创建空元组
 
 
 # [中文注释] KV Cache 顶层管理器，封装 KVCacheCoordinator 并为 Scheduler 提供高层接口。
@@ -118,29 +108,30 @@ class KVCacheBlocks:
 class KVCacheManager:
     def __init__(
         self,
-        kv_cache_config: KVCacheConfig,
-        max_model_len: int,
-        hash_block_size: int,
-        enable_caching: bool = True,
-        use_eagle: bool = False,
-        log_stats: bool = False,
-        enable_kv_cache_events: bool = False,
-        dcp_world_size: int = 1,
-        pcp_world_size: int = 1,
-        metrics_collector: KVCacheMetricsCollector | None = None,
+        kv_cache_config: KVCacheConfig,  # KV 缓存配置
+        max_model_len: int,  # 模型最大序列长度
+        hash_block_size: int,  # hash 计算使用的 block 大小
+        enable_caching: bool = True,  # 是否启用前缀缓存
+        use_eagle: bool = False,  # 是否使用 EAGLE 推测解码
+        log_stats: bool = False,  # 是否记录统计信息
+        enable_kv_cache_events: bool = False,  # 是否启用 KV 缓存事件
+        dcp_world_size: int = 1,  # 解码上下文并行度
+        pcp_world_size: int = 1,  # 预填充上下文并行度
+        metrics_collector: KVCacheMetricsCollector | None = None,  # 指标收集器
     ) -> None:
-        self.max_model_len = max_model_len
+        """初始化 KV 缓存管理器"""
+        self.max_model_len = max_model_len  # 保存最大模型长度
 
-        self.enable_caching = enable_caching
-        self.use_eagle = use_eagle
-        self.log_stats = log_stats
-        self.metrics_collector = metrics_collector
+        self.enable_caching = enable_caching  # 保存缓存启用标志
+        self.use_eagle = use_eagle  # 保存 EAGLE 标志
+        self.log_stats = log_stats  # 保存统计日志标志
+        self.metrics_collector = metrics_collector  # 保存指标收集器
         # FIXME: make prefix cache stats conditional on log_stats. We still need
         # this comment because when the log stats is enabled there are still
         # potential configs we could expose in the future.
-        self.prefix_cache_stats = PrefixCacheStats() if log_stats else None
+        self.prefix_cache_stats = PrefixCacheStats() if log_stats else None  # 创建前缀缓存统计对象
 
-        self.coordinator = get_kv_cache_coordinator(
+        self.coordinator = get_kv_cache_coordinator(  # 创建 KV 缓存协调器
             kv_cache_config=kv_cache_config,
             max_model_len=self.max_model_len,
             use_eagle=self.use_eagle,
@@ -151,16 +142,16 @@ class KVCacheManager:
             hash_block_size=hash_block_size,
             metrics_collector=self.metrics_collector,
         )
-        self.num_kv_cache_groups = len(kv_cache_config.kv_cache_groups)
-        self.block_pool = self.coordinator.block_pool
-        self.kv_cache_config = kv_cache_config
+        self.num_kv_cache_groups = len(kv_cache_config.kv_cache_groups)  # KV 缓存 group 数量
+        self.block_pool = self.coordinator.block_pool  # 获取 block 池引用
+        self.kv_cache_config = kv_cache_config  # 保存 KV 缓存配置
 
         # Pre-constructed KVCacheBlocks with no blocks, callers should use this
         # via create_kv_cache_blocks instead of creating new ones to avoid GC
         # overhead.
         #
         # We use nested tuples to ensure the empty KVCacheBlocks is immutable.
-        self.empty_kv_cache_blocks = KVCacheBlocks(
+        self.empty_kv_cache_blocks = KVCacheBlocks(  # 预构造的空 KVCacheBlocks（避免重复创建）
             tuple(() for _ in range(self.num_kv_cache_groups))
         )
 

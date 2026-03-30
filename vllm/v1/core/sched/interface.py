@@ -1,22 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
-import enum
-from abc import ABC, abstractmethod
-from collections.abc import Iterable
-from typing import TYPE_CHECKING
+import enum  # 导入枚举模块
+from abc import ABC, abstractmethod  # 导入抽象基类和抽象方法装饰器
+from collections.abc import Iterable  # 导入可迭代类型
+from typing import TYPE_CHECKING  # 导入类型检查标志
 
-from vllm.multimodal import MULTIMODAL_REGISTRY, MultiModalRegistry
+from vllm.multimodal import MULTIMODAL_REGISTRY, MultiModalRegistry  # 导入多模态注册表
 
-if TYPE_CHECKING:
-    from vllm.config import VllmConfig
-    from vllm.distributed.kv_transfer.kv_connector.v1 import KVConnectorBase_V1
-    from vllm.v1.core.sched.output import GrammarOutput, SchedulerOutput
-    from vllm.v1.engine import EngineCoreOutputs
-    from vllm.v1.kv_cache_interface import KVCacheConfig
-    from vllm.v1.metrics.stats import SchedulerStats
-    from vllm.v1.outputs import DraftTokenIds, ModelRunnerOutput
-    from vllm.v1.request import Request, RequestStatus
-    from vllm.v1.structured_output import StructuredOutputManager
+if TYPE_CHECKING:  # 仅在类型检查时导入以下模块（避免循环导入）
+    from vllm.config import VllmConfig  # vLLM 配置类
+    from vllm.distributed.kv_transfer.kv_connector.v1 import KVConnectorBase_V1  # KV传输连接器基类
+    from vllm.v1.core.sched.output import GrammarOutput, SchedulerOutput  # 调度器输出和语法输出
+    from vllm.v1.engine import EngineCoreOutputs  # 引擎核心输出
+    from vllm.v1.kv_cache_interface import KVCacheConfig  # KV缓存配置
+    from vllm.v1.metrics.stats import SchedulerStats  # 调度器统计信息
+    from vllm.v1.outputs import DraftTokenIds, ModelRunnerOutput  # 草稿token ID和模型运行器输出
+    from vllm.v1.request import Request, RequestStatus  # 请求对象和请求状态
+    from vllm.v1.structured_output import StructuredOutputManager  # 结构化输出管理器
 
 
 # [中文注释] Scheduler 暂停状态枚举。
@@ -32,9 +32,9 @@ class PauseState(enum.IntEnum):
     - PAUSE_ALL: No requests are scheduled
     """
 
-    UNPAUSED = 0
-    PAUSED_NEW = 1
-    PAUSED_ALL = 2
+    UNPAUSED = 0  # 正常调度，不暂停
+    PAUSED_NEW = 1  # 暂停新请求调度，已运行的请求继续
+    PAUSED_ALL = 2  # 完全暂停，不调度任何请求
 
 
 # [中文注释] Scheduler 抽象接口（定义 Engine Core 所需的调度器契约）。
@@ -49,17 +49,20 @@ class PauseState(enum.IntEnum):
 #     调度器每步让 computed 追赶 total，统一覆盖 chunked prefill、
 #     prefix caching、speculative decoding 等场景。
 class SchedulerInterface(ABC):
+    """调度器抽象接口，定义 Engine Core 所需的调度器契约。"""
+
     @abstractmethod
     def __init__(
         self,
-        vllm_config: "VllmConfig",
-        kv_cache_config: "KVCacheConfig",
-        structured_output_manager: "StructuredOutputManager",
-        block_size: int,
-        mm_registry: MultiModalRegistry = MULTIMODAL_REGISTRY,
-        include_finished_set: bool = False,
-        log_stats: bool = False,
+        vllm_config: "VllmConfig",  # vLLM 全局配置
+        kv_cache_config: "KVCacheConfig",  # KV 缓存配置
+        structured_output_manager: "StructuredOutputManager",  # 结构化输出管理器
+        block_size: int,  # KV 缓存块大小
+        mm_registry: MultiModalRegistry = MULTIMODAL_REGISTRY,  # 多模态注册表
+        include_finished_set: bool = False,  # 是否在输出中包含已完成请求的集合
+        log_stats: bool = False,  # 是否记录统计信息
     ) -> None:
+        """初始化调度器接口（抽象方法，由子类实现）。"""
         raise NotImplementedError
 
     @abstractmethod
@@ -92,6 +95,7 @@ class SchedulerInterface(ABC):
     def get_grammar_bitmask(
         self, scheduler_output: "SchedulerOutput"
     ) -> "GrammarOutput | None":
+        """获取结构化输出的语法约束 bitmask（抽象方法）。"""
         raise NotImplementedError
 
     @abstractmethod
@@ -177,9 +181,8 @@ class SchedulerInterface(ABC):
         raise NotImplementedError
 
     def has_unfinished_requests(self) -> bool:
-        """Returns True if there are unfinished requests in the scheduler's
-        internal queue."""
-        return self.get_num_unfinished_requests() > 0
+        """返回调度器内部队列中是否有未完成的请求。"""
+        return self.get_num_unfinished_requests() > 0  # 未完成请求数大于0则返回True
 
     @abstractmethod
     def has_finished_requests(self) -> bool:
@@ -197,9 +200,8 @@ class SchedulerInterface(ABC):
         raise NotImplementedError
 
     def has_requests(self) -> bool:
-        """Returns True if there are unfinished requests, or finished requests
-        not yet returned in SchedulerOutputs."""
-        return self.has_unfinished_requests() or self.has_finished_requests()
+        """返回是否有未完成的请求或已完成但尚未返回的请求。"""
+        return self.has_unfinished_requests() or self.has_finished_requests()  # 有未完成或已完成未返回的请求
 
     @property
     @abstractmethod
@@ -209,6 +211,7 @@ class SchedulerInterface(ABC):
 
     @abstractmethod
     def set_pause_state(self, pause_state: PauseState) -> None:
+        """设置调度器的暂停状态（抽象方法）。"""
         raise NotImplementedError
 
     @abstractmethod
@@ -255,4 +258,5 @@ class SchedulerInterface(ABC):
         raise NotImplementedError
 
     def get_kv_connector(self) -> "KVConnectorBase_V1 | None":
-        return None
+        """获取 KV 传输连接器（默认返回 None，子类可重写）。"""
+        return None  # 默认无 KV 连接器

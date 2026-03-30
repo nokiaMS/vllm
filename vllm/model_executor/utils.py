@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Utils for model executor."""
+# 模型执行器的工具函数模块。
 
-import copy
-from typing import Any
+import copy  # 导入拷贝模块，用于深拷贝操作
+from typing import Any  # 导入Any类型注解
 
-import torch
+import torch  # 导入PyTorch深度学习框架
 
-from vllm.utils.torch_utils import is_torch_equal_or_newer
+from vllm.utils.torch_utils import is_torch_equal_or_newer  # 导入PyTorch版本检查工具函数
 
 
 def set_weight_attrs(
@@ -23,10 +24,11 @@ def set_weight_attrs(
         weight: The weight tensor.
         weight_attrs: A dictionary of attributes to set on the weight tensor.
     """
-    if weight_attrs is None:
+    # 在权重张量上设置属性，不会覆盖已有属性。
+    if weight_attrs is None:  # 如果属性字典为空则直接返回
         return
-    for key, value in weight_attrs.items():
-        assert not hasattr(weight, key), f"Overwriting existing tensor attribute: {key}"
+    for key, value in weight_attrs.items():  # 遍历所有属性
+        assert not hasattr(weight, key), f"Overwriting existing tensor attribute: {key}"  # 确保不覆盖已有属性
 
         # NOTE(woosuk): During weight loading, we often do something like:
         # narrowed_tensor = param.data.narrow(0, offset, len)
@@ -37,11 +39,11 @@ def set_weight_attrs(
         # This sometimes causes OOM errors during model loading. To avoid this,
         # we sync the param tensor after its weight loader is called.
         # TODO(woosuk): Remove this hack once we have a better solution.
-        from vllm.platforms import current_platform
+        from vllm.platforms import current_platform  # 导入当前平台信息
 
-        if current_platform.use_sync_weight_loader() and key == "weight_loader":
-            value = current_platform.make_synced_weight_loader(value)
-        setattr(weight, key, value)
+        if current_platform.use_sync_weight_loader() and key == "weight_loader":  # 如果需要同步权重加载器
+            value = current_platform.make_synced_weight_loader(value)  # 创建同步的权重加载器
+        setattr(weight, key, value)  # 设置属性到权重张量
 
 
 def replace_parameter(

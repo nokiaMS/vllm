@@ -7,9 +7,9 @@
 # 本文件仅做重新导出以保持旧版导入路径可用。
 # ============================================================================
 
-from vllm.v1.executor.ray_executor import (
-    RayDistributedExecutor as _RayDistributedExecutor,
+from vllm.v1.executor.ray_executor import (  # 从 ray_executor 模块导入 RayDistributedExecutor 类
+    RayDistributedExecutor as _RayDistributedExecutor,  # 将其重命名为内部别名 _RayDistributedExecutor
 )
 
 # For backwards compatibility.
-RayDistributedExecutor = _RayDistributedExecutor
+RayDistributedExecutor = _RayDistributedExecutor  # 重新导出为 RayDistributedExecutor，保持向后兼容

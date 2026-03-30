@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: Apache-2.0
-# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+# SPDX-License-Identifier: Apache-2.0  # Apache-2.0 开源许可证标识
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project  # 版权声明：vLLM 项目贡献者
 
 # ============================================================================
 # executor 包的初始化模块
@@ -10,7 +10,7 @@
 # 再通过 Executor.get_class() 工厂方法根据配置动态选择具体实现。
 # ============================================================================
 
-from .abstract import Executor
-from .uniproc_executor import UniProcExecutor
+from .abstract import Executor  # 从当前包的 abstract 模块导入 Executor 抽象基类
+from .uniproc_executor import UniProcExecutor  # 从当前包的 uniproc_executor 模块导入单进程执行器
 
-__all__ = ["Executor", "UniProcExecutor"]
+__all__ = ["Executor", "UniProcExecutor"]  # 定义模块的公开接口列表，限制 from xxx import * 的导出范围

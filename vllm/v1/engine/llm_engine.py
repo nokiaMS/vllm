@@ -104,10 +104,12 @@ class LLMEngine:  # LLM引擎类定义
         )  # IO处理器创建完成
 
         # Convert TokPrompt --> EngineCoreRequest.
-        self.input_processor = InputProcessor(self.vllm_config, renderer)  # 创建输入处理器，将提示转换为引擎核心请求
+        # 创建输入处理器，将提示转换为引擎核心请求
+        self.input_processor = InputProcessor(self.vllm_config, renderer)
 
         # Converts EngineCoreOutputs --> RequestOutput.
-        self.output_processor = OutputProcessor(  # 创建输出处理器，将引擎核心输出转换为请求输出
+        # 创建输出处理器，将引擎核心输出转换为请求输出
+        self.output_processor = OutputProcessor(
             renderer.tokenizer,  # 传入分词器
             log_stats=self.log_stats,  # 传入统计日志标志
             stream_interval=self.vllm_config.scheduler_config.stream_interval,  # 传入流式输出间隔
@@ -115,7 +117,8 @@ class LLMEngine:  # LLM引擎类定义
         )  # 输出处理器创建完成
 
         # EngineCore (gets EngineCoreRequests and gives EngineCoreOutputs)
-        self.engine_core = EngineCoreClient.make_client(  # 创建引擎核心客户端
+        # 创建engineCore client，负责接收engineCore请求并返回engineCore输出
+        self.engine_core = EngineCoreClient.make_client(
             multiprocess_mode=multiprocess_mode,  # 传入多进程模式标志
             asyncio_mode=False,  # 同步模式，不使用asyncio
             vllm_config=vllm_config,  # 传入vLLM配置

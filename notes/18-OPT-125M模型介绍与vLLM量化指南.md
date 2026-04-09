@@ -59,7 +59,12 @@ vLLM 支持多种量化方法，下面按易用程度依次介绍。
 
 ### 2.1 方案一：FP8 动态量化（最简单，无需校准数据）
 
-直接在推理时指定 `quantization="fp8"`，vLLM 自动完成在线量化：
+>fp8(float point 8-bit) 量化是 vLLM 最新支持的高效量化方案，具有接近 FP16 的精度和更高的压缩比。
+FP8（8位浮点）将模型权重从默认的 FP16 压缩到 8 位，降低显存占用、提升吞吐，精度损失很小。
+
+>此代码中配置了quantization="fp8"，vLLM 会自动在加载模型时进行在线量化，无需预先处理模型或提供校准数据。
+
+>直接在推理时指定 `quantization="fp8"`，vLLM 自动完成在线量化：
 
 ```python
 from vllm import LLM, SamplingParams
